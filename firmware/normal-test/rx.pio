@@ -1,0 +1,7 @@
+.program normal_rx
+; Passive receiver. SC=GP0, data=GP1. MSB first, sample on rising edge.
+.wrap_target
+    wait 0 gpio 0
+    wait 1 gpio 0
+    in pins, 1
+.wrap

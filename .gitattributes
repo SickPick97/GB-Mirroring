@@ -1,0 +1,18 @@
+* text=auto
+*.py text eol=lf
+*.c text eol=lf
+*.h text eol=lf
+*.S text eol=lf
+*.md text eol=lf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.uf2 binary
+*.gba binary
+*.bin binary
+*.bmp binary
+*.dll binary
+*.exe binary
+*.pyd binary
+*.zip binary
+runtime/python/** -text
+vendor/celio_transport/*.py -text

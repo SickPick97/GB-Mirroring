@@ -1,0 +1,21 @@
+build/
+downloads/
+third_party/
+tools/ninja/
+__pycache__/
+*.pyc
+PROGETTO AMICO/
+analisi/
+passotile-reference.html
+packages/
+dist/link-reports/
+dist/normal-reports/
+dist/diagnosi-usb.txt
+.env
+.env.*
+*.sav
+*.srm
+*.ss0
+*.ss1
+*.gba
+!dist/gbmirroring-*.gba

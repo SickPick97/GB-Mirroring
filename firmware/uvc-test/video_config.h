@@ -1,0 +1,12 @@
+#pragma once
+
+#define GBM_WIDTH 240u
+#define GBM_HEIGHT 160u
+#define GBM_FRAME_BYTES (GBM_WIDTH * GBM_HEIGHT * 2u)
+#define GBM_FAST_INTERVAL_100NS 1000000u
+#define GBM_SLOW_INTERVAL_100NS 2000000u
+#define GBM_USB_VID 0xCAFEu
+#define GBM_USB_PID 0x4020u
+#define GBM_USB_PRODUCT "GBMirroring - USB Test"
+#define GBM_VERSION "0.1.0"
+

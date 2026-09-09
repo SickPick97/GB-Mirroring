@@ -1,0 +1,9 @@
+{
+  "status": "compiled; hardware not tested",
+  "bytes": 2128,
+  "sha256": "f0fcb46f6a28215471fe4d69062b8b1d1f0dde741943564444dbba66f9ece5dd",
+  "load_address": "0x02000000",
+  "entry_offset": "0xC0",
+  "start_offset": "0xE0",
+  "cartridge_access": false
+}

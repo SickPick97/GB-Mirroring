@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "tests": 4,
+  "failures": 0,
+  "errors": 0,
+  "scope": "Actual GBA ARM code with mocked IO, ideal PIO edges, report faults; no electrical or USB hardware test"
+}

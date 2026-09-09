@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "tests": 7,
+  "failures": 0,
+  "errors": 0,
+  "scope": "Protocol fault injection and compiled ARM execution with mocked IO; no physical timing or BIOS test"
+}

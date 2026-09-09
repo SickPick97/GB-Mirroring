@@ -1,0 +1,17 @@
+**Banco Link 0.2.0**
+
+Il banco riutilizza localmente `PROGETTO AMICO/mb_multi.py`, `usb_link.py`, Python embedded e `celio.uf2`. Nessun nuovo firmware Pico e necessario per questa misura: la versione UVC e la versione Celio sono alternative temporanee. I moduli originali sono importati senza modifiche e con bytecode cache disabilitata. Non vengono ridistribuiti sotto una nuova licenza.
+
+Sorgenti del nuovo programma GBA: firmware/link-test. Compilazione: `python tools/build_link_test.py`. Collaudo software: `python tools/test_link_bench.py`; il solo collaudo ARM richiede Unicorn 2.1.4 in third_party/test-runtime. Per l'utente sono gia pronti il .gba e i BAT.
+
+Il binario e collegato a 0x02000000 e parte da 0xC0, con branch a 0xE0. Inizializza stack in IWRAM, BSS e display Mode 3, poi imposta multiplayer child 115200. La CPU e IME mantengono IRQ disabilitati; il loop legge il flag seriale IF bit 7, abilitato in SIOCNT. Non ci sono chiamate al BIOS, letture o scritture alla cartuccia. L'header usa i 156 byte di logo richiesti dal BIOS, presi dal multiboot homebrew fornito, e titolo/codice/checksum propri. Le sezioni sono eseguibili e scrivibili perche residenti nella RAM del GBA: il warning ELF RWX del linker e previsto.
+
+Formato: 72 parole little-endian per pacchetto. Magic B17E,4D47; versione 1; tipo 1 diagnostica o 2 screenshot; sequenza low/high; lunghezza 64; 64 parole dati; CRC-16/CCITT-FALSE. CRC iniziale FFFF, polinomio 1021, byte basso prima del byte alto, dalla versione all'ultimo dato, magic escluso. Il parser conserva lo stato e cerca nuovamente magic/CRC dopo gli errori.
+
+Diagnostica: i primi sette dati contengono challenge, tasti attivi, SIOCNT, contatore trasferimenti low/high, contatore errori seriali low/high. Seguono 0,FFFF,A55A,7FFF,8000 e una sequenza deterministica dipendente da indice e numero pacchetto. Comandi D000..DFFF aggiornano il challenge; C001 richiede una cattura al confine fra pacchetti. Screenshot: 600 pacchetti da 64 pixel RGB555 letti direttamente dalla VRAM in ordine di raster. Gli aggiornamenti grafici si fermano durante la lettura. Nessun frame viene ricostruito dalla conoscenza della scena sul PC.
+
+Il test prova timing Celio 7400,3700,2000,1000,500, 20 secondi ciascuno dopo acquisizione del primo pacchetto. Si ferma alla prima fase non pulita; sceglie per la cattura un passo piu conservativo rispetto alla migliore velocita misurata. I criteri sono almeno 5 pacchetti, almeno 2 echo del challenge corretto, nessun errore CRC/pattern, buco, duplicato o incremento di errore SIO nel periodo. Errori precedenti al primo pacchetto di sincronizzazione non entrano nel periodo misurato. Il rate esclude il pacchetto iniziale di sincronizzazione e conta il payload dei pacchetti ricevuti validi; il valore e significativo come rate pulito soltanto quando clean=true.
+
+Limiti: polling seriale in EWRAM, firmware Celio preesistente e trasferimento USB attraverso Python. Unicorn verifica le istruzioni ARM, il protocollo e i byte della schermata con MMIO simulato, non i tempi elettrici, il BIOS o il driver USB. Il banco non misura ancora normal mode a 256 kHz/2 MHz e non prova la sopravvivenza di un payload all'avvio delle cartucce. Un frame Mode 3 non equivale alla ricostruzione dei modi tile/sprite usati da Pokemon.
+
+Riferimenti: copia locale GBATEK in analisi/fonti/gbatek.html, sezioni SIO Multiplayer e Multiboot; [GBATEK](https://mgba-emu.github.io/gbatek/); codice di trasporto e note sul cablaggio nel materiale dell'utente.

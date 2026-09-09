@@ -1,0 +1,43 @@
+cmake_minimum_required(VERSION 3.20)
+
+set(PICO_SDK_PATH "${CMAKE_CURRENT_LIST_DIR}/third_party/pico-sdk-2.2.0" CACHE PATH "Pinned Pico SDK")
+set(PICO_TINYUSB_PATH "${CMAKE_CURRENT_LIST_DIR}/third_party/tinyusb-86ad6e56c1700e85f1c5678607a762cfe3aa2f47" CACHE PATH "Pinned TinyUSB")
+set(PICO_BOARD pico CACHE STRING "Raspberry Pi Pico RP2040")
+set(PICO_NO_PICOTOOL 1 CACHE BOOL "Use the local, verified BIN-to-UF2 packer")
+include(${PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+project(gbmirroring VERSION 0.1.0 LANGUAGES C CXX ASM)
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
+pico_sdk_init()
+if(NOT PICO_RP2040 OR NOT PICO_BOARD STREQUAL "pico")
+    message(FATAL_ERROR "This first firmware targets the original RP2040 Pico only.")
+endif()
+
+add_executable(gbmirroring_uvc_test
+    firmware/uvc-test/main.c
+    firmware/uvc-test/usb_descriptors.c
+    firmware/uvc-test/test_pattern.c)
+target_include_directories(gbmirroring_uvc_test PRIVATE firmware/uvc-test)
+target_link_libraries(gbmirroring_uvc_test PRIVATE pico_stdlib pico_unique_id tinyusb_device)
+# UART0 would use Link pins GP0/GP1. Neither UART nor CDC stdio belongs in this test.
+pico_enable_stdio_uart(gbmirroring_uvc_test 0)
+pico_enable_stdio_usb(gbmirroring_uvc_test 0)
+set_source_files_properties(
+    firmware/uvc-test/main.c firmware/uvc-test/usb_descriptors.c firmware/uvc-test/test_pattern.c
+    PROPERTIES COMPILE_OPTIONS "-Wall;-Wextra;-Werror")
+pico_set_program_name(gbmirroring_uvc_test "GBMirroring USB Test")
+pico_set_program_version(gbmirroring_uvc_test "0.1.0")
+pico_add_bin_output(gbmirroring_uvc_test)
+target_link_options(gbmirroring_uvc_test PRIVATE "-Wl,--print-memory-usage")
+
+add_executable(gbmirroring_normal_test firmware/normal-test/pico.c firmware/normal-test/usb.c)
+target_include_directories(gbmirroring_normal_test PRIVATE firmware/normal-test)
+target_link_libraries(gbmirroring_normal_test PRIVATE pico_stdlib pico_unique_id hardware_pio hardware_dma tinyusb_device)
+pico_enable_stdio_uart(gbmirroring_normal_test 0)
+pico_enable_stdio_usb(gbmirroring_normal_test 0)
+set_source_files_properties(firmware/normal-test/pico.c firmware/normal-test/usb.c
+    PROPERTIES COMPILE_OPTIONS "-Wall;-Wextra;-Werror")
+pico_set_program_name(gbmirroring_normal_test "GBMirroring Normal Test")
+pico_set_program_version(gbmirroring_normal_test "0.3.0")
+pico_add_bin_output(gbmirroring_normal_test)
+target_link_options(gbmirroring_normal_test PRIVATE "-Wl,--print-memory-usage")

@@ -1,0 +1,21 @@
+{
+  "status": "PASS (static validation; hardware not tested)",
+  "binary_bytes": 35272,
+  "uf2_bytes": 70656,
+  "uf2_blocks": 138,
+  "uf2_sha256": "04c02f6b49cbc01c575c233897858bb62312533dc408bf5100d99eebaf241426",
+  "boot2_crc": "0x7a4eb274",
+  "vid": "CAFE",
+  "pid": "4020",
+  "configuration_bytes": 172,
+  "width": 240,
+  "height": 160,
+  "format": "YUY2",
+  "fps": [
+    10,
+    5
+  ],
+  "iso_packet_bytes": 1023,
+  "initial_stack": "0x20042000",
+  "reset_vector": "0x100001f7"
+}

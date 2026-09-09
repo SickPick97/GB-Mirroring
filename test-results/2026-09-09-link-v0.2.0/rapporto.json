@@ -1,0 +1,110 @@
+{
+  "status": "PASS",
+  "phases": [
+    {
+      "clean": true,
+      "seconds": 20.0,
+      "packets": 63,
+      "crc_errors": 0,
+      "pattern_errors": 0,
+      "missing_packets": 0,
+      "duplicates": 0,
+      "challenge_echoes": 63,
+      "gba_serial_errors_delta": 0,
+      "keys_seen_mask": 0,
+      "verified_payload_bytes_s": 396.8,
+      "timing": 7400
+    },
+    {
+      "clean": true,
+      "seconds": 20.001,
+      "packets": 116,
+      "crc_errors": 0,
+      "pattern_errors": 0,
+      "missing_packets": 0,
+      "duplicates": 0,
+      "challenge_echoes": 116,
+      "gba_serial_errors_delta": 0,
+      "keys_seen_mask": 0,
+      "verified_payload_bytes_s": 736.0,
+      "timing": 3700
+    },
+    {
+      "clean": true,
+      "seconds": 20.001,
+      "packets": 187,
+      "crc_errors": 0,
+      "pattern_errors": 0,
+      "missing_packets": 0,
+      "duplicates": 0,
+      "challenge_echoes": 187,
+      "gba_serial_errors_delta": 0,
+      "keys_seen_mask": 0,
+      "verified_payload_bytes_s": 1190.3,
+      "timing": 2000
+    },
+    {
+      "clean": true,
+      "seconds": 20.001,
+      "packets": 293,
+      "crc_errors": 0,
+      "pattern_errors": 0,
+      "missing_packets": 0,
+      "duplicates": 0,
+      "challenge_echoes": 293,
+      "gba_serial_errors_delta": 0,
+      "keys_seen_mask": 0,
+      "verified_payload_bytes_s": 1868.7,
+      "timing": 1000
+    },
+    {
+      "clean": true,
+      "seconds": 20.001,
+      "packets": 411,
+      "crc_errors": 0,
+      "pattern_errors": 0,
+      "missing_packets": 0,
+      "duplicates": 0,
+      "challenge_echoes": 411,
+      "gba_serial_errors_delta": 0,
+      "keys_seen_mask": 0,
+      "verified_payload_bytes_s": 2623.9,
+      "timing": 500
+    }
+  ],
+  "hardware_test": true,
+  "description": "Celio multiplayer baseline; not normal-mode bandwidth or cartridge capture",
+  "multiboot": {
+    "byte": 2128,
+    "durata": 3.8100075721740723,
+    "parole_inviate": 1207,
+    "risposte_lette": 1211,
+    "scartate": 50,
+    "desync": 0,
+    "riavvii": 0,
+    "parole_s": 317.8471373244482,
+    "crc": 6415
+  },
+  "best_measured": {
+    "clean": true,
+    "seconds": 20.001,
+    "packets": 411,
+    "crc_errors": 0,
+    "pattern_errors": 0,
+    "missing_packets": 0,
+    "duplicates": 0,
+    "challenge_echoes": 411,
+    "gba_serial_errors_delta": 0,
+    "keys_seen_mask": 0,
+    "verified_payload_bytes_s": 2623.9,
+    "timing": 500
+  },
+  "screenshot": {
+    "complete": true,
+    "blocks": 600,
+    "crc_errors": 0,
+    "seconds": 41.08,
+    "file": "schermo-gba.bmp",
+    "sha256": "6709d15086927c7e9b068312b2be691de2ccabd84da3a363765835eceeef4a18"
+  }
+}

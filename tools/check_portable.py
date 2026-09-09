@@ -1,0 +1,36 @@
+"""Offline validation of the portable package, without accessing USB devices."""
+import hashlib
+import json
+import sys
+sys.dont_write_bytecode=True
+from pathlib import Path
+ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT/'tools'))
+sys.path.insert(0,str(ROOT/'vendor/celio_transport'))
+
+def main():
+    manifest=json.loads((ROOT/'runtime/manifest.json').read_text())
+    for relative,expected in manifest.items():
+        path=ROOT/'runtime/python'/relative
+        if hashlib.sha256(path.read_bytes()).hexdigest()!=expected:
+            raise ValueError('Runtime incompleto o modificato: '+relative)
+    import mb_multi, usb_link, normal_report, link_bench
+    import usb.core, libusb_package
+    if libusb_package.get_libusb1_backend() is None:
+        raise RuntimeError('Backend USB non disponibile')
+    for report,binary,key in [
+        ('verifica-normal-gba.json','gbmirroring-normal-test-v0.3.0.gba','sha256'),
+        ('verifica-link-build.json','gbmirroring-link-test-v0.2.0.gba','sha256'),
+        ('verifica-normal-pico.json','gbmirroring-normal-test-v0.3.0.uf2','uf2_sha256'),
+        ('verifica-firmware.json','gbmirroring-uvc-test-v0.1.0.uf2','uf2_sha256')]:
+        expected=json.loads((ROOT/'dist'/report).read_text())[key]
+        if hashlib.sha256((ROOT/'dist'/binary).read_bytes()).hexdigest()!=expected:
+            raise ValueError('Firmware non corrispondente al manifest: '+binary)
+    print('Pacchetto GBMirroring', (ROOT/'VERSION').read_text().strip())
+    print('OK: runtime, librerie USB, moduli e firmware. Nessun dispositivo interrogato.')
+    return 0
+
+if __name__=='__main__':
+    try:sys.exit(main())
+    except Exception as exc:
+        print('ERRORE:',exc);sys.exit(1)

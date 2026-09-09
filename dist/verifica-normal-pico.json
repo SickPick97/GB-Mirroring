@@ -1,0 +1,10 @@
+{
+  "status": "PASS static; hardware untested",
+  "uf2_sha256": "21f419bf3f35a291d58d4a709ed6d27268cb714e3a8447cfb1b21c7d2673355e",
+  "binary_bytes": 33548,
+  "uf2_bytes": 67584,
+  "usb": "CAFE:4021 CDC",
+  "dma_ring_address": "0x20008000",
+  "dma_ring_bytes": 32768,
+  "frame_bytes": 76800
+}
