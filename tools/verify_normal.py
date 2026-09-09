@@ -8,7 +8,7 @@ ROOT=Path(__file__).resolve().parents[1]
 
 def verify():
     binary=(ROOT/'build/uvc-test/gbmirroring_normal_test.bin').read_bytes()
-    uf2=(ROOT/'dist/gbmirroring-normal-test-v0.3.0.uf2').read_bytes()
+    uf2=(ROOT/'dist/gbmirroring-normal-test-v0.3.2.uf2').read_bytes()
     symbols=elf_symbols((ROOT/'build/uvc-test/gbmirroring_normal_test.elf').read_bytes())
     crc=0xffffffff
     for b in binary[:252]:

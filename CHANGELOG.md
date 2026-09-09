@@ -1,5 +1,12 @@
 # Storico
 
+## 0.3.2 — Diagnostica della ricezione
+
+- Ricevitore Pico: contatori grezzi, primi campioni, pin e stato PIO ogni due secondi anche senza BEGIN valido. Nessuna modifica al pilotaggio delle linee.
+- Il PC registra e mostra la diagnostica; i messaggi periodici non impediscono il timeout.
+- Corretto il cavo nella guida: l'utente conferma di avere sempre usato GBA. Sender GBA 0.3.0 invariato.
+- Non dichiarata risolta la mancata ricezione: serve il nuovo rapporto hardware.
+
 ## 0.3.1 â€” Portabilita e repository
 
 - Repository organizzata per aggiornamenti e risultati dei test.

@@ -17,6 +17,8 @@ static uint32_t consumed, buffered, overruns, rate, valid, expected, gaps, dupli
 static uint32_t crc_errors, pattern_errors, screen_blocks, last_seq, parsed_data;
 static uint64_t started, ended, last_progress;
 static bool have_seq;
+static uint64_t last_diagnostic;
+static uint32_t raw_last, raw_first[4], raw_samples, headers;
 static int dma_ch;
 static uint sm,offset;
 
@@ -44,8 +46,10 @@ static void start_rx(void) {
     dma_channel_set_write_addr(dma_ch,ring,false);
     dma_channel_set_trans_count(dma_ch,0xffffffff,true);
     consumed=0;buffered=0;overruns=0;active=false;
+    crc_errors=0;headers=0;raw_samples=0;raw_last=0;
+    memset(raw_first,0,sizeof(raw_first));last_diagnostic=time_us_64();
     pio_sm_set_enabled(pio0,sm,true);armed=true;
-    output("{\"event\":\"ready\",\"version\":3,\"clock_pin\":0,\"data_pin\":1}\n");
+    output("{\"event\":\"ready\",\"version\":3,\"firmware\":\"0.3.2\",\"clock_pin\":0,\"data_pin\":1}\n");
 }
 static void finish(void) {
     uint64_t elapsed=ended>started?ended-started:0;
@@ -111,6 +115,7 @@ static void accept_packet(void) {
     }
 }
 static void feed(uint32_t w) {
+    raw_last=w;if(raw_samples<4)raw_first[raw_samples++]=w;
     packet[buffered++]=w;
     for(;;) {
         if(buffered<2)return;
@@ -120,7 +125,7 @@ static void feed(uint32_t w) {
             for(unsigned i=2;i<N_WORDS-1;++i)crc=n_crc_word(crc,packet[i]);
             if(packet[2]==3 && packet[6]==256 && packet[3]>=1 && packet[3]<=4 &&
                (packet[4]==262144 || packet[4]==2097152) && (crc^0xffffffff)==packet[N_WORDS-1]) {
-                accept_packet();buffered=0;return;
+                ++headers;accept_packet();buffered=0;return;
             }
             ++crc_errors;
         }
@@ -160,6 +165,14 @@ int main(void) {
         if(produced-consumed>RING_WORDS) {++overruns;consumed=produced;buffered=0;output("{\"event\":\"error\",\"message\":\"dma_overrun\"}\n");}
         unsigned budget=512;
         while(consumed<produced && budget--) {uint32_t w=ring[consumed&(RING_WORDS-1)];++consumed;feed(w);}
+        if(time_us_64()-last_diagnostic>=2000000) {
+            char line[512];
+            snprintf(line,sizeof(line),"{\"event\":\"diagnostic\",\"words\":%"PRIu32",\"valid_headers\":%"PRIu32",\"crc_errors\":%"PRIu32",\"pins\":%lu,\"pio_pc\":%u,\"pio_stall\":%u,\"first\":[%"PRIu32",%"PRIu32",%"PRIu32",%"PRIu32"],\"last\":%"PRIu32"}\n",
+                produced,headers,crc_errors,(unsigned long)(gpio_get_all()&15u),
+                pio_sm_get_pc(pio0,sm),!!(pio0->fdebug&(1u<<(PIO_FDEBUG_RXSTALL_LSB+sm))),
+                raw_first[0],raw_first[1],raw_first[2],raw_first[3],raw_last);
+            output(line);last_diagnostic=time_us_64();
+        }
         gpio_put(25,(time_us_64()/250000)&1);
     }
 }

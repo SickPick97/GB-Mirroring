@@ -20,3 +20,5 @@ Banco Link 0.2.0: prova fisica ricevuta dall'utente, cartella dist/link-reports/
 Confermato trasferimento della VRAM del nostro homebrew dal GBA al PC. Non ancora verificati streaming continuo, trasporto normal mode, cattura dalle cartucce o integrazione di questa sorgente con UVC. A 2623,9 B/s, 76800 byte di un frame grezzo richiederebbero circa 29,3 secondi, senza ulteriori costi: serve aumentare il throughput e/o ridurre i dati trasmessi.
 
 Banco normal mode 0.3.0: software e firmware preparati, verifica software completata. Prova fisica a 256 kHz e 2 MHz ancora da eseguire; procedura in PROVA-NORMAL.md.
+
+2026-09-09, Normal 0.3.0: utente conferma GBA in trasmissione dopo A e successivo messaggio per B, mentre PC resta PRONTO. Nessun pacchetto riconosciuto visibile. Cavo sempre GBA (correzione dell'ipotesi GBC precedente). Causa ancora da identificare. Ricevitore diagnostico 0.3.2 da collaudare.

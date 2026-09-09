@@ -98,6 +98,17 @@ class NormalTests(unittest.TestCase):
             lines.append(dict(event='phase_done'))
         (folder/'usb.jsonl').write_text('\n'.join(json.dumps(l) for l in lines))
 
+    def test_diagnostic_only_is_preserved_and_never_passes(self):
+        with tempfile.TemporaryDirectory() as d:
+            folder=Path(d)
+            (folder/'host.json').write_text(json.dumps(dict(completed=False,error='timeout')))
+            diagnostic=dict(event='diagnostic',words=12000,valid_headers=0,first=[0xffffffff]*4)
+            (folder/'usb.jsonl').write_text(json.dumps(diagnostic)+'\n')
+            result=build_report(folder)
+            self.assertEqual(result['status'],'INCOMPLETE_OR_FAILED')
+            self.assertEqual(result['diagnostics'],[diagnostic])
+            self.assertEqual(list(folder.glob('*.bmp')),[])
+
     def test_complete_report(self):
         with tempfile.TemporaryDirectory() as d:
             folder=Path(d);self.report_fixture(folder)

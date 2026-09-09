@@ -31,12 +31,12 @@ try {
     while ($done -lt 2) {
         # ReadExisting preserves partial lines across polling timeouts.
         $incoming = $port.ReadExisting()
+        if (((Get-Date) - $lastActivity).TotalSeconds -gt $deadlineSeconds) { throw 'Timeout: nessun pacchetto valido in progresso. Conserva il rapporto diagnostico.' }
         if ($incoming.Length -eq 0) {
             if (((Get-Date) - $lastActivity).TotalSeconds -gt $deadlineSeconds) { throw 'Timeout: nessun progresso. Conserva il rapporto e controlla le istruzioni sul GBA.' }
             Start-Sleep -Milliseconds 20
             continue
         }
-        $lastActivity = Get-Date
         $partial += $incoming
         if ($partial.Length -gt 131072) { throw 'Flusso seriale senza delimitatori validi.' }
         while ($partial.Contains("`n")) {
@@ -47,7 +47,10 @@ try {
             $writer.WriteLine($line)
             $writer.Flush()
             $item = $line | ConvertFrom-Json
+            # Heartbeats prove USB is alive, but must not extend the packet timeout.
+            if ($item.event -ne 'diagnostic') { $lastActivity = Get-Date }
             switch ($item.event) {
+                'diagnostic' { Write-Host "Diagnostica: parole=$($item.words), pacchetti validi=$($item.valid_headers), CRC errati=$($item.crc_errors), pin=$($item.pins), PIO=$($item.pio_pc)" }
                 'ready' { Write-Host 'PRONTO. Premi e rilascia A sul GBA per il test 256 kHz.'; $deadlineSeconds=180 }
                 'begin' { Write-Host "Ricezione iniziata: clock $($item.rate) Hz."; $deadlineSeconds=20; $imageBlocks=0 }
                 'progress' { Write-Host "Pacchetti verificati: $($item.packets)/1024" }

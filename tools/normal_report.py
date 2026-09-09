@@ -11,11 +11,12 @@ from link_protocol import bmp
 
 def build_report(folder):
     host=json.loads((folder/'host.json').read_text(encoding='utf-8-sig'))
-    results=[];images={};issues=[];done=0
+    results=[];images={};issues=[];done=0;diagnostics=[]
     for line in (folder/'usb.jsonl').read_text(encoding='utf-8-sig').splitlines():
         try:
             obj=json.loads(line)
-            if obj['event']=='result': results.append(obj)
+            if obj['event']=='diagnostic': diagnostics.append(obj)
+            elif obj['event']=='result': results.append(obj)
             elif obj['event']=='phase_done': done+=1
             elif obj['event']=='error': issues.append(obj)
             elif obj['event']=='image':
@@ -47,7 +48,7 @@ def build_report(folder):
             [r['rate'] for r in results]==[262144,2097152] and
             all(r['clean'] and r['image_complete'] for r in results))
     report=dict(status='PASS' if passed else 'INCOMPLETE_OR_FAILED',host=host,
-                phases=results,issues=issues,scope='One-way normal SIO, 1 MiB per rate plus VRAM; no cartridge or UVC')
+                phases=results,issues=issues,diagnostics=diagnostics,scope='One-way normal SIO, 1 MiB per rate plus VRAM; no cartridge or UVC')
     (folder/'rapporto.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
     return report
 

@@ -21,7 +21,7 @@ def main():
     for report,binary,key in [
         ('verifica-normal-gba.json','gbmirroring-normal-test-v0.3.0.gba','sha256'),
         ('verifica-link-build.json','gbmirroring-link-test-v0.2.0.gba','sha256'),
-        ('verifica-normal-pico.json','gbmirroring-normal-test-v0.3.0.uf2','uf2_sha256'),
+        ('verifica-normal-pico.json','gbmirroring-normal-test-v0.3.2.uf2','uf2_sha256'),
         ('verifica-firmware.json','gbmirroring-uvc-test-v0.1.0.uf2','uf2_sha256')]:
         expected=json.loads((ROOT/'dist'/report).read_text())[key]
         if hashlib.sha256((ROOT/'dist'/binary).read_bytes()).hexdigest()!=expected:
