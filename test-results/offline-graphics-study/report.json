@@ -1,0 +1,45 @@
+{
+  "scope": "Offline compression size study, not hardware streaming. Snapshots are different sessions of the same simple homebrew, NOT consecutive game frames.",
+  "reference_payload_bytes_s": 4328.7,
+  "limitations": [
+    "zlib runs on PC here, not on GBA",
+    "Timing estimates exclude capture, encoding, framing, acknowledgements and USB delivery",
+    "Tile delta requires exact shared base, frame identity and integrity checks before use on wire",
+    "No conclusion about Pokemon or other cartridge compression"
+  ],
+  "snapshots": [
+    {
+      "source": "test-results/2026-09-09-link-v0.2.0/schermo-gba.bmp",
+      "raw_bytes": 76800,
+      "zlib_bytes": 922,
+      "raw_transport_seconds": 17.742,
+      "compressed_transport_seconds": 0.213
+    },
+    {
+      "source": "test-results/2026-09-10-link-extended-v0.3.4/schermo-gba.bmp",
+      "raw_bytes": 76800,
+      "zlib_bytes": 918,
+      "raw_transport_seconds": 17.742,
+      "compressed_transport_seconds": 0.212,
+      "changed_tiles": 15,
+      "delta_bytes": 1950,
+      "delta_zlib_bytes": 142
+    },
+    {
+      "source": "test-results/2026-09-10-link-profile-v0.3.5/schermo-gba.bmp",
+      "raw_bytes": 76800,
+      "zlib_bytes": 920,
+      "raw_transport_seconds": 17.742,
+      "compressed_transport_seconds": 0.213,
+      "changed_tiles": 10,
+      "delta_bytes": 1300,
+      "delta_zlib_bytes": 107
+    }
+  ],
+  "synthetic_noise": {
+    "raw_bytes": 76800,
+    "zlib_bytes": 75620,
+    "raw_transport_seconds": 17.742,
+    "compressed_transport_seconds": 17.469
+  }
+}

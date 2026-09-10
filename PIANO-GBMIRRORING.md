@@ -183,3 +183,6 @@ Questa prima analisi stabilisce una base concreta e le prove necessarie. Non ass
 **Dettagli ancora da definire durante lo sviluppo**
 
 Modello esatto di Pico; revisione SP; lingue/revisioni delle cartucce; disponibilità di un analizzatore logico; priorità dell'audio e della cattura durante multiplayer; soglia accettabile di latenza/rallentamento quando avremo le prime misure. Nessuno di questi punti richiede di cambiare il piano appena concordato; serviranno per dimensionare e collaudare i prototipi.
+
+
+Aggiornamento: valutata uscita video diretta e ricostruzione su PC in [OPZIONI-VIDEO](docs/OPZIONI-VIDEO.md). Prosegue il trasporto a cavo fisso con studio offline compressione/delta; nessun accesso diretto al segnale LCD tramite Link.

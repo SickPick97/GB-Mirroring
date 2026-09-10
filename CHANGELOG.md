@@ -1,5 +1,11 @@
 # Storico
 
+## Studio video offline (firmware invariato)
+
+- Valutata distinzione segnale LCD / dati grafici esportati. Ricostruzione PC ammessa nel prototipo, UVC autonomo resta requisito finale.
+- Aggiunto studio riproducibile compressione/delta con verifica lossless su schermate homebrew e caso sintetico poco comprimibile. Nessuna previsione FPS sui giochi.
+
+
 ## 0.3.7 - Scansione multiplayer locale
 
 - Timing 125/60/30/10/1 per 20 s, arresto al primo errore e conferma 60 s della fase pulita con velocita misurata migliore.
