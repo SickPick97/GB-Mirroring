@@ -139,11 +139,23 @@ def screenshot(link, timing, folder):
     return dict(complete=False,blocks=len(chunks),crc_errors=parser.bad_crc,
                 error='Cattura incompleta: nessuna immagine parziale presentata come completa')
 
+def scan(link, timings, seconds, measure_fn=measure):
+    phases=[]
+    for index,timing in enumerate(timings):
+        result=measure_fn(link,timing,seconds,0xd120+index)
+        phases.append(result)
+        if not result.get('clean'):
+            print('Fase non pulita: fermo la salita di velocita e conservo i risultati.')
+            break
+    return phases
+
+
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--skip-boot',action='store_true')
     ap.add_argument('--seconds',type=int,default=20)
     ap.add_argument('--no-screenshot',action='store_true')
+    ap.add_argument('--extended',action='store_true',help='Scansione pause ridotte e conferma 60 s, cavo fisso')
     args=ap.parse_args()
     if not 15<=args.seconds<=300:
         ap.error('--seconds deve essere fra 15 e 300')
@@ -163,23 +175,29 @@ def main():
             print('Avvio misura. Puoi premere A/B sul GBA: i tasti sono inclusi nei dati.')
             link=UsbLink(timing=7400,cable='gba',raw=True)
             link.open()
-            for index,timing in enumerate([7400,3700,2000,1000,500]):
-                r=measure(link,timing,args.seconds,0xd120+index)
-                report['phases'].append(r)
-                if not r.get('clean'):
-                    print('Fase non pulita: fermo la salita di velocita e conservo i risultati.')
-                    break
+            timings=[1000,500,250,125,60,30,10,1] if args.extended else [7400,3700,2000,1000,500]
+            report['package_version']=(ROOT/'VERSION').read_text().strip()
+            report['requested_timings']=timings
+            report['extended']=args.extended
+            report['phases']=scan(link,timings,args.seconds)
             clean=[r for r in report['phases'] if r.get('clean')]
             if clean:
                 best=max(clean,key=lambda r:r['verified_payload_bytes_s'])
                 report['best_measured']=best
+                if args.extended:
+                    print('Conferma per 60 secondi del miglior timing pulito:',best['timing'])
+                    report['confirmation']=measure(link,best['timing'],60,0xd150)
+                    report['reference_bytes_s']=2623.9
+                    report['best_vs_previous_ratio']=round(best['verified_payload_bytes_s']/2623.9,3)
+                    report['comparison_note']='Different session/PC may affect comparison; not isolated electrical bandwidth.'
                 if not args.no_screenshot:
                     # One step slower than best for the longer full-screen transfer.
                     capture=clean[max(0,clean.index(best)-1)]
                     report['screenshot']=screenshot(link,capture['timing'],folder)
                 all_clean=all(r.get('clean') for r in report['phases'])
-                image_ok=args.no_screenshot or report['screenshot']['complete']
-                report['status']='PASS' if all_clean and image_ok else 'PARTIAL'
+                image_ok=args.no_screenshot or (report['screenshot']['complete'] and report['screenshot']['crc_errors']==0)
+                confirmation_ok=not args.extended or report['confirmation'].get('clean',False)
+                report['status']='PASS' if all_clean and image_ok and confirmation_ok else 'PARTIAL'
             else:
                 report['status']='FAIL'
         except (Exception,SystemExit,KeyboardInterrupt) as exc:

@@ -26,6 +26,22 @@ def parse(words):
     return p,result
 
 class ProtocolTests(unittest.TestCase):
+    def test_scan_stops_at_first_fault_and_preserves_evidence(self):
+        from link_bench import scan
+        calls=[]
+        def fake(link,timing,seconds,challenge):
+            calls.append(timing)
+            return dict(timing=timing,clean=timing>=500,crc_errors=int(timing<500))
+        phases=scan(None,[1000,500,250,125],20,fake)
+        self.assertEqual(calls,[1000,500,250])
+        self.assertEqual(len(phases),3)
+        self.assertEqual(phases[-1]['crc_errors'],1)
+
+    def test_scan_completes_clean_schedule(self):
+        from link_bench import scan
+        phases=scan(None,[500,250,1],20,lambda link,t,s,c:dict(timing=t,clean=True))
+        self.assertEqual([x['timing'] for x in phases],[500,250,1])
+
     def test_crc_known_vector(self):
         import binascii
         self.assertEqual(binascii.crc_hqx(b'123456789',0xffff),0x29b1)

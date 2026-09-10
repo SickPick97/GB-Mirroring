@@ -2,7 +2,7 @@
 
 Progetto sperimentale per acquisire il video di un GBA/GBA SP attraverso un adattatore Link con Raspberry Pi Pico RP2040 e arrivare a una webcam USB autonoma, senza modificare internamente la console.
 
-**Versione del pacchetto: 0.3.3. Prova corrente: ricevitore normal mode 0.3.3, sender GBA 0.3.0.** Il video delle cartucce commerciali non e ancora implementato.
+**Versione pacchetto 0.3.4. Prova corrente: multiplayer esteso a cavo fisso.** Leggi [PROVA-LINK-ESTESO.md](PROVA-LINK-ESTESO.md) e avvia 5-AVVIA-LINK-ESTESO.bat. Firmware invariati; cattura dalle cartucce non implementata.
 
 ## Su un altro PC Windows
 
@@ -10,7 +10,7 @@ Progetto sperimentale per acquisire il video di un GBA/GBA SP attraverso un adat
 2. Scarica **Code → Download ZIP**, oppure clona la repository con GitHub Desktop.
 3. Estrai tutto in una cartella scrivibile. Non avviare i BAT dentro lo ZIP.
 4. Avvia **0-CONTROLLA-PC.bat**: verifica offline runtime e firmware, senza interrogare dispositivi.
-5. Apri [PROVA-NORMAL.md](PROVA-NORMAL.md) e segui la procedura. I file principali sono **3-CARICA-NORMAL.bat** e **4-MISURA-NORMAL.bat**.
+5. Apri [PROVA-LINK-ESTESO.md](PROVA-LINK-ESTESO.md) e segui la procedura con **5-AVVIA-LINK-ESTESO.bat**.
 
 Il pacchetto contiene Python portatile, librerie USB, firmware UF2 e programmi multiboot compilati. Non serve l'intera cartella PROGETTO AMICO e non occorre installare strumenti di sviluppo per eseguire i test. Target attuale: Windows 10/11 x64, Pico RP2040 e GBA SP.
 

@@ -1,5 +1,13 @@
 # Storico
 
+## 0.3.4 - Multiplayer esteso a cavo fisso
+
+- Nuovi avvii portatili per scansione da timing 1000 a 1, arresto al primo errore, conferma 60 s e screenshot conservativo.
+- Firmware e vendor invariati. Ripristinare Celio prima della prova.
+- PASS richiede anche conferma pulita e screenshot senza CRC errati. Test Normal invertito mantenuto come alternativa diagnostica.
+- Velocita e stabilita della nuova scansione ancora da verificare su hardware.
+
+
 ## Riscontro hardware 2026-09-10 (nessun nuovo firmware)
 
 - Normal 0.3.3 confermato in esecuzione su GP3, ma ancora senza header: spostare il ricevitore non ha risolto.
