@@ -1,5 +1,11 @@
 # Storico
 
+## 0.3.7 - Scansione multiplayer locale
+
+- Timing 125/60/30/10/1 per 20 s, arresto al primo errore e conferma 60 s della fase pulita con velocita misurata migliore.
+- Esiti distinguono scansione completa e conferma dopo errore. Sequenza PIO e programma GBA invariati; hardware ancora da verificare.
+
+
 ## 0.3.6 - Misura multiplayer locale sul Pico
 
 - Nuovo firmware Pico SDK/CDC, sequenza PIO master derivata da Celio; verifica locale CRC/pattern/sequenze, due finestre 30 s senza inviare dati grezzi USB.

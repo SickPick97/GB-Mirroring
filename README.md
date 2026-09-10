@@ -2,7 +2,7 @@
 
 Progetto sperimentale per acquisire il video di un GBA/GBA SP attraverso un adattatore Link con Raspberry Pi Pico RP2040 e arrivare a una webcam USB autonoma, senza modificare internamente la console.
 
-**Versione pacchetto 0.3.6. Prossima prova: [PROVA-PICO.md](PROVA-PICO.md).** Firmware Pico multiplayer collaudato in due finestre da 30 s: fino a 3719,4 B/s senza errori; cavo fisso. Cattura dalle cartucce non implementata.
+**Versione pacchetto 0.3.7. Prossima prova: [PROVA-PICO.md](PROVA-PICO.md).** Scansione locale estesa da collaudare, basata sulla 0.3.6 verificata a 3719,4 B/s; cavo fisso. Cattura dalle cartucce non implementata.
 
 ## Su un altro PC Windows
 

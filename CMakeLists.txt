@@ -48,5 +48,5 @@ target_link_libraries(gbmirroring_multi_profile PRIVATE pico_stdlib pico_unique_
 pico_enable_stdio_uart(gbmirroring_multi_profile 0)
 pico_enable_stdio_usb(gbmirroring_multi_profile 0)
 target_compile_options(gbmirroring_multi_profile PRIVATE -Wall -Wextra -Werror)
-pico_set_program_version(gbmirroring_multi_profile "0.3.6")
+pico_set_program_version(gbmirroring_multi_profile "0.3.7")
 pico_add_bin_output(gbmirroring_multi_profile)

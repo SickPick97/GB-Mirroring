@@ -31,7 +31,7 @@ def main():
             (folder/'multiboot.json').write_text(json.dumps(result,indent=2))
             print('\nMultiboot completato. Sul GBA deve apparire GBMIRRORING LINK TEST.')
             print('LASCIA ACCESO il GBA e NON premere ancora A.')
-            print('Ora cambia il firmware Pico con BOOTSEL: gbmirroring-multi-profile-v0.3.6.uf2.')
+            print('Ora cambia il firmware Pico con BOOTSEL: gbmirroring-multi-profile-v0.3.7.uf2.')
             print('Poi avvia 9-MISURA-PICO.bat. Non occorre premere tasti.')
             return 0
         except (Exception,SystemExit,KeyboardInterrupt) as exc:

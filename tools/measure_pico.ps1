@@ -8,7 +8,7 @@ $report=@{status='INCOMPLETE'; phases=@(); error=$null; scope='Pico-local multip
 $writer=New-Object System.IO.StreamWriter((Join-Path $folder 'usb.jsonl'),$false,[System.Text.Encoding]::UTF8)
 try {
  $devices=@(Get-PnpDevice -PresentOnly | Where-Object {$_.InstanceId -match 'VID_CAFE&PID_4022' -and $_.FriendlyName -match '\(COM\d+\)'})
- if($devices.Count -ne 1){throw 'Serve un solo Pico con firmware Multi Profile 0.3.6.'}
+ if($devices.Count -ne 1){throw 'Serve un solo Pico con firmware Multi Profile 0.3.7.'}
  $null=$devices[0].FriendlyName -match '\((COM\d+)\)'
  $port=New-Object System.IO.Ports.SerialPort($Matches[1],115200)
  $port.DtrEnable=$true;$port.WriteTimeout=2000;$port.Open()
@@ -16,7 +16,7 @@ try {
  $port.DiscardInBuffer();$port.WriteLine('START')
  $start=Get-Date;$notice=Get-Date;$partial='';$finished=$false
  while(!$finished){
-  if(((Get-Date)-$start).TotalSeconds -gt 85){throw 'Timeout: conservare usb.jsonl e rapporto.json.'}
+  if(((Get-Date)-$start).TotalSeconds -gt 190){throw 'Timeout: conservare usb.jsonl e rapporto.json.'}
   if(((Get-Date)-$notice).TotalSeconds -ge 5){Write-Host 'Misura sul Pico in corso; attendere il riepilogo...';$notice=Get-Date}
   $partial+=$port.ReadExisting()
   if($partial.Length -gt 8192){throw 'Risposta USB troppo lunga'}
@@ -25,7 +25,7 @@ try {
    if(!$line){continue}
    $writer.WriteLine($line);$writer.Flush();$item=$line|ConvertFrom-Json
    switch($item.event){
-    'begin' {if($item.firmware -ne '0.3.6'){throw 'Versione firmware inattesa'};Write-Host 'Pico avviato: due finestre fino a 30 secondi ciascuna.'}
+    'begin' {if($item.firmware -ne '0.3.7'){throw 'Versione firmware inattesa'};Write-Host 'Pico avviato: scansione 5 x 20 secondi e conferma 60 secondi.'}
     'result' {
      $speed=0
      if($item.packet_span_us -gt 0){$speed=[math]::Round($item.verified_payload_bytes*1000000.0/$item.packet_span_us,1)}
@@ -35,7 +35,11 @@ try {
     }
     'done' {
      $finished=$true
-     if($item.clean -and $results.Count -eq 2 -and $results[0].timing -eq 1000 -and $results[1].timing -eq 125 -and $results[0].clean -and $results[1].clean){$report.status='PASS'}else{$report.status='FAILED'}
+     $scan=@($results | Where-Object {!$_.confirmation})
+     $confirm=@($results | Where-Object {$_.confirmation})
+     $validScan=($scan.Count -eq 5 -and (($scan.timing -join ',') -eq '125,60,30,10,1') -and @($scan | Where-Object {!$_.clean -or $_.requested_seconds -ne 20}).Count -eq 0)
+     $validConfirm=($confirm.Count -eq 1 -and $confirm[0].clean -and $confirm[0].requested_seconds -eq 60 -and @($scan | Where-Object {$_.clean -and $_.timing -eq $confirm[0].timing}).Count -gt 0)
+     if($item.clean -and $validScan -and $validConfirm){$report.status='PASS'}elseif($validConfirm){$report.status='PARTIAL'}else{$report.status='FAILED'}
     }
     default {throw 'Evento USB sconosciuto'}
    }

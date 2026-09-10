@@ -12,5 +12,5 @@ if __name__=='__main__':
     run(cmake,'-S','.', '-B','build/uvc-test','-G','Ninja',
         '-DCMAKE_MAKE_PROGRAM='+str(ROOT/'tools/ninja/ninja.exe').replace('\\','/'),'-DCMAKE_BUILD_TYPE=Release')
     run(cmake,'--build','build/uvc-test','--target','gbmirroring_multi_profile','--parallel','4')
-    run(sys.executable,'tools/make_uf2.py','build/uvc-test/gbmirroring_multi_profile.bin','dist/gbmirroring-multi-profile-v0.3.6.uf2')
+    run(sys.executable,'tools/make_uf2.py','build/uvc-test/gbmirroring_multi_profile.bin','dist/gbmirroring-multi-profile-v0.3.7.uf2')
     run(sys.executable,'tools/verify_multi_profile.py')

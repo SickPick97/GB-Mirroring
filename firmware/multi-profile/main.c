@@ -37,7 +37,8 @@ static void feed(uint16_t word){
 }
 static void output(const char *s){size_t n=strlen(s),p=0;uint64_t until=time_us_64()+2000000;while(p<n && tud_cdc_connected() && time_us_64()<until){tud_task();p+=tud_cdc_write(s+p,n-p);tud_cdc_write_flush();}}
 static void stop(void){pio_sm_set_enabled(pio0,sm,false);for(unsigned i=0;i<5;i++){gpio_init(i);gpio_set_dir(i,GPIO_IN);gpio_disable_pulls(i);}}
-static bool run(unsigned timing){
+static double measured_rate;
+static bool run(unsigned timing,unsigned seconds,bool confirmation){
  buffered=frames=bad_crc=bad_pattern=gaps=echoes=0;first_packet=last_packet=0;first_errors=last_errors=0;
  pio_sm_clear_fifos(pio0,sm);pio_sm_restart(pio0,sm);pio_sm_exec(pio0,sm,pio_encode_jmp(offset));
  pio_sm_exec(pio0,sm,pio_encode_set(pio_y,0));
@@ -46,7 +47,7 @@ static bool run(unsigned timing){
  pio0->fdebug=0xffffffff;
  uint64_t start=time_us_64();unsigned words=0;bool connected=true;
  pio_sm_set_enabled(pio0,sm,true);
- while(time_us_64()-start<30000000){
+ while(time_us_64()-start<(uint64_t)seconds*1000000){
   tud_task();if(!tud_cdc_connected()){connected=false;break;}
   if(!pio_sm_is_rx_fifo_empty(pio0,sm)){
    uint16_t w=reverse16((uint16_t)pio_sm_get(pio0,sm));words++;
@@ -57,7 +58,8 @@ static bool run(unsigned timing){
  }
  unsigned debug=pio0->fdebug;uint64_t elapsed=time_us_64()-start;stop();
  bool clean=!(debug & ((1u<<sm)|(1u<<(16+sm)))) && connected && frames>=5 && echoes>=2 && !bad_crc && !bad_pattern && !gaps && last_errors==first_errors;
- char line[640];snprintf(line,sizeof(line),"{\"event\":\"result\",\"firmware\":\"0.3.6\",\"timing\":%u,\"clean\":%s,\"words\":%u,\"elapsed_us\":%llu,\"packets\":%u,\"packet_span_us\":%llu,\"verified_payload_bytes\":%u,\"crc_errors\":%u,\"pattern_errors\":%u,\"sequence_errors\":%u,\"echoes\":%u,\"pio_fdebug\":%u,\"gba_serial_errors_delta\":%lu}\n",timing,clean?"true":"false",words,(unsigned long long)elapsed,frames,(unsigned long long)(frames?last_packet-first_packet:0),frames?(frames-1)*128:0,bad_crc,bad_pattern,gaps,echoes,debug,(unsigned long)(last_errors-first_errors));output(line);return clean;
+ measured_rate=frames>1 && last_packet>first_packet ? (double)(frames-1)*128000000.0/(last_packet-first_packet):0;
+ char line[640];snprintf(line,sizeof(line),"{\"event\":\"result\",\"firmware\":\"0.3.7\",\"timing\":%u,\"confirmation\":%s,\"requested_seconds\":%u,\"clean\":%s,\"words\":%u,\"elapsed_us\":%llu,\"packets\":%u,\"packet_span_us\":%llu,\"verified_payload_bytes\":%u,\"crc_errors\":%u,\"pattern_errors\":%u,\"sequence_errors\":%u,\"echoes\":%u,\"pio_fdebug\":%u,\"gba_serial_errors_delta\":%lu}\n",timing,confirmation?"true":"false",seconds,clean?"true":"false",words,(unsigned long long)elapsed,frames,(unsigned long long)(frames?last_packet-first_packet:0),frames?(frames-1)*128:0,bad_crc,bad_pattern,gaps,echoes,debug,(unsigned long)(last_errors-first_errors));output(line);return clean;
 }
 int main(void){
  sm=pio_claim_unused_sm(pio0,true);offset=pio_add_program(pio0,&program);
@@ -67,5 +69,12 @@ int main(void){
  pio_sm_init(pio0,sm,offset,&c);stop();
  tusb_rhport_init_t init={.role=TUSB_ROLE_DEVICE,.speed=TUSB_SPEED_FULL};tusb_init(0,&init);
  char command[16];unsigned n=0;
- for(;;){tud_task();while(tud_cdc_available()){char ch=tud_cdc_read_char();if(ch=='\n'){command[n]=0;n=0;if(!strcmp(command,"START")){output("{\"event\":\"begin\",\"firmware\":\"0.3.6\",\"seconds_per_phase\":30}\n");bool ok=run(1000);if(ok)ok=run(125);output(ok?"{\"event\":\"done\",\"clean\":true}\n":"{\"event\":\"done\",\"clean\":false}\n");}}else if(ch!='\r' && n<15)command[n++]=ch;}}
+ for(;;){tud_task();while(tud_cdc_available()){char ch=tud_cdc_read_char();if(ch=='\n'){command[n]=0;n=0;if(!strcmp(command,"START")){output("{\"event\":\"begin\",\"firmware\":\"0.3.7\",\"seconds_per_phase\":20}\n");const unsigned timings[]={125,60,30,10,1};
+ bool all=true,have_best=false,confirmed=false;unsigned best=125;double best_rate=0;
+ for(unsigned i=0;i<5;i++){
+  if(!run(timings[i],20,false)){all=false;break;}
+  if(!have_best || measured_rate>best_rate){best=timings[i];best_rate=measured_rate;have_best=true;}
+ }
+ if(have_best && tud_cdc_connected())confirmed=run(best,60,true);
+ bool ok=all && confirmed;output(ok?"{\"event\":\"done\",\"clean\":true}\n":"{\"event\":\"done\",\"clean\":false}\n");}}else if(ch!='\r' && n<15)command[n++]=ch;}}
 }
