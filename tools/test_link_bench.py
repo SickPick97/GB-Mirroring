@@ -26,6 +26,30 @@ def parse(words):
     return p,result
 
 class ProtocolTests(unittest.TestCase):
+    def test_usb_profile_preserves_reads_and_failures(self):
+        from usb_profile import ReadProfile,difference
+        class Device:
+            def read(self,ep,size,timeout):
+                if timeout==0:raise TimeoutError('simulated')
+                return bytes(range(size))
+        proxy=ReadProfile(Device());before=proxy.snapshot()
+        self.assertEqual(proxy.read(0x82,64,timeout=10),bytes(range(64)))
+        proxy.read(0x81,2,timeout=10)
+        with self.assertRaises(TimeoutError):proxy.read(0x82,64,timeout=0)
+        result=difference(before,proxy.snapshot(),2)
+        self.assertEqual((result['calls'],result['bytes'],result['failures']),(1,64,1))
+        self.assertEqual(result['sizes'],{'64':1})
+        self.assertEqual(result['bytes_s'],32)
+
+    def test_gba_transfer_counter_wrap(self):
+        stats=Measurement(0xd123)
+        for seq,count in [(0,0xfffffff0),(1,56)]:
+            data=[0xd123,0,0,count&65535,count>>16,0,0]+[pattern(seq,i) for i in range(7,64)]
+            stats.accept((1,seq,data))
+        result=stats.result(1,0)
+        self.assertEqual(result['gba_transfer_counter_delta'],72)
+        self.assertEqual(result['gba_expected_transfer_delta'],72)
+
     def test_scan_stops_at_first_fault_and_preserves_evidence(self):
         from link_bench import scan
         calls=[]

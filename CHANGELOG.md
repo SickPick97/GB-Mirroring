@@ -1,5 +1,11 @@
 # Storico
 
+## 0.3.5 - Profilo lato PC e contatori GBA
+
+- Tre finestre da 30 s, contatori seriali GBA gia presenti ora esposti; letture USB e coda del parser misurate tramite wrapper senza modificare vendor o firmware.
+- Tempi USB includono attesa, non sono timestamp sul Pico. Profilo da verificare su hardware e confrontare con il banco senza strumentazione.
+
+
 ## 0.3.4 - Multiplayer esteso a cavo fisso
 
 - Nuovi avvii portatili per scansione da timing 1000 a 1, arresto al primo errore, conferma 60 s e screenshot conservativo.

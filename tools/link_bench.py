@@ -83,12 +83,18 @@ def measure(link, timing, seconds, challenge):
     stats=Measurement(challenge)
     stats.accept(first)
     started=time.monotonic()
+    profile=getattr(link,'receive_profile',None)
+    before=profile.snapshot() if profile else None
+    cpu_start=time.process_time()
+    queue_start=link.raw_words.qsize() if profile else 0
+    queue_peak=queue_start
     deadline=started+seconds
     next_message=started+5
     while time.monotonic()<deadline:
         frame=receive(link,parser,min(deadline,next_message))
         if frame:
             stats.accept(frame)
+            if profile:queue_peak=max(queue_peak,link.raw_words.qsize())
         if time.monotonic()>=next_message:
             print(f'  timing {timing}: {stats.frames} pacchetti, CRC errati {parser.bad_crc-baseline}')
             next_message+=5
@@ -96,6 +102,12 @@ def measure(link, timing, seconds, challenge):
     result=stats.result(time.monotonic()-started,parser.bad_crc-baseline)
     result['verified_payload_bytes_s']=round(max(0,stats.frames-1)*128/result['seconds'],1)
     result['timing']=timing
+    if profile:
+        from usb_profile import difference
+        elapsed=time.monotonic()-started
+        result['host_usb']=difference(before,profile.snapshot(),elapsed)
+        result['host_usb'].update(queue_start_words=queue_start,queue_end_words=link.raw_words.qsize(),
+            queue_peak_sampled_words=queue_peak,process_cpu_seconds=round(time.process_time()-cpu_start,4))
     print(json.dumps(result,ensure_ascii=False))
     return result
 
@@ -156,6 +168,7 @@ def main():
     ap.add_argument('--seconds',type=int,default=20)
     ap.add_argument('--no-screenshot',action='store_true')
     ap.add_argument('--extended',action='store_true',help='Scansione pause ridotte e conferma 60 s, cavo fisso')
+    ap.add_argument('--profile',action='store_true',help='Misura USB, coda e contatori GBA senza cambiare firmware')
     args=ap.parse_args()
     if not 15<=args.seconds<=300:
         ap.error('--seconds deve essere fra 15 e 300')
@@ -173,12 +186,24 @@ def main():
             if not args.skip_boot:
                 report['multiboot']=load()
             print('Avvio misura. Puoi premere A/B sul GBA: i tasti sono inclusi nei dati.')
-            link=UsbLink(timing=7400,cable='gba',raw=True)
+            if args.profile:
+                from usb_profile import ReadProfile
+                class ProfiledLink(UsbLink):
+                    def _read_loop(self):
+                        self.receive_profile=ReadProfile(self.dev)
+                        original=self.dev
+                        self.dev=self.receive_profile
+                        try:super()._read_loop()
+                        finally:self.dev=original
+                link=ProfiledLink(timing=7400,cable='gba',raw=True)
+            else:
+                link=UsbLink(timing=7400,cable='gba',raw=True)
             link.open()
-            timings=[1000,500,250,125,60,30,10,1] if args.extended else [7400,3700,2000,1000,500]
+            timings=[500,125,125] if args.profile else ([1000,500,250,125,60,30,10,1] if args.extended else [7400,3700,2000,1000,500])
             report['package_version']=(ROOT/'VERSION').read_text().strip()
             report['requested_timings']=timings
             report['extended']=args.extended
+            report['profile']=args.profile
             report['phases']=scan(link,timings,args.seconds)
             clean=[r for r in report['phases'] if r.get('clean')]
             if clean:

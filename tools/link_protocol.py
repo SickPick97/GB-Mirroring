@@ -69,12 +69,16 @@ class Measurement:
         self.first_errors=None
         self.last_errors=0
         self.keys_seen=0
+        self.first_transfers=None
+        self.last_transfers=0
 
     def accept(self, frame):
         kind,seq,data=frame
         if kind!=1:
             return
         self.frames+=1
+        self.last_transfers=data[3]|(data[4]<<16)
+        if self.first_transfers is None:self.first_transfers=self.last_transfers
         self.keys_seen |= data[1]
         self.echoes+=data[0]==self.challenge
         if self.previous is not None:
@@ -98,4 +102,6 @@ class Measurement:
                     missing_packets=self.gaps,duplicates=self.duplicates,
                     challenge_echoes=self.echoes,gba_serial_errors_delta=errors,
                     keys_seen_mask=self.keys_seen,
+                    gba_transfer_counter_delta=(self.last_transfers-(self.first_transfers or 0))&0xffffffff,
+                    gba_expected_transfer_delta=max(0,self.frames-1)*WORDS,
                     verified_payload_bytes_s=round(self.frames*128/elapsed,1))
