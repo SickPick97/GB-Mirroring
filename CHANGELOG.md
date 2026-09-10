@@ -3,7 +3,7 @@
 ## 0.3.5 - Profilo lato PC e contatori GBA
 
 - Tre finestre da 30 s, contatori seriali GBA gia presenti ora esposti; letture USB e coda del parser misurate tramite wrapper senza modificare vendor o firmware.
-- Tempi USB includono attesa, non sono timestamp sul Pico. Profilo da verificare su hardware e confrontare con il banco senza strumentazione.
+- Hardware PASS: 3451,3 B/s, contatori GBA coerenti, coda campionata fino a 20 parole, letture USB circa ogni 10,17 ms. Screenshot completo in 22,26 s. Tempi USB includono attesa, non sono timestamp sul Pico.
 
 
 ## 0.3.4 - Multiplayer esteso a cavo fisso

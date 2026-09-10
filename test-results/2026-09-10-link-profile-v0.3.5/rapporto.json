@@ -1,0 +1,174 @@
+{
+  "status": "PASS",
+  "phases": [
+    {
+      "clean": true,
+      "seconds": 30.001,
+      "packets": 615,
+      "crc_errors": 0,
+      "pattern_errors": 0,
+      "missing_packets": 0,
+      "duplicates": 0,
+      "challenge_echoes": 614,
+      "gba_serial_errors_delta": 0,
+      "keys_seen_mask": 0,
+      "gba_transfer_counter_delta": 44208,
+      "gba_expected_transfer_delta": 44208,
+      "verified_payload_bytes_s": 2619.6,
+      "timing": 500,
+      "host_usb": {
+        "calls": 2914,
+        "bytes": 88554,
+        "read_seconds": 29.61830650003685,
+        "failures": 0,
+        "sizes": {
+          "30": 2347,
+          "32": 567
+        },
+        "bytes_s": 2951.7,
+        "mean_successful_read_ms": 10.164,
+        "scope": "Host USB reads including waiting; not Pico wire timestamps. Failures include timeouts.",
+        "queue_start_words": 8,
+        "queue_end_words": 14,
+        "queue_peak_sampled_words": 15,
+        "process_cpu_seconds": 0.5
+      }
+    },
+    {
+      "clean": true,
+      "seconds": 30.005,
+      "packets": 810,
+      "crc_errors": 0,
+      "pattern_errors": 0,
+      "missing_packets": 0,
+      "duplicates": 0,
+      "challenge_echoes": 810,
+      "gba_serial_errors_delta": 0,
+      "keys_seen_mask": 0,
+      "gba_transfer_counter_delta": 58248,
+      "gba_expected_transfer_delta": 58248,
+      "verified_payload_bytes_s": 3451.2,
+      "timing": 125,
+      "host_usb": {
+        "calls": 2912,
+        "bytes": 116562,
+        "read_seconds": 29.612304200505605,
+        "failures": 0,
+        "sizes": {
+          "38": 1,
+          "40": 2869,
+          "42": 42
+        },
+        "bytes_s": 3884.8,
+        "mean_successful_read_ms": 10.169,
+        "scope": "Host USB reads including waiting; not Pico wire timestamps. Failures include timeouts.",
+        "queue_start_words": 9,
+        "queue_end_words": 19,
+        "queue_peak_sampled_words": 20,
+        "process_cpu_seconds": 0.5
+      }
+    },
+    {
+      "clean": true,
+      "seconds": 30.004,
+      "packets": 810,
+      "crc_errors": 0,
+      "pattern_errors": 0,
+      "missing_packets": 0,
+      "duplicates": 0,
+      "challenge_echoes": 809,
+      "gba_serial_errors_delta": 0,
+      "keys_seen_mask": 0,
+      "gba_transfer_counter_delta": 58248,
+      "gba_expected_transfer_delta": 58248,
+      "verified_payload_bytes_s": 3451.3,
+      "timing": 125,
+      "host_usb": {
+        "calls": 2912,
+        "bytes": 116562,
+        "read_seconds": 29.618871299782768,
+        "failures": 0,
+        "sizes": {
+          "38": 1,
+          "40": 2869,
+          "42": 42
+        },
+        "bytes_s": 3884.9,
+        "mean_successful_read_ms": 10.171,
+        "scope": "Host USB reads including waiting; not Pico wire timestamps. Failures include timeouts.",
+        "queue_start_words": 6,
+        "queue_end_words": 19,
+        "queue_peak_sampled_words": 20,
+        "process_cpu_seconds": 0.5312
+      }
+    }
+  ],
+  "hardware_test": true,
+  "description": "Celio multiplayer baseline; not normal-mode bandwidth or cartridge capture",
+  "multiboot": {
+    "byte": 2128,
+    "durata": 3.889846086502075,
+    "parole_inviate": 1183,
+    "risposte_lette": 1187,
+    "scartate": 47,
+    "desync": 0,
+    "riavvii": 1,
+    "parole_s": 305.15346201458675,
+    "crc": 6682
+  },
+  "package_version": "0.3.5",
+  "requested_timings": [
+    500,
+    125,
+    125
+  ],
+  "extended": false,
+  "profile": true,
+  "best_measured": {
+    "clean": true,
+    "seconds": 30.004,
+    "packets": 810,
+    "crc_errors": 0,
+    "pattern_errors": 0,
+    "missing_packets": 0,
+    "duplicates": 0,
+    "challenge_echoes": 809,
+    "gba_serial_errors_delta": 0,
+    "keys_seen_mask": 0,
+    "gba_transfer_counter_delta": 58248,
+    "gba_expected_transfer_delta": 58248,
+    "verified_payload_bytes_s": 3451.3,
+    "timing": 125,
+    "host_usb": {
+      "calls": 2912,
+      "bytes": 116562,
+      "read_seconds": 29.618871299782768,
+      "failures": 0,
+      "sizes": {
+        "38": 1,
+        "40": 2869,
+        "42": 42
+      },
+      "bytes_s": 3884.9,
+      "mean_successful_read_ms": 10.171,
+      "scope": "Host USB reads including waiting; not Pico wire timestamps. Failures include timeouts.",
+      "queue_start_words": 6,
+      "queue_end_words": 19,
+      "queue_peak_sampled_words": 20,
+      "process_cpu_seconds": 0.5312
+    }
+  },
+  "screenshot": {
+    "complete": true,
+    "blocks": 600,
+    "crc_errors": 0,
+    "seconds": 22.26,
+    "file": "schermo-gba.bmp",
+    "sha256": "e7ecb0ab6669f1ca0bee5bda4f40df5c65f78fe22b09df3d8a59948f35433678"
+  },
+  "analysis": {
+    "validation": "Phase logs, USB histograms, GBA counters and screenshot SHA256/dimensions checked; image visually inspected.",
+    "finding": "No substantial sampled host parser backlog; approximately 40 bytes per 10 ms USB read at timing 125. USB bytes include protocol overhead.",
+    "limitation": "No Pico timestamps; reader waiting includes production/USB scheduling. Available relay source sleeps 10 ms but flushes 64 bytes, unlike observed 38/40/42 byte reads: not established as exact loaded firmware source."
+  }
+}
