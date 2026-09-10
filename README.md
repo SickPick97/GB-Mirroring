@@ -21,7 +21,7 @@ Su questo nuovo PC, se Celio non viene riconosciuto da PyUSB, conserva l'errore 
 | Versione firmware | Risultato |
 |---|---|
 | UVC 0.1.0 | Immagine sintetica 240x160 a 10 FPS visualizzata in Fotocamera; riapertura verificata dall'utente. |
-| Link 0.2.0 | Multiboot, cinque velocita senza errori; massimo 2623,9 B/s; cattura VRAM completa in 41,08 s. |
+| Link 0.2.0 / banco 0.3.4 | Multiplayer a cavo fisso: otto velocita pulite, conferma 60 s a 3451,4 B/s; screenshot completo in 23,45 s. |
 | Normal 0.3.2 / 0.3.3 | Entrambe le prove senza header: 290664 parole, campioni registrati nulli su GP1 e GP3. Percorso del segnale da chiarire. |
 
 [Registro hardware](docs/VALIDAZIONE-HARDWARE.md) · [Storico modifiche](CHANGELOG.md) · [Piano](PIANO-GBMIRRORING.md).

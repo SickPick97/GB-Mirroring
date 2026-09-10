@@ -5,7 +5,7 @@
 - Nuovi avvii portatili per scansione da timing 1000 a 1, arresto al primo errore, conferma 60 s e screenshot conservativo.
 - Firmware e vendor invariati. Ripristinare Celio prima della prova.
 - PASS richiede anche conferma pulita e screenshot senza CRC errati. Test Normal invertito mantenuto come alternativa diagnostica.
-- Velocita e stabilita della nuova scansione ancora da verificare su hardware.
+- Hardware 2026-09-10: otto fasi pulite, 3451,4 B/s nella conferma di 60 s, screenshot completo in 23,45 s. Plateau da timing 125; nessuna inversione del cavo.
 
 
 ## Riscontro hardware 2026-09-10 (nessun nuovo firmware)
