@@ -19,3 +19,5 @@ dist/diagnosi-usb.txt
 *.ss1
 *.gba
 !dist/gbmirroring-*.gba
+
+dist/pico-reports/

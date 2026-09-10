@@ -15,3 +15,7 @@ Aggiornamento portatile 0.3.1: i due moduli sono copiati invariati in vendor/cel
 Il banco importa localmente i moduli mb_multi.py e usb_link.py del pacchetto dell'utente, conservandoli invariati e senza attribuirsi la loro paternita. Usa il relativo Python embedded e il firmware Celio originale. Il nuovo header multiboot contiene i byte di logo di avvio richiesti dal BIOS, ricavati dal file homebrew mbstub.gba fornito, non codice o asset delle cartucce Pokemon.
 
 Unicorn 2.1.4 e usato solo come dipendenza di collaudo del codice ARM, in third_party/test-runtime; non e richiesto per il test fisico e non e incluso nei firmware. Le licenze del pacchetto sono conservate nella sua installazione locale. [Repository Unicorn](https://github.com/unicorn-engine/unicorn).
+
+**Multi Profile 0.3.6**
+
+Sequenza PIO master adattata dalla variante GBA del file Celio linkLayer_pio.c, copia di riferimento locale in analisi/fonti, progetto https://github.com/Celio-Link/Celio-Firmware (autori Celio e modifiche preesistenti del pacchetto). Non si dichiara che corrisponda esattamente al binario Celio ricevuto. Le 27 istruzioni conservano direzioni, temporizzazione e ordine dei bit; nuovo controllo Pico SDK e validatore GBMirroring. Uso nella repository privata; nessuna nuova licenza assegnata al codice derivato.

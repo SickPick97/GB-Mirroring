@@ -1,0 +1,7 @@
+{
+  "status": "PASS static; hardware untested",
+  "uf2_sha256": "e5d2ee968c73e4b72f0f7df53b4a1f8f3473d234ccc1fdd01bb1584bf6b6a468",
+  "binary_bytes": 32360,
+  "uf2_bytes": 65024,
+  "usb": "CAFE:4022 CDC"
+}

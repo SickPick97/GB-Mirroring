@@ -1,0 +1,5 @@
+{
+  "passed": true,
+  "cases": 5,
+  "scope": "Actual C validator ARM execution with mocked timer; no PIO electrical, USB or hardware timing test"
+}

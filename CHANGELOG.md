@@ -1,5 +1,12 @@
 # Storico
 
+## 0.3.6 - Misura multiplayer locale sul Pico
+
+- Nuovo firmware Pico SDK/CDC, sequenza PIO master derivata da Celio; verifica locale CRC/pattern/sequenze, due finestre 30 s senza inviare dati grezzi USB.
+- Nuovi BAT 8 e 9, caricatore del GBA invariato 0.2.0 via Celio e cambio manuale firmware mantenendo il GBA acceso. Nessuna inversione del cavo.
+- Nuova implementazione da validare su hardware, non strumentazione del vecchio binario Celio.
+
+
 ## 0.3.5 - Profilo lato PC e contatori GBA
 
 - Tre finestre da 30 s, contatori seriali GBA gia presenti ora esposti; letture USB e coda del parser misurate tramite wrapper senza modificare vendor o firmware.
