@@ -1,5 +1,9 @@
 # Storico
 
+## Riscontro hardware 0.4.0
+
+- Verificati 332 frame consecutivi senza errori; RAW 102229 B/s e 1,33 FPS, fase RLE prolungata 3,55 FPS. Obiettivo 5-10 FPS ancora aperto; firmware invariato.
+
 ## 0.4.0 - Video su protocollo software SC/SD
 
 - Nuovo sender GBA GPIO in IWRAM e ricevitore Pico passivo PIO/DMA, stesso cavo e orientamento; supera il vincolo strutturale di una parola utile per ciclo multiplayer. Banda effettiva ancora da verificare.

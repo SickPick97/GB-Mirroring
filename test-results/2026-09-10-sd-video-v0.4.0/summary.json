@@ -1,0 +1,63 @@
+{
+  "version": "0.4.0",
+  "valid_frames": 332,
+  "crc_errors": 0,
+  "header_errors": 0,
+  "sequence_gaps": 0,
+  "duplicates": 0,
+  "bytes_received": 14454946,
+  "phases": [
+    {
+      "sequence_first": 0,
+      "sequence_last": 111,
+      "frames": 112,
+      "codec": 0,
+      "duration_between_arrivals_seconds": 83.4152,
+      "fps": 1.3306927274645388,
+      "wire_bytes_per_second": 102229.13809473574,
+      "min_frame_bytes": 76824,
+      "max_frame_bytes": 76824
+    },
+    {
+      "sequence_first": 112,
+      "sequence_last": 113,
+      "frames": 2,
+      "codec": 1,
+      "duration_between_arrivals_seconds": 0.22810000000001196,
+      "fps": 4.384042086803803,
+      "wire_bytes_per_second": 27680.841736079215,
+      "min_frame_bytes": 6314,
+      "max_frame_bytes": 6314
+    },
+    {
+      "sequence_first": 114,
+      "sequence_last": 272,
+      "frames": 159,
+      "codec": 1,
+      "duration_between_arrivals_seconds": 44.4524,
+      "fps": 3.5543637688853695,
+      "wire_bytes_per_second": 45525.55092638418,
+      "min_frame_bytes": 12420,
+      "max_frame_bytes": 12940
+    },
+    {
+      "sequence_first": 273,
+      "sequence_last": 331,
+      "frames": 59,
+      "codec": 1,
+      "duration_between_arrivals_seconds": 41.417699999999996,
+      "fps": 1.400367475741048,
+      "wire_bytes_per_second": 90225.67646199572,
+      "min_frame_bytes": 64430,
+      "max_frame_bytes": 64430
+    }
+  ],
+  "last_image_sha256": "90f7ec93d2cc6af8e0e1877bcad7d794681d66e2dad8e89c19e60d479211983b",
+  "limitations": [
+    "Arrival rates include GBA render/codec/transfer and host delivery; not isolated wire bandwidth.",
+    "Two-frame phase is too short for sustained FPS.",
+    "Scene and speed changes not logged; final image visibly SCENE 2 L FAST.",
+    "First 112 frames RAW; activation cause not established.",
+    "Target 5-10 FPS not achieved over sustained phases; homebrew only."
+  ]
+}

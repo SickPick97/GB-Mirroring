@@ -20,6 +20,7 @@ Su questo nuovo PC, se Celio non viene riconosciuto da PyUSB, conserva l'errore 
 
 | Versione firmware | Risultato |
 |---|---|
+| SD video 0.4.0 | 332 frame senza errori; RAW 1,33 FPS, fase RLE prolungata 3,55 FPS. Target 5-10 ancora aperto. |
 | UVC 0.1.0 | Immagine sintetica 240x160 a 10 FPS visualizzata in Fotocamera; riapertura verificata dall'utente. |
 | Link 0.2.0 / banco 0.3.4 | Multiplayer a cavo fisso: otto velocita pulite, conferma 60 s a 3451,4 B/s; screenshot completo in 23,45 s. |
 | Normal 0.3.2 / 0.3.3 | Entrambe le prove senza header: 290664 parole, campioni registrati nulli su GP1 e GP3. Percorso del segnale da chiarire. |
