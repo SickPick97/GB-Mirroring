@@ -1,5 +1,11 @@
 # Storico
 
+## Riscontro hardware 2026-09-10 (nessun nuovo firmware)
+
+- Normal 0.3.3 confermato in esecuzione su GP3, ma ancora senza header: spostare il ricevitore non ha risolto.
+- Archiviato riepilogo dei tre file coerenti, senza identificativi USB del PC. Prossima verifica: orientamento del cavo e percorso fisico del segnale.
+
+
 ## 0.3.3 - Ricezione SD per cavo GBA
 
 - Ricevitore spostato da GP1/SI a GP3/SD, percorso usato dal trasporto multiplayer esistente. Tutti i pin restano ingressi.

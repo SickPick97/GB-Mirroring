@@ -1,0 +1,18 @@
+{
+  "firmware": "0.3.3",
+  "data_pin": 3,
+  "status": "INCOMPLETE_OR_FAILED",
+  "expected_words": 290664,
+  "observed_words": 290664,
+  "diagnostic_count": 90,
+  "valid_headers": 0,
+  "crc_errors": 0,
+  "pio_stall": 0,
+  "all_recorded_first_and_last_zero": true,
+  "pin_masks": [
+    4,
+    5,
+    13
+  ],
+  "note": "GP3 change did not restore reception. Cable orientation and signal route unresolved. Samples do not describe every received word."
+}
