@@ -49,7 +49,7 @@ static void start_rx(void) {
     crc_errors=0;headers=0;raw_samples=0;raw_last=0;
     memset(raw_first,0,sizeof(raw_first));last_diagnostic=time_us_64();
     pio_sm_set_enabled(pio0,sm,true);armed=true;
-    output("{\"event\":\"ready\",\"version\":3,\"firmware\":\"0.3.2\",\"clock_pin\":0,\"data_pin\":1}\n");
+    output("{\"event\":\"ready\",\"version\":3,\"firmware\":\"0.3.3\",\"clock_pin\":0,\"data_pin\":3}\n");
 }
 static void finish(void) {
     uint64_t elapsed=ended>started?ended-started:0;
@@ -135,13 +135,13 @@ static void feed(uint32_t w) {
 int main(void) {
     /* All Link pins remain inputs, including GP2: this bench is one-way. */
     for(unsigned i=0;i<5;++i) {gpio_init(i);gpio_set_dir(i,GPIO_IN);gpio_disable_pulls(i);}
-    gpio_pull_up(0);gpio_pull_up(1);
+    gpio_pull_up(0);gpio_pull_up(3);
     gpio_init(25);gpio_set_dir(25,GPIO_OUT);
     sm=pio_claim_unused_sm(pio0,true);offset=pio_add_program(pio0,&normal_rx_program);
     pio_sm_config config=normal_rx_program_get_default_config(offset);
-    sm_config_set_in_pins(&config,1);sm_config_set_in_shift(&config,false,true,32);
+    sm_config_set_in_pins(&config,3);sm_config_set_in_shift(&config,false,true,32);
     sm_config_set_fifo_join(&config,PIO_FIFO_JOIN_RX);
-    pio_gpio_init(pio0,0);pio_gpio_init(pio0,1);
+    pio_gpio_init(pio0,0);pio_gpio_init(pio0,3);
     pio_sm_init(pio0,sm,offset,&config);
     dma_ch=dma_claim_unused_channel(true);
     dma_channel_config dc=dma_channel_get_default_config(dma_ch);

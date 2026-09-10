@@ -1,5 +1,12 @@
 # Storico
 
+## 0.3.3 - Ricezione SD per cavo GBA
+
+- Ricevitore spostato da GP1/SI a GP3/SD, percorso usato dal trasporto multiplayer esistente. Tutti i pin restano ingressi.
+- Log 0.3.2: 290664 parole, esattamente una fase completa; campioni registrati nulli e nessun header. Il CRC nullo non indicava integrita.
+- Sender invariato. Nuovo percorso da verificare su hardware.
+
+
 ## 0.3.2 — Diagnostica della ricezione
 
 - Ricevitore Pico: contatori grezzi, primi campioni, pin e stato PIO ogni due secondi anche senza BEGIN valido. Nessuna modifica al pilotaggio delle linee.

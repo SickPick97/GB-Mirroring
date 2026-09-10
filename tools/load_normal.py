@@ -31,7 +31,7 @@ def main():
             (folder/'multiboot.json').write_text(json.dumps(result,indent=2))
             print('\nMultiboot completato. Sul GBA deve apparire GBMIRRORING NORMAL V030.')
             print('LASCIA ACCESO il GBA e NON premere ancora A.')
-            print('Ora cambia il firmware Pico con BOOTSEL: gbmirroring-normal-test-v0.3.2.uf2.')
+            print('Ora cambia il firmware Pico con BOOTSEL: gbmirroring-normal-test-v0.3.3.uf2.')
             print('Poi avvia 4-MISURA-NORMAL.bat. Premi A sul GBA solo quando il PC dice PRONTO.')
             return 0
         except (Exception,SystemExit,KeyboardInterrupt) as exc:

@@ -22,3 +22,5 @@ Confermato trasferimento della VRAM del nostro homebrew dal GBA al PC. Non ancor
 Banco normal mode 0.3.0: software e firmware preparati, verifica software completata. Prova fisica a 256 kHz e 2 MHz ancora da eseguire; procedura in PROVA-NORMAL.md.
 
 2026-09-09, Normal 0.3.0: utente conferma GBA in trasmissione dopo A e successivo messaggio per B, mentre PC resta PRONTO. Nessun pacchetto riconosciuto visibile. Cavo sempre GBA (correzione dell'ipotesi GBC precedente). Causa ancora da identificare. Ricevitore diagnostico 0.3.2 da collaudare.
+
+2026-09-10: log Normal 0.3.2 confermano 290664 parole (fase completa attesa), nessun header, nessun CRC verificato, nessuno stall PIO segnalato. Primi quattro campioni e ultimo campione di ogni rilevazione tutti zero; non e una cattura di tutte le parole. Ipotesi: GP1 non e la linea dati corretta con il cavo GBA. Versione 0.3.3 ascolta GP3/SD; esito hardware ancora da verificare. Evidenza ripulita in test-results/2026-09-10-normal-v0.3.2/summary.json.

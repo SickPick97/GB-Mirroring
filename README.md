@@ -2,7 +2,7 @@
 
 Progetto sperimentale per acquisire il video di un GBA/GBA SP attraverso un adattatore Link con Raspberry Pi Pico RP2040 e arrivare a una webcam USB autonoma, senza modificare internamente la console.
 
-**Versione del pacchetto: 0.3.2. Prova corrente: ricevitore normal mode 0.3.2, sender GBA 0.3.0.** Il video delle cartucce commerciali non e ancora implementato.
+**Versione del pacchetto: 0.3.3. Prova corrente: ricevitore normal mode 0.3.3, sender GBA 0.3.0.** Il video delle cartucce commerciali non e ancora implementato.
 
 ## Su un altro PC Windows
 
@@ -22,7 +22,7 @@ Su questo nuovo PC, se Celio non viene riconosciuto da PyUSB, conserva l'errore 
 |---|---|
 | UVC 0.1.0 | Immagine sintetica 240x160 a 10 FPS visualizzata in Fotocamera; riapertura verificata dall'utente. |
 | Link 0.2.0 | Multiboot, cinque velocita senza errori; massimo 2623,9 B/s; cattura VRAM completa in 41,08 s. |
-| Normal 0.3.0 | Prova fisica senza pacchetti riconosciuti; 0.3.2 aggiunge diagnostica, da provare. |
+| Normal 0.3.0 | Prova fisica senza pacchetti riconosciuti; 0.3.3 aggiunge diagnostica, da provare. |
 
 [Registro hardware](docs/VALIDAZIONE-HARDWARE.md) · [Storico modifiche](CHANGELOG.md) · [Piano](PIANO-GBMIRRORING.md).
 

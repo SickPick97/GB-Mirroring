@@ -5,7 +5,7 @@ const tusb_desc_device_t normal_device_descriptor={
     .bLength=18,.bDescriptorType=TUSB_DESC_DEVICE,.bcdUSB=0x200,
     .bDeviceClass=TUSB_CLASS_MISC,.bDeviceSubClass=MISC_SUBCLASS_COMMON,
     .bDeviceProtocol=MISC_PROTOCOL_IAD,.bMaxPacketSize0=64,
-    .idVendor=0xcafe,.idProduct=0x4021,.bcdDevice=0x0302,
+    .idVendor=0xcafe,.idProduct=0x4021,.bcdDevice=0x0303,
     .iManufacturer=1,.iProduct=2,.iSerialNumber=3,.bNumConfigurations=1};
 const uint8_t normal_configuration_descriptor[]={
     TUD_CONFIG_DESCRIPTOR(1,2,0,TUD_CONFIG_DESC_LEN+TUD_CDC_DESC_LEN,0,100),

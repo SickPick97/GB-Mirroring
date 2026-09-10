@@ -1,0 +1,12 @@
+{
+  "firmware": "0.3.2",
+  "status": "INCOMPLETE_OR_FAILED",
+  "expected_words": 290664,
+  "observed_words": 290664,
+  "diagnostic_count": 90,
+  "all_recorded_first_and_last_zero": true,
+  "valid_headers": 0,
+  "crc_errors": 0,
+  "pio_stall": 0,
+  "note": "Sampled values only; not a full raw capture. GP3 hypothesis awaits hardware test."
+}

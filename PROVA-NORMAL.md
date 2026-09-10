@@ -1,3 +1,5 @@
+**Versione Pico 0.3.3: usa il tuo cavo GBA, nelle stesse prese del test precedente. Ricezione su GP3/SD; nessuna modifica hardware. Il programma GBA resta V030.**
+
 **Terza prova: Link seriale normale a 256 kHz e 2 MHz**
 
 Il banco precedente ha trasferito correttamente una schermata dal GBA e misurato 2623,9 B/s attraverso Celio. Ora usiamo un nuovo programma GBA e un nuovo firmware Pico: il GBA genera il clock, il Pico riceve con PIO e DMA. Il firmware Pico controlla direttamente i dati e invia risultati e schermate al PC tramite una porta USB seriale standard.
@@ -20,10 +22,10 @@ Tutto e gia compilato. Non devi installare Python, librerie o driver aggiuntivi.
 
 1. Lasciando acceso il GBA, scollega soltanto l'USB del Pico dal PC. Puoi lasciare il cavo Link collegato.
 2. Ricollega l'USB tenendo premuto BOOTSEL, poi rilascia il pulsante.
-3. Copia su RPI-RP2 [gbmirroring-normal-test-v0.3.2.uf2](dist/gbmirroring-normal-test-v0.3.2.uf2).
+3. Copia su RPI-RP2 [gbmirroring-normal-test-v0.3.3.uf2](dist/gbmirroring-normal-test-v0.3.3.uf2).
 4. Attendi che RPI-RP2 scompaia e che Windows riconosca la porta USB. Il dispositivo si chiama **GBMirroring Normal Test**, oppure appare come dispositivo seriale USB con una porta COM.
 
-Il nuovo firmware tiene tutti i pin Link in ingresso e ascolta SC su GP0 e dati su GP1. Durante questa attesa anche il programma GBA lascia le linee in ingresso. **Non premere A prima che il prossimo script dica PRONTO**: il GBA deve generare il clock solo quando Celio e stato sostituito dal ricevitore.
+Il nuovo firmware tiene tutti i pin Link in ingresso e ascolta SC su GP0 e dati su GP3 (SD, cavo GBA). Durante questa attesa anche il programma GBA lascia le linee in ingresso. **Non premere A prima che il prossimo script dica PRONTO**: il GBA deve generare il clock solo quando Celio e stato sostituito dal ricevitore.
 
 **Passo 3: misura e cattura**
 

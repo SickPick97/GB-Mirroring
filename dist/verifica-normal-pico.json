@@ -1,6 +1,6 @@
 {
   "status": "PASS static; hardware untested",
-  "uf2_sha256": "9dad3431182b75a2492822be778275387cb6f040cd6a97302e2a2ad9ad792b70",
+  "uf2_sha256": "64c5ab5d2c0a1875d332fe4136a72c26511265c58b85d15c67cdc4691900c25b",
   "binary_bytes": 34028,
   "uf2_bytes": 68096,
   "usb": "CAFE:4021 CDC",

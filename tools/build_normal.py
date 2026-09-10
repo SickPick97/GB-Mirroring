@@ -13,5 +13,5 @@ if __name__=='__main__':
     run(cmake,'-S','.', '-B','build/uvc-test','-G','Ninja',
         '-DCMAKE_MAKE_PROGRAM='+str(ROOT/'tools/ninja/ninja.exe').replace('\\','/'),'-DCMAKE_BUILD_TYPE=Release')
     run(cmake,'--build','build/uvc-test','--target','gbmirroring_normal_test','--parallel','4')
-    run(sys.executable,'tools/make_uf2.py','build/uvc-test/gbmirroring_normal_test.bin','dist/gbmirroring-normal-test-v0.3.2.uf2')
+    run(sys.executable,'tools/make_uf2.py','build/uvc-test/gbmirroring_normal_test.bin','dist/gbmirroring-normal-test-v0.3.3.uf2')
     run(sys.executable,'tools/verify_normal.py')
