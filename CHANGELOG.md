@@ -4,7 +4,7 @@
 
 - Nuovo firmware Pico SDK/CDC, sequenza PIO master derivata da Celio; verifica locale CRC/pattern/sequenze, due finestre 30 s senza inviare dati grezzi USB.
 - Nuovi BAT 8 e 9, caricatore del GBA invariato 0.2.0 via Celio e cambio manuale firmware mantenendo il GBA acceso. Nessuna inversione del cavo.
-- Nuova implementazione da validare su hardware, non strumentazione del vecchio binario Celio.
+- Hardware PASS 2026-09-10: 1866,1 e 3719,4 B/s a timing 1000/125, zero errori e pio_fdebug zero. Nuova implementazione validata in due finestre da 30 s, non strumentazione del vecchio binario Celio.
 
 
 ## 0.3.5 - Profilo lato PC e contatori GBA

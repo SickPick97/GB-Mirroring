@@ -1,0 +1,47 @@
+{
+  "scope": "Pico-local multiplayer validation; no image or cartridge capture",
+  "status": "PASS",
+  "error": null,
+  "phases": [
+    {
+      "event": "result",
+      "firmware": "0.3.6",
+      "timing": 1000,
+      "clean": true,
+      "words": 31490,
+      "elapsed_us": 30000003,
+      "packets": 437,
+      "packet_span_us": 29906654,
+      "verified_payload_bytes": 55808,
+      "crc_errors": 0,
+      "pattern_errors": 0,
+      "sequence_errors": 0,
+      "echoes": 436,
+      "pio_fdebug": 0,
+      "gba_serial_errors_delta": 0,
+      "verified_payload_bytes_s": 1866.1
+    },
+    {
+      "event": "result",
+      "firmware": "0.3.6",
+      "timing": 125,
+      "clean": true,
+      "words": 62765,
+      "elapsed_us": 30000000,
+      "packets": 871,
+      "packet_span_us": 29940037,
+      "verified_payload_bytes": 111360,
+      "crc_errors": 0,
+      "pattern_errors": 0,
+      "sequence_errors": 0,
+      "echoes": 871,
+      "pio_fdebug": 0,
+      "gba_serial_errors_delta": 0,
+      "verified_payload_bytes_s": 3719.4
+    }
+  ],
+  "analysis": {
+    "gain_vs_celio_125_percent": 7.77,
+    "scope_note": "Different firmware and no raw USB stream; gain cannot be assigned solely to USB. Timing 125 still includes a configured pause. No screenshot or continuous video tested."
+  }
+}
