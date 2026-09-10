@@ -1,5 +1,13 @@
 # Storico
 
+## 0.4.0 - Video su protocollo software SC/SD
+
+- Nuovo sender GBA GPIO in IWRAM e ricevitore Pico passivo PIO/DMA, stesso cavo e orientamento; supera il vincolo strutturale di una parola utile per ciclo multiplayer. Banda effettiva ancora da verificare.
+- Video completo 240x160 letto da VRAM, RLE16 lossless con fallback RAW, CRC32 pixel e CRC16 header. Tre scene, controlli RAW e impulsi piu lenti.
+- Visualizzatore browser locale via driver CDC Windows, FPS di frame nuovi verificati e registri automatici. Nessuna cartuccia o webcam UVC in questo banco.
+- Test ARM del sender GPIO e dei pixel, decoder con errori e pipeline HTTP simulata; nessuna dichiarazione di 5-10 FPS reali prima del collaudo.
+
+
 ## Studio video offline (firmware invariato)
 
 - Valutata distinzione segnale LCD / dati grafici esportati. Ricostruzione PC ammessa nel prototipo, UVC autonomo resta requisito finale.

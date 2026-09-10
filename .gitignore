@@ -21,3 +21,5 @@ dist/diagnosi-usb.txt
 !dist/gbmirroring-*.gba
 
 dist/pico-reports/
+
+dist/sd-video-reports/
