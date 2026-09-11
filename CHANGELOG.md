@@ -1,5 +1,12 @@
 # Storico
 
+## Riscontro hardware 0.5.1 e piano streaming/firmware unico
+
+- Utente conferma GBA fluido e assenza di nero persistente nelle transizioni provate. 261 frame validi, 1,537 FPS fra primo e ultimo, nessun errore CRC o sequenza.
+- Analizzati limiti scheduler, distribuzione byte e coda USB. Piano per aggiornamenti grafici fini, riuso risorse e firmware unico multiboot/video.
+- Solo documentazione ed evidenze selezionate; nessun sorgente, binario o versione firmware modificato.
+
+
 ## 0.5.1 - Priorita al gioco e recupero del flusso
 
 - Test: 4 residente/protocollo, 9 SD/HTTP; mGBA 600/600 VBlank statico e con input direzionale, circa 2,49 catture/s statico dopo warmup. Non misura diretta della fluidita hardware.

@@ -1,0 +1,83 @@
+{
+  "scope": "Physical Italian Emerald cartridge; gameplay fluidity and transition recovery reported by user, not objective full-game FPS certification",
+  "report": {
+    "status": "STOPPED",
+    "valid_frames": 261,
+    "sequence_gaps": 0,
+    "duplicates": 0,
+    "bytes_received": 1975066,
+    "codec": "GRAPHICS",
+    "error": null,
+    "scope": "Experimental Italian Emerald graphics. Scanline effects incomplete; no UVC.",
+    "gba": {
+      "version": "emerald-sliced-0.5.1",
+      "game_frame": 13153,
+      "changed_blocks": 18,
+      "keyframe": false,
+      "raster_dma_active": false,
+      "scope": "Static graphics snapshot; scanline effects not yet reproduced"
+    },
+    "unique_fps_last_5s": 1.8,
+    "bit_resyncs": 5,
+    "delta_reference_misses": 0,
+    "crc_errors": 0,
+    "header_errors": 0,
+    "discarded_bytes": 104,
+    "elapsed_seconds": 185.0,
+    "has_verified_frames": true,
+    "stopped_cleanly": true
+  },
+  "first_frame": {
+    "seconds": 15.5373,
+    "sequence": 0,
+    "wire_bytes": 110102,
+    "codec": 4,
+    "gba": {
+      "version": "emerald-sliced-0.5.1",
+      "game_frame": 2684,
+      "changed_blocks": 393,
+      "keyframe": true,
+      "raster_dma_active": false,
+      "scope": "Static graphics snapshot; scanline effects not yet reproduced"
+    }
+  },
+  "last_frame": {
+    "seconds": 184.6719,
+    "sequence": 260,
+    "wire_bytes": 5102,
+    "codec": 4,
+    "gba": {
+      "version": "emerald-sliced-0.5.1",
+      "game_frame": 13153,
+      "changed_blocks": 18,
+      "keyframe": false,
+      "raster_dma_active": false,
+      "scope": "Static graphics snapshot; scanline effects not yet reproduced"
+    }
+  },
+  "verified_frame_interval_seconds": 169.1346,
+  "received_fps": 1.5372372063433501,
+  "median_frame_interval_seconds": 0.585899999999997,
+  "max_frame_interval_seconds": 7.049100000000003,
+  "nonkey_mean_blocks": 20.832684824902724,
+  "nonkey_mean_wire_bytes": 5895.151750972763,
+  "key_sequences": [
+    0,
+    49,
+    75,
+    159
+  ],
+  "sum_valid_wire_bytes": 1955462,
+  "last_bmp_sha256": "38ad8691feaf2e2dc52f1d2b2a07fb66b730dd71de32bb0bcdd3e85e27b04417",
+  "raw_tail_sha256": "860e3ae0550e1da7507b50ede7822fcc1404be9087e696f8ec6c7c5a2e026183",
+  "visual_review": "Visible outdoor game scene; not black. No simultaneous GBA reference for pixel comparison.",
+  "tail_analysis": {
+    "validated_block_packets": 230,
+    "raw_payload_bytes": 58880,
+    "rle_or_raw_payload_bytes": 55976,
+    "repeated_blocks": 207,
+    "repeated_raw_bytes": 52992,
+    "ideal_halfword_bitmap_payload_bytes": 30584,
+    "scope": "Partial tail only; size estimates exclude header/encoder CPU and assume cached previous blocks on analysis PC"
+  }
+}
