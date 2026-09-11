@@ -20,8 +20,8 @@ def main():
         try:
             from usb_link import UsbLink
             from mb_multi import Multiboot
-            data=(ROOT/'dist/gbmirroring-emerald-v0.5.1.gba').read_bytes()
-            manifest=json.loads((ROOT/'dist/verifica-emerald-v0.5.1.json').read_text())
+            data=(ROOT/'dist/gbmirroring-emerald-v0.6.0.gba').read_bytes()
+            manifest=json.loads((ROOT/'dist/verifica-emerald-v0.6.0.json').read_text())
             if hashlib.sha256(data).hexdigest()!=manifest['sha256']:
                 raise RuntimeError('Hash del programma GBA diverso dal manifest')
             print('GBA acceso, slot VUOTO, Pico con firmware Celio. Non premere A sul GBA.')

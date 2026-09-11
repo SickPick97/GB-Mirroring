@@ -1,0 +1,21 @@
+"""One entry point for boot and capture; reports belong to the same session."""
+import sys,datetime
+from pathlib import Path
+ROOT=Path(__file__).resolve().parents[1]
+sys.dont_write_bytecode=True
+from link_bench import Log
+from sd_video_viewer import main
+if __name__=='__main__':
+ folder=ROOT/'dist/emerald-reports';folder.mkdir(parents=True,exist_ok=True)
+ log_path=folder/('avvio-'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')+'.txt')
+ with log_path.open('w',encoding='utf-8') as f:
+  original=sys.stdout;sys.stdout=Log(original,f)
+  try:
+   from check_portable import main as check
+   check()
+   print('Pico: firmware UNIFIED 0.6.0. Cavo invariato. Nessun cambio UF2 durante la sessione.')
+   answer=input('INVIO per multiboot (GBA acceso SENZA cartuccia); R per riprendere un gioco gia caricato e cattura in pausa: ').strip().lower()
+   if answer not in ('','r'):raise SystemExit('Scelta non riconosciuta; nessun trasferimento avviato.')
+   result=main(emerald=True,unified=True,resume=answer=='r',log_path=log_path)
+  finally:sys.stdout=original
+ sys.exit(result)

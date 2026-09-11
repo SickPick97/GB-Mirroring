@@ -2,7 +2,7 @@
 import sys,struct,unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'third_party/test-runtime'))
-from graphics_stream import GraphicsParser,encode_snapshot,graphics_from_state,SIZE
+from graphics_stream import packet,GraphicsParser,encode_snapshot,graphics_from_state,SIZE
 class Echo:
  def render(self,data):return bytes(data)
 class Tests(unittest.TestCase):
@@ -26,6 +26,19 @@ class Tests(unittest.TestCase):
    p=GraphicsParser(Echo());result=[]
    for i in range(0,len(wire),113):result.extend(p.feed(wire[i:i+113]))
    self.assertEqual(len(result),2);self.assertEqual(result[-1][1],b);self.assertGreater(p.discarded_bits,0)
+ def test_cached_packet_validation(self):
+  def p(seq,kind,block,body):return packet(seq,kind,block,body,version=0x600)
+  def begin(seq,key):return p(seq,0,0,struct.pack('<3H',key,6,0))
+  def end(seq,count):return p(seq,2,0,struct.pack('<12H',6,0,count,0,12,0,6,100,0,10,1,6))
+  key=begin(0,1)+p(0,4,0,struct.pack('<2H',128,0))+b''.join(p(0,3,i,bytes(2)) for i in range(1,393))+end(0,393)
+  parser=GraphicsParser(Echo());self.assertEqual(parser.feed(key)[0][1],bytes(SIZE))
+  delta=begin(1,0)+p(1,5,0,struct.pack('<9H',1,0,0,0,0,0,0,0,123))+end(1,1)
+  self.assertEqual(parser.feed(delta)[0][1][:2],struct.pack('<H',123))
+  self.assertEqual(parser.feed(begin(2,0)+p(2,3,0,struct.pack('<H',63))+end(2,1)),[])
+  self.assertGreater(parser.bad_frames,0)
+  malformed=begin(3,1)+p(3,4,0,struct.pack('<4H',128,0,0,1))
+  self.assertEqual(parser.feed(malformed),[]);self.assertIsNone(parser.cache)
+  self.assertEqual(len(parser.feed(key)),1)
  def test_actual_resident_gpio(self):
   from unicorn import Uc,UC_ARCH_ARM,UC_MODE_ARM,UC_HOOK_MEM_WRITE,UC_HOOK_CODE
   from unicorn.arm_const import UC_ARM_REG_SP,UC_ARM_REG_LR,UC_ARM_REG_PC,UC_ARM_REG_CPSR
@@ -47,8 +60,13 @@ class Tests(unittest.TestCase):
   def original(m,address,size,user):m.reg_write(UC_ARM_REG_PC,m.reg_read(UC_ARM_REG_LR))
   uc.hook_add(UC_HOOK_CODE,original,begin=0x03002750,end=0x03002750)
   uc.hook_add(UC_HOOK_MEM_WRITE,write,begin=0x04000134,end=0x04000135)
-  max_words=0
-  for game_frame in range(6,430):
+  max_words=0;mutated=False;restored=False
+  original_oam=bytes(uc.mem_read(0x07000000,1024))
+  for game_frame in range(6,650):
+   if len(frames)==2 and not mutated:
+    uc.mem_write(0x07000000,b"\x43\x21");mutated=True
+   if len(frames)==3 and not restored:
+    uc.mem_write(0x07000000,original_oam);restored=True
    before_words=state.get("total",0)
    uc.mem_write(0x030022e0,struct.pack('<I',game_frame))
    uc.mem_write(0x04000006,struct.pack('<H',224 if game_frame==6 else 160))
@@ -58,8 +76,8 @@ class Tests(unittest.TestCase):
    uc.emu_start(0x0203cf80,0x03007000,count=100000000)
    if game_frame==6:self.assertEqual(state.get("total",0),0)
    max_words=max(max_words,state.get("total",0)-before_words)
-   if len(frames)==2:break
+   if len(frames)==4:break
   self.assertLessEqual(max_words,155)
   expected=bytes(256)+bytes(uc.mem_read(0x05000000,1024))+bytes(uc.mem_read(0x07000000,1024))+bytes(uc.mem_read(0x06000000,98304))
-  self.assertEqual(struct.unpack('<H',uc.mem_read(0x04000134,2))[0],0x8030);self.assertEqual(len(frames),2);self.assertEqual(frames[0][1],expected);self.assertEqual(frames[1][1],expected);self.assertEqual(frames[1][4]['changed_blocks'],0)
+  self.assertEqual(struct.unpack('<H',uc.mem_read(0x04000134,2))[0],0x8030);self.assertEqual(len(frames),4);self.assertEqual(frames[0][1],expected);self.assertEqual(frames[1][1],expected);self.assertEqual(frames[1][4]['changed_blocks'],0);self.assertEqual(frames[3][1],expected);self.assertEqual(frames[2][1][5*256:5*256+2],b'\x43\x21')
 if __name__=='__main__':unittest.main()

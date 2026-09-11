@@ -33,13 +33,68 @@ hash_begin:
  push {r4,r5,lr}
  mov r2,#0
  mov r3,#0
- mov r4,#64
-1: ldr r5,[r0],#4
+ mov r4,#16
+1:
+ .rept 4
+ ldr r5,[r0],#4
  eor r2,r5,r2,ror #27
  add r3,r5,r3,ror #25
+ .endr
  subs r4,r4,#1
  bne 1b
  str r2,[r1]
  str r3,[r1,#4]
  pop {r4,r5,pc}
 hash_end:
+
+/* Skip unchanged blocks entirely in IWRAM. r2=NULL forces a keyframe. */
+.global scan_next
+scan_next:
+ push {r4-r10,lr}
+ mov r4,r0
+ mov r5,r1
+ mov r6,r2
+ mov r7,r3
+ ldr r9,=0x04000006
+1:
+ cmp r4,#392
+ bhi 4f
+ ldrh r0,[r9]
+ cmp r0,#224
+ orrhs r4,r4,#0x80000000
+ bhs 4f
+ cmp r4,#0
+ moveq r8,r5
+ beq 2f
+ cmp r4,#5
+ sublo r8,r4,#1
+ movlo r8,r8,lsl #8
+ addlo r8,r8,#0x05000000
+ blo 2f
+ cmp r4,#9
+ sublo r8,r4,#5
+ movlo r8,r8,lsl #8
+ addlo r8,r8,#0x07000000
+ subhs r8,r4,#9
+ movhs r8,r8,lsl #8
+ addhs r8,r8,#0x06000000
+2:
+ mov r0,r8
+ mov r1,r7
+ bl hash_begin
+ cmp r6,#0
+ beq 3f
+ ldm r7,{r0,r1}
+ add r2,r6,r4,lsl #3
+ ldm r2,{r2,r3}
+ cmp r0,r2
+ cmpeq r1,r3
+ bne 3f
+ add r4,r4,#1
+ b 1b
+3:
+ str r8,[r7,#8]
+4:
+ mov r0,r4
+ pop {r4-r10,pc}
+.ltorg

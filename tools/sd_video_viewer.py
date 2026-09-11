@@ -8,7 +8,7 @@ from sd_video_protocol import Parser
 from win_serial import Serial
 from link_protocol import bmp
 ROOT=Path(__file__).resolve().parents[1]
-def main(emerald=False):
+def main(emerald=False,unified=False,resume=False,log_path=None):
  folder=ROOT/('dist/emerald-reports' if emerald else 'dist/sd-video-reports')/datetime.datetime.now().strftime('%Y%m%d-%H%M%S');folder.mkdir(parents=True)
  parser=Parser();lock=threading.Lock();stop=threading.Event();latest=[None];arrivals=collections.deque()
  stats=dict(status='WAITING',valid_frames=0,sequence_gaps=0,duplicates=0,bytes_received=0,codec=None,error=None,scope='Experimental Italian Emerald graphics. Scanline effects incomplete; no UVC.' if emerald else 'Homebrew VRAM over software SD/SC. No cartridge or UVC support.')
@@ -18,7 +18,7 @@ def main(emerald=False):
   with lock:
    now=time.monotonic()
    while arrivals and now-arrivals[0]>5:arrivals.popleft()
-   return dict(stats,unique_fps_last_5s=round(len(arrivals)/5,2),bit_resyncs=getattr(parser,"bit_resyncs",0),delta_reference_misses=parser.delta_misses,crc_errors=parser.bad_frames,header_errors=parser.bad_headers,discarded_bytes=parser.discarded,elapsed_seconds=round(now-started,1))
+   return dict(stats,usb_queue_peak_lag_ms=round(getattr(serial,"peak_lag_ms",0),2),unique_fps_last_5s=round(len(arrivals)/5,2),bit_resyncs=getattr(parser,"bit_resyncs",0),delta_reference_misses=parser.delta_misses,crc_errors=parser.bad_frames,header_errors=parser.bad_headers,discarded_bytes=parser.discarded,elapsed_seconds=round(now-started,1))
  def reader():
   nonlocal previous
   try:
@@ -72,11 +72,19 @@ def main(emerald=False):
    from graphics_stream import GraphicsParser
    renderer=Renderer();parser=GraphicsParser(renderer)
   command="Get-PnpDevice -PresentOnly | Where-Object { $_.InstanceId -match 'VID_CAFE&PID_4023' } | ForEach-Object { $_.FriendlyName }"
+  if unified:command=command.replace('PID_4023','PID_4024')
   result=subprocess.run(['powershell.exe','-NoProfile','-Command',command],capture_output=True,text=True,check=True)
   ports=re.findall(r'\((COM\d+)\)',result.stdout)
-  if len(ports)!=1:raise RuntimeError('Serve un solo Pico con SD Video 0.4.0. Nessun driver Zadig richiesto.')
+  if len(ports)!=1:raise RuntimeError('Serve un solo Pico con firmware UNIFIED 0.6.0. Nessun driver Zadig richiesto.' if unified else 'Serve un solo Pico con SD Video 0.4.0. Nessun driver Zadig richiesto.')
   server=ThreadingHTTPServer(('127.0.0.1',8765),Handler);server.timeout=.2
-  serial=Serial(ports[0]);time.sleep(.4);serial.write(b'START\n')
+  serial=Serial(ports[0],read_timeout=5) if unified else Serial(ports[0]);time.sleep(.4)
+  if unified and not resume:
+   from unified_boot import boot
+   boot(serial,folder)
+  serial.write(b'START\n')
+  if unified:
+   from buffered_serial import BufferedSerial
+   serial=BufferedSerial(serial)
   worker=threading.Thread(target=reader,daemon=True);worker.start()
   print('Visualizzatore: http://127.0.0.1:8765 - risultati:',folder,flush=True)
   webbrowser.open('http://127.0.0.1:8765')
@@ -99,5 +107,6 @@ def main(emerald=False):
   if emerald and raw_tail:(folder/'usb-tail.bin').write_bytes(raw_tail)
   if latest[0]:bmp(folder/'ultimo-frame.bmp',struct.unpack('<38400H',latest[0][1]))
   print('Risultati salvati:',folder,flush=True)
+  if log_path:(folder/'console.txt').write_bytes(Path(log_path).read_bytes())
  return 1 if stats['error'] else 0
 if __name__=='__main__':sys.exit(main('--emerald' in sys.argv))

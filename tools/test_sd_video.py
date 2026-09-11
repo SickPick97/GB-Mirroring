@@ -13,13 +13,14 @@ def raw_packet(seq=0):
 class Tests(unittest.TestCase):
  def test_viewer_http_pipeline_without_hardware(self):self.exercise_viewer(False)
  def test_emerald_viewer_http_pipeline_without_hardware(self):self.exercise_viewer(True)
- def exercise_viewer(self,emerald):
+ def test_unified_viewer_pipeline(self):self.exercise_viewer(True,True)
+ def exercise_viewer(self,emerald,unified=False):
   import tempfile,threading,time,json,urllib.request
   from unittest.mock import patch
   import sd_video_viewer as viewer
   errors=[];saved=[]
   class FakeSerial:
-   def __init__(self,port):
+   def __init__(self,port,read_timeout=50):
     from graphics_stream import encode_snapshot,SIZE
     self.chunks=[b'READY SD VIDEO 0.4.0\n']+([encode_snapshot(0,6,bytes(SIZE)),encode_snapshot(1,12,bytes(SIZE),bytes(SIZE))] if emerald else [raw_packet(),raw_packet(1)]);self.writes=[]
    def read(self):
@@ -46,8 +47,9 @@ class Tests(unittest.TestCase):
    root=Path(d);(root/'tools').mkdir();(root/'tools/sd_video_viewer.html').write_bytes((ROOT/'tools/sd_video_viewer.html').read_bytes())
    (root/'tools/emerald_viewer.html').write_bytes((ROOT/'tools/emerald_viewer.html').read_bytes())
    result=type('Result',(),{'stdout':'GBMirroring (COM99)'})()
-   with patch.object(viewer,'ROOT',root),patch.object(viewer,'Serial',FakeSerial),patch.object(viewer.subprocess,'run',return_value=result),patch.object(viewer.webbrowser,'open',side_effect=browser):
-    self.assertEqual(viewer.main(emerald),0)
+   with patch.object(viewer,'ROOT',root),patch.object(viewer,'Serial',FakeSerial),patch.object(viewer.subprocess,'run',return_value=result),patch.object(viewer.webbrowser,'open',side_effect=browser),patch('unified_boot.boot') as boot_mock:
+    self.assertEqual(viewer.main(emerald,unified=unified),0)
+    if unified:boot_mock.assert_called_once()
    self.assertEqual(errors,[])
    report=json.loads(next(root.glob('dist/'+('emerald-reports' if emerald else 'sd-video-reports')+'/*/rapporto.json')).read_text())
    self.assertEqual(report['valid_frames'],2);self.assertEqual(report['crc_errors'],0)
@@ -127,5 +129,5 @@ class Tests(unittest.TestCase):
 if __name__=='__main__':
  r=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(Tests))
  import json
- (ROOT/'dist/verifica-sd-software-v0.4.2.json').write_text(json.dumps(dict(passed=r.wasSuccessful(),tests=r.testsRun,scope='Actual GBA GPIO output and VRAM reconstruction in ARM emulation; corrupted stream tests. No real pin timing, Windows USB or achieved FPS claim.'),indent=2)+'\n')
+ (ROOT/'dist/verifica-viewer-software-v0.6.0.json').write_text(json.dumps(dict(passed=r.wasSuccessful(),tests=r.testsRun,scope='Actual GBA GPIO output and VRAM reconstruction in ARM emulation; corrupted stream tests. No real pin timing, Windows USB or achieved FPS claim.'),indent=2)+'\n')
  sys.exit(not r.wasSuccessful())

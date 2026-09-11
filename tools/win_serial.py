@@ -4,7 +4,7 @@ from ctypes import wintypes as w
 class Timeouts(c.Structure):
  _fields_=[(x,w.DWORD) for x in ('interval','rm','rc','wm','wc')]
 class Serial:
- def __init__(self,port):
+ def __init__(self,port,read_timeout=50):
   k=self.k=c.WinDLL('kernel32',use_last_error=True)
   k.CreateFileW.argtypes=[w.LPCWSTR,w.DWORD,w.DWORD,c.c_void_p,w.DWORD,w.DWORD,w.HANDLE];k.CreateFileW.restype=w.HANDLE
   k.ReadFile.argtypes=[w.HANDLE,c.c_void_p,w.DWORD,c.POINTER(w.DWORD),c.c_void_p];k.ReadFile.restype=w.BOOL
@@ -15,7 +15,7 @@ class Serial:
   self.handle=k.CreateFileW(chr(92)*2+'.'+chr(92)+port,0xc0000000,0,None,3,0,None)
   if self.handle==c.c_void_p(-1).value:self.handle=None;raise c.WinError(c.get_last_error())
   try:
-   self.check(k.SetCommTimeouts(self.handle,c.byref(Timeouts(10,0,50,0,2000))))
+   self.check(k.SetCommTimeouts(self.handle,c.byref(Timeouts(min(10,read_timeout),0,read_timeout,0,2000))))
    self.check(k.EscapeCommFunction(self.handle,5))
   except Exception:self.close();raise
  def check(self,result):

@@ -1,5 +1,14 @@
 # Storico
 
+## 0.6.0 - Avvio unico, cache e misure integrate
+
+- Firmware RP2040 unico CDC CAFE:4024: multiboot master PIO, rilascio bus e ricezione SD PIO/DMA senza cambio UF2. Trasporto PC per il multiboot esistente, moduli vendor invariati.
+- Avvio 14 con controllo file, multiboot, viewer e rapporti nella stessa sessione; modalita R per ripresa senza boot.
+- Cache di 64 risorse, RAW/RLE/riferimenti e patch di registri/OAM; scanner ARM in IWRAM. Tetto 155 parole per intervento e telemetria, lettura USB separata dal rendering.
+- Test software: 5 residente/protocollo, 10 viewer/SD, 2 multiboot CDC/PIO; verifiche UF2 e portabilita. mGBA circa 6,47 FPS statico, 3,68 con input direzionale e 600/600 VBlank. Non prova prestazioni hardware o intera partita.
+- Target 10 FPS non raggiunto: code di copie del gioco, commit basato sulle risorse e UVC restano aperti.
+
+
 ## Riscontro hardware 0.5.1 e piano streaming/firmware unico
 
 - Utente conferma GBA fluido e assenza di nero persistente nelle transizioni provate. 261 frame validi, 1,537 FPS fra primo e ultimo, nessun errore CRC o sequenza.

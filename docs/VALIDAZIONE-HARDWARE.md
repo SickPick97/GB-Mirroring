@@ -61,3 +61,6 @@ Nuova direzione 0.4.0: sender GPIO SC/SD e codec in IWRAM, ricezione passiva PIO
 
 
 2026-09-11, Smeraldo 0.5.1: collaudo utente positivo per fluidita GBA e recupero delle transizioni Centro Pokemon/menu. 261 frame 0..260, zero CRC/header/gap/duplicati/riferimenti mancanti, cinque riagganci riportati e 104 byte scartati; arresto pulito. FPS fra primo/ultimo frame 1,537 su 169,135 s; mediana intervallo 0,586 s, massimo 7,049 s. Media non-keyframe 20,83 blocchi / 5895 byte; keyframe 0,49,75,159. Ultimo BMP ispezionato con scena di gioco visibile, non confronto pixel per pixel. Conteggi e lunghezze ricalcolati da frames.jsonl. Evidenza selezionata test-results/2026-09-11-emerald-v0.5.1; log grezzi e coda USB non pubblicati. Target 10 FPS ancora aperto. Piano PIANO-STREAMING-FIRMWARE-UNICO.md; nessuna modifica software in questo aggiornamento.
+
+
+0.6.0 preparata: firmware unificato e nuovo loader. Solo prove software: 6,47 catture/s statico e 3,68 con input direzionale in mGBA, 600/600 VBlank nelle due finestre; non misura di fluidita hardware. Nuovo collaudo unico in PROVA-SMERALDO.md. Baseline hardware fluida resta 0.5.1.

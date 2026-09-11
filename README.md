@@ -2,15 +2,15 @@
 
 Progetto sperimentale per acquisire il video di un GBA/GBA SP attraverso un adattatore Link con Raspberry Pi Pico RP2040 e arrivare a una webcam USB autonoma, senza modificare internamente la console.
 
-**Versione pacchetto 0.5.1. [Prova Smeraldo italiano](PROVA-SMERALDO.md).** Priorita alla fluidita del GBA: invio suddiviso tra interrupt, massimo un blocco da 256 byte per intervento, e recupero dell allineamento a bit sul PC. La 0.5.0 ha trasmesso il gioco reale, ma rallentava e si bloccava dopo transizioni. Il collaudo 0.5.1 conferma GBA fluido e transizioni recuperate, ma streaming a circa 1,54 FPS. Prossimo lavoro: [piano streaming e firmware unico](PIANO-STREAMING-FIRMWARE-UNICO.md).
+**Versione pacchetto 0.6.0. [Prova integrata Smeraldo](PROVA-SMERALDO.md).** Un firmware Pico per multiboot e video, un solo avvio **14-AVVIA-SMERALDO.bat**, cache grafica e misure automatiche nella stessa sessione. Primo collaudo hardware della versione integrata da eseguire. In emulazione circa 6,47 FPS statico e 3,68 con input direzionale; target 10 FPS e UVC ancora aperti.
 
 ## Su un altro PC Windows
 
 1. Accedi alla repository privata con il tuo account GitHub.
 2. Scarica **Code → Download ZIP**, oppure clona la repository con GitHub Desktop.
 3. Estrai tutto in una cartella scrivibile. Non avviare i BAT dentro lo ZIP.
-4. Avvia **0-CONTROLLA-PC.bat**: verifica offline runtime e firmware, senza interrogare dispositivi.
-5. Segui [PROVA-SMERALDO.md](PROVA-SMERALDO.md): **12-CARICA-SMERALDO.bat** e **13-VIDEO-SMERALDO.bat**. Il banco homebrew resta disponibile con gli avvii 10/11.
+4. Segui la preparazione in **PROVA-SMERALDO.md** e installa il firmware unificato una sola volta.
+5. Avvia **14-AVVIA-SMERALDO.bat**: controllo dei file, multiboot e anteprima nello stesso programma. Il banco homebrew resta disponibile con gli avvii 10/11.
 
 Il pacchetto contiene Python portatile, librerie USB, firmware UF2 e programmi multiboot compilati. Non serve l'intera cartella PROGETTO AMICO e non occorre installare strumenti di sviluppo per eseguire i test. Target attuale: Windows 10/11 x64, Pico RP2040 e GBA SP.
 

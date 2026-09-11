@@ -1,38 +1,36 @@
-# Smeraldo italiano - pacchetto sperimentale 0.5.1
+# Smeraldo - pacchetto integrato 0.6.0
 
-Contiene un loader multiboot per la cartuccia italiana originale, un payload residente e un visualizzatore PC. Il Pico mantiene il firmware SD 0.4.0. Non servono ROM sul PC, Python installato, emulatori aperti o connessioni Internet durante la prova. Il renderer mGBA e gia incluso e riceve solo lo stato grafico; non esegue Smeraldo sul PC.
+Un firmware Pico per multiboot e video; un solo avvio PC, controlli offline e misure automatiche. Cavo e GBA invariati. Non servono ROM sul PC o strumenti di compilazione. Questa e una versione sperimentale: primo collaudo del firmware unificato, non webcam UVC autonoma.
 
-## Cosa e verificato
+## Preparazione unica
 
-La 0.5.0 ha funzionato sulla cartuccia dell utente, ma con rallentamento e blocchi neri. Questa versione distribuisce l invio tra piu fotogrammi e recupera l allineamento a bit sul PC. Il limite e un blocco inviato per interrupt, invece di una schermata intera. Verifiche ARM e protocollo superate; le nuove prestazioni hardware sono da misurare.
-
-Aspettati una prima immagine dopo circa 7-15 secondi, e streaming piu lento. La priorita di questa prova e la velocita del gioco sul GBA. I blocchi vengono letti in momenti diversi: durante movimento e transizioni l anteprima puo mostrare temporaneamente parti non coerenti.
-
-Limiti attuali: effetti per scanline non riprodotti, nessuna webcam UVC, possibili pause al primo invio, ai cambi scena e ai reinvii completi periodici. Non e certificata l intera partita, incluse tutte le battaglie o il salvataggio con payload attivo. Non usare il Cable Club durante questa prova: la porta Link e occupata dalla cattura.
-
-## Procedura
-
-1. Scarica/estrai la versione 0.5.1 in una cartella nuova; avvia 0-CONTROLLA-PC.bat. Chiudi Fotocamera, PassoTile e gli altri test.
-2. GBA spento, cartuccia rimossa. Ripristina il Pico con dist/RIPRISTINO-CELIO-PACCHETTO-AMICO.uf2 mediante BOOTSEL.
+1. Estrai tutto il pacchetto in una cartella nuova e scrivibile. Chiudi gli altri programmi dell adattatore.
+2. Spegni il GBA e rimuovi la cartuccia. Collega il Pico via USB tenendo BOOTSEL e copia dist/gbmirroring-unified-v0.6.0.uf2 su RPI-RP2. Attendi il riavvio USB.
 3. Mantieni il cavo come sempre: piccolo nell adattatore, grande nel GBA, selettore GBA, presa centrale vuota. Accendi il GBA senza cartuccia.
-4. Avvia 12-CARICA-SMERALDO.bat. Attendi sul GBA INSERT CART THEN START. Chiudi il BAT quando il multiboot e completato.
-5. Lascia acceso il GBA, inserisci Smeraldo italiano originale, poi premi START. Questo e l inserimento a caldo previsto dal loader, come nel progetto precedente. Se compare WRONG CART OR REVISION, fermati e riferisci il messaggio: non tentare altre cartucce. Il codice non forza l avvio di un profilo diverso.
-6. Quando Smeraldo e partito, lascia acceso il GBA e cambia soltanto il firmware Pico: scollega USB, ricollega con BOOTSEL, copia dist/gbmirroring-sd-video-v0.4.0.uf2 su RPI-RP2. Non attivare ancora la cattura.
-7. Carica la partita e portati all aperto. Avvia 13-VIDEO-SMERALDO.bat della nuova cartella. Attendi PRONTO nella console.
-8. Premi insieme SELECT + L + R e rilasciali: abilita la trasmissione. La pagina si apre su http://127.0.0.1:8765 . Attendi fino a 15 secondi per la prima immagine. Gli FPS richiedono 5 secondi per stabilizzarsi.
-9. Resta fermo 20 secondi, cammina per 30 secondi, entra/esci da un Centro Pokemon e apri/chiudi la squadra. Dopo ogni transizione attendi 15 secondi senza riavviare il viewer. Metti anche in pausa la cattura con SELECT+L+R per confrontare la velocita del gioco, poi riattivala e attendi il reinvio. Confronta GBA e anteprima: testo, posizione, colori e velocita della partita. In questa prima prova fermati prima di fare nuove modifiche alla partita che vorresti salvare.
-10. Premi SELECT + L + R per mettere in pausa la cattura, poi Termina e salva rapporto nella pagina. Spegni il GBA prima di rimettere Celio o rimuovere la cartuccia. Il payload scompare spegnendo; non modifica la ROM della cartuccia.
 
-## Se qualcosa non funziona
+## Una sola procedura
 
-- Schermo GBA nero o gioco bloccato dopo START: spegni e invia il log multiboot e il messaggio/fase osservati.
-- Nessuna immagine: verifica PRONTO e la combinazione SELECT + L + R; attendi 15 secondi. Se resta vuoto, termina e invia il rapporto. Non invertire il cavo e non cambiare driver.
-- Dopo una perdita il decoder attende un reinvio completo. Pausa e riattiva con SELECT + L + R (rilasciando fra le due pressioni) per richiederlo dal GBA. Il reinvio richiede diversi secondi.
-- Se chiudi e riapri il viewer, metti prima in pausa il GBA, poi attendi il nuovo PRONTO e riattiva la cattura.
-- Dopo spegnimento o soft reset occorre rifare il multiboot. Chiudere solo la scheda browser non termina il processo.
+4. Avvia 14-AVVIA-SMERALDO.bat. Verifica automaticamente i file. Premi INVIO per il nuovo multiboot. Non scegliere R durante questo primo avvio.
+5. Quando il GBA mostra INSERT CART THEN START, lascialo acceso, inserisci Smeraldo italiano originale e premi START. Se appare WRONG CART OR REVISION, fermati e segnala il messaggio.
+6. NON cambiare firmware, non scollegare USB e non chiudere il BAT. Il programma passa da solo alla ricezione video e apre la pagina locale.
+7. Entra nella partita; quando la console PC dice PRONTO premi insieme SELECT+L+R e rilasciali. Attendi fino a 15 secondi per la prima immagine.
+8. Nella stessa sessione: resta fermo 30 secondi, cammina per 60 secondi, entra/esci dal Centro Pokemon, apri/chiudi la squadra e il menu. Metti in pausa la cattura con SELECT+L+R per 10 secondi e confronta la velocita del GBA; riattivala e continua per altri 30 secondi. Tutte le misure vengono raccolte automaticamente, senza altri BAT o prove di banda separate.
+9. Metti in pausa con SELECT+L+R, poi premi Termina e salva rapporto nella pagina. Spegni il GBA prima di rimuovere la cartuccia. In questa prova evita progressi che vorresti salvare: compatibilita dell intera partita e salvataggio con residente non certificati.
 
-## Risultati da inviare
+Invia la cartella dist/emerald-reports/<data-ora> intera: rapporto.json, frames.jsonl, ultimo-frame.bmp, usb-tail.bin, console.txt e multiboot.json se presenti. In caso di errore prima del viewer e disponibile anche avvio-<data-ora>.txt nella cartella emerald-reports.
 
-Nella nuova cartella dist/emerald-reports/<data-ora>: rapporto.json, frames.jsonl, ultimo-frame.bmp se presente e usb-tail.bin. In caso di problema iniziale aggiungi console.txt dalla sottocartella boot-<data-ora>. Indica anche se il gioco sul GBA rallenta o se noti differenze rispetto alla pagina. Non serve inviare ROM o salvataggi.
+## Ripresa e problemi
 
-Il campo has_verified_frames indica frame ricostruiti da pacchetti validati, non una certificazione automatica della fedelta di ogni effetto grafico. raster_dma_active segnala un possibile effetto DMA per scanline non supportato. Gli FPS del PC contano immagini ricevute, non latenza totale.
+- Se chiudi il programma lasciando il gioco acceso: metti prima in pausa la cattura, riapri lo stesso BAT e scegli R. Attendi PRONTO, quindi riattiva SELECT+L+R. R non ricarica il payload.
+- Dopo spegnimento o soft reset del GBA occorre il multiboot da slot vuoto: scegli INVIO. Il firmware Pico resta installato; BOOTSEL serve solo per installazione e aggiornamenti futuri.
+- Nessun Pico trovato: verifica di aver installato UNIFIED 0.6.0. Usa il driver CDC standard Windows, senza Zadig.
+- Multiboot fallito: conserva la cartella/console. Spegni il GBA prima di riprovare; non aggiungere cambi UF2 alla procedura.
+- Immagine assente dopo 15 secondi: termina e conserva i log. Nessuna inversione del cavo. Un reinvio completo puo essere richiesto mettendo in pausa e riattivando la cattura.
+
+## Cosa cambia e cosa e verificato
+
+Cache di 64 risorse grafiche sul ricevitore, riferimenti per contenuti ripetuti, RLE selettivo e modifiche parziali di registri/OAM. Scansione dei blocchi invariati in IWRAM. Limite di 155 parole inviate per intervento, confronto con deadline video e telemetria integrata. Ricezione USB PC su thread separato con coda limitata. Conservati CRC e recupero dell allineamento a bit.
+
+Verifiche software: avvio BPEI, rifiuto firma errata, decodifica delle scritture ARM reali, errori protocollo, multiboot attraverso trasporto CDC simulato, viewer HTTP e pacchetto portatile. Campo statico emulato: circa 6,47 catture/s; input direzionale circa 3,68 catture/s, 600 VBlank gioco su 600 in entrambe le finestre. Questi non sono risultati hardware. I 90 confronti esatti del renderer riguardano snapshot coerenti del test, non tutta la cattura distribuita del gioco.
+
+L obiettivo 10 FPS non e ancora raggiunto nei test. Restano da implementare rilevamento selettivo delle modifiche del gioco e gestione delle risorse dipendente dallo stato; non sono inclusi effetti per scanline o UVC. La cattura resta distribuita nel tempo: possibili artefatti temporanei e ritardo ai cambi scena. Il contatore VBlank non prova da solo fluidita del gameplay o dell audio.

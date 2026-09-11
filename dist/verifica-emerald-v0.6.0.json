@@ -1,0 +1,7 @@
+{
+  "status": "Experimental; hardware untested",
+  "sha256": "a6fc8a4bc4aeaedf25daa7a6a16231973b763d60236c628043fff546b81d364b",
+  "bytes": 5680,
+  "resident_bytes": 4076,
+  "scope": "Italian BPEI; no scanline effects or UVC; performance unverified"
+}

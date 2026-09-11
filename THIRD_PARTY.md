@@ -23,3 +23,5 @@ Sequenza PIO master adattata dalla variante GBA del file Celio linkLayer_pio.c, 
 ## mGBA libretro graphics engine
 
 Unmodified Windows x86_64 core 0.11-219-e31759b, copyright mGBA contributors, MPL-2.0. License and provenance in runtime/mgba. Corresponding source: https://github.com/libretro/mgba/tree/e31759b . The receiver uses only our own homebrew and exported graphics; commercial ROMs and saves are not distributed.
+
+Il firmware unificato 0.6.0 riutilizza la sequenza master PIO attribuita a Celio nel banco 0.3.7. Il protocollo multiboot esistente e richiamato da un nuovo adattatore CDC senza modifiche ai moduli vendor.
