@@ -64,3 +64,6 @@ Nuova direzione 0.4.0: sender GPIO SC/SD e codec in IWRAM, ricezione passiva PIO
 
 
 0.6.0 preparata: firmware unificato e nuovo loader. Solo prove software: 6,47 catture/s statico e 3,68 con input direzionale in mGBA, 600/600 VBlank nelle due finestre; non misura di fluidita hardware. Nuovo collaudo unico in PROVA-SMERALDO.md. Baseline hardware fluida resta 0.5.1.
+
+
+0.6.0: utente segnala ModuleNotFoundError: link_bench all avvio del BAT, prima del collegamento USB. Nessun nuovo risultato hardware. Riprodotto col Python incluso e corretto nel launcher del pacchetto 0.6.1; firmware invariati.

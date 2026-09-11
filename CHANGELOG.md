@@ -1,5 +1,12 @@
 # Storico
 
+## 0.6.1 - Correzione avvio Python portatile
+
+- Aggiunta esplicita della cartella tools al percorso import del launcher: il runtime isolato non aggiunge automaticamente la directory dello script.
+- Test diretto dello script con il Python incluso, da cartella con spazi e directory corrente diversa, uscita prima di USB. Il precedente test di import aggiungeva il percorso manualmente e mascherava il difetto.
+- Firmware Pico e loader GBA 0.6.0 invariati: nessun nuovo flash necessario.
+
+
 ## 0.6.0 - Avvio unico, cache e misure integrate
 
 - Firmware RP2040 unico CDC CAFE:4024: multiboot master PIO, rilascio bus e ricezione SD PIO/DMA senza cambio UF2. Trasporto PC per il multiboot esistente, moduli vendor invariati.

@@ -1,4 +1,4 @@
-# Smeraldo - pacchetto integrato 0.6.0
+# Smeraldo - pacchetto integrato 0.6.1
 
 Un firmware Pico per multiboot e video; un solo avvio PC, controlli offline e misure automatiche. Cavo e GBA invariati. Non servono ROM sul PC o strumenti di compilazione. Questa e una versione sperimentale: primo collaudo del firmware unificato, non webcam UVC autonoma.
 
@@ -34,3 +34,5 @@ Cache di 64 risorse grafiche sul ricevitore, riferimenti per contenuti ripetuti,
 Verifiche software: avvio BPEI, rifiuto firma errata, decodifica delle scritture ARM reali, errori protocollo, multiboot attraverso trasporto CDC simulato, viewer HTTP e pacchetto portatile. Campo statico emulato: circa 6,47 catture/s; input direzionale circa 3,68 catture/s, 600 VBlank gioco su 600 in entrambe le finestre. Questi non sono risultati hardware. I 90 confronti esatti del renderer riguardano snapshot coerenti del test, non tutta la cattura distribuita del gioco.
 
 L obiettivo 10 FPS non e ancora raggiunto nei test. Restano da implementare rilevamento selettivo delle modifiche del gioco e gestione delle risorse dipendente dallo stato; non sono inclusi effetti per scanline o UVC. La cattura resta distribuita nel tempo: possibili artefatti temporanei e ritardo ai cambi scena. Il contatore VBlank non prova da solo fluidita del gameplay o dell audio.
+
+Il pacchetto 0.6.1 corregge solo l avvio PC. Se il Pico ha gia UNIFIED 0.6.0, non ripetere BOOTSEL o il flash.

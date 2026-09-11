@@ -3,6 +3,7 @@ import sys,datetime
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.dont_write_bytecode=True
+sys.path.insert(0,str(ROOT/'tools'))
 from link_bench import Log
 from sd_video_viewer import main
 if __name__=='__main__':
