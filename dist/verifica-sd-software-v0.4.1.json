@@ -1,0 +1,5 @@
+{
+  "passed": true,
+  "tests": 7,
+  "scope": "Actual GBA GPIO output and VRAM reconstruction in ARM emulation; corrupted stream tests. No real pin timing, Windows USB or achieved FPS claim."
+}

@@ -1,10 +1,10 @@
-# Video SD 0.4.0 - nuova strada, cavo fisso
+# Video SD 0.4.1 - nuova strada, cavo fisso
 
 Obiettivo del banco: video 240x160 del nostro homebrew, 5-10 FPS quando dati e tempo CPU lo consentono. Non sono prestazioni ancora dimostrate sul dispositivo e non e cattura da Smeraldo/Verde Foglia. Usa un protocollo software sincrono su SC e SD tramite RCNT GPIO; Pico passivo PIO/DMA, USB CDC standard, visualizzatore locale sul PC. Nessuna modifica hardware e nessuna inversione del cavo.
 
 ## Avvio
 
-1. Estrai il pacchetto 0.4.0 in una cartella nuova e avvia 0-CONTROLLA-PC.bat. Chiudi Fotocamera, PassoTile e i vecchi test.
+1. Estrai il pacchetto 0.4.1 in una cartella nuova e avvia 0-CONTROLLA-PC.bat. Chiudi Fotocamera, PassoTile e i vecchi test.
 2. Spegni il GBA, slot vuoto. Ripristina sul Pico dist/RIPRISTINO-CELIO-PACCHETTO-AMICO.uf2 con BOOTSEL: il firmware 0.3.7 non effettua il multiboot.
 3. Mantieni piccolo nell'adattatore, grande nel GBA, presa centrale vuota e selettore GBA. Accendi il GBA senza cartuccia.
 4. Avvia 10-CARICA-VIDEO-SD.bat. Aspetta multiboot completato e LOAD SD VIDEO UF2 sul GBA. Chiudi il BAT. NON premere ancora A.
@@ -19,7 +19,7 @@ Obiettivo del banco: video 240x160 del nostro homebrew, 5-10 FPS quando dati e t
 - Premi e rilascia B, attendi 20 secondi: scena 2 pseudo-casuale poco comprimibile. Il calo FPS e previsto e quantifica il limite del trasporto; non deve essere confuso con gli FPS delle scene facili.
 - In RAW i frame possono durare piu a lungo: tieni premuti i tasti circa un secondo perche il programma li legge fra i frame.
 - Premi B per tornare alla scena 0, poi A: modalita RAW senza compressione, attendi 20 secondi. Premi A di nuovo per riattivare RLE.
-- Se non arrivano immagini o aumentano i CRC, premi e rilascia L per la modalita SLOW e attendi 10 secondi. Questa allunga gli impulsi senza cambiare il cavo. Riporta se hai usato L. Non installare driver a tentativi.
+- Se non arrivano immagini o aumentano i CRC, premi e rilascia L per la modalita BASE e attendi 10 secondi. Questa ripristina il trasmettitore della prova 0.4.0 e allunga gli impulsi senza cambiare il cavo. Riporta se hai usato L. Non installare driver a tentativi.
 - Premi Termina e salva rapporto nella pagina. Poi spegni il GBA. Non caricare Celio mentre il sender GPIO e ancora in esecuzione sul GBA.
 
 Se non vedi immagini dopo circa 30 s, termina comunque e invia i risultati. In caso di errore READY/COM o overrun, conserva il messaggio e il rapporto. Per ripetere da uno stato noto, spegni il GBA e riparti dal punto 2. Chiudere soltanto la scheda browser non termina la cattura: usa il pulsante oppure Ctrl+C nella console.
@@ -30,6 +30,14 @@ Nuova cartella dist/sd-video-reports: rapporto.json, frames.jsonl e ultimo-frame
 
 ## Cosa e incluso
 
-Programma GBA 0.4.0 compilato (codice e codec in IWRAM, buffer in EWRAM), Pico UF2 0.4.0, decoder RLE16 con keyframe autonomi, app browser offline. Non e ancora una webcam UVC; il requisito finale rimane UVC autonomo. Non occorrono Python installato, librerie nuove o Internet durante la prova. Il software su PC usa solo il driver CDC di Windows.
+Programma GBA 0.4.1 compilato (codice e codec in IWRAM, buffer in EWRAM), Pico UF2 0.4.0 invariato, decoder RLE16 e delta XOR con keyframe ogni 10 fotogrammi, app browser offline. Non e ancora una webcam UVC; il requisito finale rimane UVC autonomo. Non occorrono Python installato, librerie nuove o Internet durante la prova. Il software su PC usa solo il driver CDC di Windows.
 
-Ogni fotogramma contiene tutti i pixel letti dalla VRAM. Non si inviano coordinate di oggetti da ridisegnare con asset sul PC. CRC32 dei pixel e CRC16 dell'header; i frame errati non vengono visualizzati. Ogni frame e indipendente: una perdita non contamina le immagini successive, ma una perdita di sincronismo a livello di bit puo richiedere il riavvio della prova. RLE ripiega su RAW se non riduce i dati. Non e una garanzia di 5-10 FPS per immagini arbitrarie o giochi commerciali.
+Ogni fotogramma contiene tutti i pixel letti dalla VRAM. Non si inviano coordinate di oggetti da ridisegnare con asset sul PC. CRC32 dei pixel e CRC16 dell'header; i frame errati non vengono visualizzati. I delta richiedono il frame precedente: dopo una perdita il decoder attende un keyframe valido. Una perdita di sincronismo a livello di bit puo richiedere il riavvio della prova. RLE ripiega su RAW se non riduce i dati. Non e una garanzia di 5-10 FPS per immagini arbitrarie o giochi commerciali.
+
+## Novita 0.4.1
+
+Il Pico mantiene esattamente il firmware 0.4.0. Si aggiorna il multiboot e il viewer. FAST usa una routine ARM srotolata; BASE usa quella gia provata. La compressione invia differenze XOR e un keyframe ogni 10 frame; il CRC verifica sempre tutti i pixel ricostruiti. La scena 2 resta una prova difficile, non rappresentativa della comprimibilita di Smeraldo.
+
+Il registro include scene, raw_requested, sender e render_ms, copy_ms, crc_ms, encode_ms, previous_tx_ms. L ultimo tempo riguarda il frame precedente (zero per il primo), gli altri il corrente. encode_ms include la gestione del riferimento delta. I tempi sono letti dai timer GBA a 65536 Hz; non sono una misura della latenza schermo-monitor.
+
+Dopo la prova normale, torna alla scena 0 e confronta FAST e BASE per 20 secondi ciascuno con L. Non inserire ancora Smeraldo: il payload residente del gioco non e incluso in questa versione.

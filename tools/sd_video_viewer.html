@@ -1,5 +1,5 @@
 <!doctype html><meta charset="utf-8"><title>GBMirroring SD Video</title>
 <style>body{background:#15171a;color:#eee;font:18px system-ui;margin:30px}canvas{width:min(960px,95vw);image-rendering:pixelated;background:black}pre{white-space:pre-wrap}button{padding:12px}</style>
-<h1>GBMirroring · video dal GBA</h1><p>Homebrew 240×160. B sul GBA: cambia scena. A: alterna RLE / grezzo.</p>
+<h1>GBMirroring · video dal GBA</h1><p>Homebrew 240×160. B sul GBA: cambia scena. A: alterna compressione / grezzo. L: alterna FAST / BASE.</p>
 <canvas id="c" width="240" height="160"></canvas><pre id="s">Connessione...</pre><button onclick="fetch('/stop',{method:'POST'})">Termina e salva rapporto</button>
 <script>let last=-1;const ctx=c.getContext('2d');async function tick(){try{let r=await fetch('/frame',{cache:'no-store'});if(r.status===200){let seq=Number(r.headers.get('X-Frame'));if(seq!==last){let a=new Uint16Array(await r.arrayBuffer()),im=ctx.createImageData(240,160);for(let i=0;i<a.length;i++){let v=a[i];im.data[4*i]=(v&31)*255/31;im.data[4*i+1]=((v>>5)&31)*255/31;im.data[4*i+2]=((v>>10)&31)*255/31;im.data[4*i+3]=255}ctx.putImageData(im,0,0);last=seq}}s.textContent=JSON.stringify(await (await fetch('/stats',{cache:'no-store'})).json(),null,2)}catch(e){s.textContent='Visualizzatore terminato. Controlla la finestra del programma.'}setTimeout(tick,50)}tick();</script>

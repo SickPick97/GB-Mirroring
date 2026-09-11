@@ -1,5 +1,13 @@
 # Storico
 
+## 0.4.1 - Sender ottimizzato e delta video
+
+- Routine ARM srotolata FAST, BASE conserva il sender 0.4.0; Pico invariato.
+- Ridotte divisioni nella scena, compressione XOR/RLE con keyframe ogni 10 frame e recupero dopo perdita.
+- Header protetto esteso: scena, modalita e tempi GBA di rendering/copia/CRC/codec e trasmissione precedente.
+- Verifica ARM dei pixel e delle due routine, compatibilita 0.4.0 e recupero delta. Prestazioni hardware e Smeraldo ancora da implementare/verificare.
+
+
 ## Riscontro hardware 0.4.0
 
 - Verificati 332 frame consecutivi senza errori; RAW 102229 B/s e 1,33 FPS, fase RLE prolungata 3,55 FPS. Obiettivo 5-10 FPS ancora aperto; firmware invariato.

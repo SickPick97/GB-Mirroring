@@ -17,7 +17,7 @@ def main():
   with lock:
    now=time.monotonic()
    while arrivals and now-arrivals[0]>5:arrivals.popleft()
-   return dict(stats,unique_fps_last_5s=round(len(arrivals)/5,2),crc_errors=parser.bad_frames,header_errors=parser.bad_headers,discarded_bytes=parser.discarded,elapsed_seconds=round(now-started,1))
+   return dict(stats,unique_fps_last_5s=round(len(arrivals)/5,2),delta_reference_misses=parser.delta_misses,crc_errors=parser.bad_frames,header_errors=parser.bad_headers,discarded_bytes=parser.discarded,elapsed_seconds=round(now-started,1))
  def reader():
   nonlocal previous
   try:
@@ -34,12 +34,13 @@ def main():
      last_data=now
      if b'ERROR SD DMA OVERRUN' in data:raise RuntimeError('Pico DMA overrun: interrompi e conserva i risultati')
      with lock:stats['bytes_received']+=len(data)
-     for seq,pixels,wire_bytes,codec in parser.feed(data):
+     for seq,pixels,wire_bytes,codec,metadata in parser.feed(data):
       with lock:
        if previous==seq:stats['duplicates']+=1;continue
        if previous is not None and seq!=((previous+1)&0xffffffff):stats['sequence_gaps']+=1
-       previous=seq;stats['valid_frames']+=1;stats['status']='STREAMING';stats['codec']='RLE16' if codec else 'RAW';latest[0]=(seq,pixels);arrivals.append(now)
-      events.write(json.dumps(dict(seconds=round(now-started,4),sequence=seq,wire_bytes=wire_bytes,codec=codec))+'\n');events.flush()
+       stats['gba']=metadata
+       previous=seq;stats['valid_frames']+=1;stats['status']='STREAMING';stats['codec']=('RAW','RLE16','DELTA-RLE16')[codec];latest[0]=(seq,pixels);arrivals.append(now)
+      events.write(json.dumps(dict(seconds=round(now-started,4),sequence=seq,wire_bytes=wire_bytes,codec=codec,gba=metadata))+'\n');events.flush()
     if now-last_data>30:
      with lock:stats['status']='Nessun dato da 30 s: controlla GBA e collegamento'
     if now-last_save>2:

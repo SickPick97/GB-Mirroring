@@ -15,3 +15,11 @@ Build: python tools/build_sd_video.py. Tests: python tools/test_sd_video.py (dip
 Protocollo: header 12 parole little-endian [B47E,5647,0400,codec,seq_lo,seq_hi,payload_words,38400,pixel_crc32_lo,pixel_crc32_hi,header_crc16,5AA5]. Header CRC16 CCITT sui byte delle parole 2..9; pixel CRC32 IEEE sui 76800 byte RGB555. RLE16: token bit15=run, bit0..14=count nonzero, poi colore; token bit15=0: count letterali. Lunghezza massima payload38400 parole; decodifica sempre38400 pixel. Nessun delta dipendente da frame precedente. FIFO/DMA overflow arresta il ricevitore, non produce PASS.
 
 Le scene animano direttamente VRAM e ne inviano una copia stabile; non servono asset PC. E homebrew cooperante, non cattura universale dalle cartucce. Obiettivo 10FPS del timer non equivale a prestazione raggiunta. Tempo CPU, convertitore di livelli, USB e scene possono ridurre gli FPS. Se serve CPU al gioco, occupazione del sender andra misurata e limitata.
+
+## Aggiornamento 0.4.1
+
+Firmware Pico 0.4.0 invariato. Header 24 parole: prime 12 come prima con versione 0401; parole 12=scene, 13=flags (bit0 RAW richiesto, bit1 sender BASE), 14..23=cinque uint32 little-endian in tick 65536 Hz: render, copy, CRC, encode inclusa gestione delta, trasmissione del frame precedente. CRC16 sulle parole 2..9 concatenate a 12..23. Il primo previous_tx e zero.
+
+Codec 2: RLE16 di XOR con frame precedente; CRC32 sempre dei pixel finali. Keyframe ogni 10 frame e fallback RAW se il payload non si riduce. Mancanza del riferimento o CRC errato impedisce la pubblicazione fino al prossimo keyframe. Decoder compatibile con 0400. Nessuna garanzia di recupero da perdita di bit; il ricevitore resta organizzato in parole.
+
+FAST srotola 16 bit con due scritture RCNT per bit e ritorno a clock basso; BASE riusa il sender 0.4.0. L alterna le due routine. Nessuna nuova frequenza elettrica viene dichiarata senza misurarla.

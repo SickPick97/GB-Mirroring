@@ -1,0 +1,28 @@
+{
+  "id": "emerald-it-candidate",
+  "game_code": "BPEI",
+  "status": "candidate only; not authorization to install hooks",
+  "source": "Local analysis of friend mbstub.gba guard routine at offset 0x110; analisi/mbstub-loader-thumb.txt",
+  "guards": [
+    {
+      "address": "0x08085e70",
+      "expected": "0x4809b510"
+    },
+    {
+      "address": "0x0808dc58",
+      "expected": "0x4646b570"
+    },
+    {
+      "address": "0x080931d4",
+      "expected": "0x1c04b570"
+    },
+    {
+      "address": "0x081aa854",
+      "expected": "0xf6feb500"
+    }
+  ],
+  "notes": [
+    "Checks reproduce partial loader signatures, not a complete ROM revision identity.",
+    "Do not install hooks from these checks alone; boot routines and memory ownership require verification."
+  ]
+}

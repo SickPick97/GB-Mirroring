@@ -52,7 +52,8 @@ class Tests(unittest.TestCase):
   from unicorn import Uc,UC_ARCH_ARM,UC_MODE_ARM,UC_HOOK_MEM_READ,UC_HOOK_MEM_WRITE
   uc=Uc(UC_ARCH_ARM,UC_MODE_ARM)
   for a,size in [(0x02000000,0x40000),(0x03000000,0x8000),(0x04000000,0x1000),(0x06000000,0x18000)]:uc.mem_map(a,size)
-  uc.mem_write(0x02000000,(ROOT/'dist/gbmirroring-sd-video-v0.4.0.gba').read_bytes())
+  uc.mem_write(0x02000000,(ROOT/'dist/gbmirroring-sd-video-v0.4.1.gba').read_bytes())
+  parser=Parser()
   state=dict(key=0,clock=0,value=0,bits=0,words=[],frames=0,tick=0,codec=[])
   def read(m,access,address,size,value,user):
    if address==0x04000130:
@@ -70,18 +71,33 @@ class Tests(unittest.TestCase):
     if state['bits']==16:
      state['words'].append(state['value']);state['bits']=0
      w=state['words']
-     if len(w)>=12 and len(w)==12+w[6]:
-      decoded=Parser().feed(struct.pack('<'+'H'*len(w),*w))
+     if len(w)>=12 and len(w)==24+w[6]:
+      decoded=parser.feed(struct.pack('<'+'H'*len(w),*w))
       self.assertEqual(len(decoded),1)
-      seq,pixels,wire,codec=decoded[0]
-      self.assertEqual(seq,state['frames']);self.assertEqual(pixels,bytes(m.mem_read(0x06000000,76800)))
+      seq,pixels,wire,codec,metadata=decoded[0]
+      self.assertEqual(metadata['version'],'0.4.1');self.assertEqual(metadata['scene'],0 if state['frames']==0 else 1);self.assertEqual(metadata['sender'],'baseline' if state['frames']==2 else 'fast');self.assertEqual(seq,state['frames']);self.assertEqual(pixels,bytes(m.mem_read(0x06000000,76800)))
       state['codec'].append(codec);state['frames']+=1;state['words']=[]
       if state['frames']==3:m.emu_stop()
    state['clock']=value&1
   uc.hook_add(UC_HOOK_MEM_READ,read,begin=0x04000100,end=0x04000131)
   uc.hook_add(UC_HOOK_MEM_WRITE,write,begin=0x04000134,end=0x04000135)
   uc.emu_start(0x020000c0,0,count=150000000)
-  self.assertEqual(state['frames'],3);self.assertEqual(state['codec'],[1,1,0])
+  self.assertEqual(state['frames'],3);self.assertEqual(state['codec'],[1,2,0])
+ def test_delta_loss_crc_and_keyframe_recovery(self):
+  def packet(seq,codec=2):
+   # Zero pixels or zero XOR delta: two RLE runs.
+   payload=struct.pack('<4H',0xffff,0,0x8000|5633,0)
+   crc=zlib.crc32(bytes(76800))
+   h=[0xb47e,0x5647,0x401,codec,seq,0,4,38400,crc&65535,crc>>16,0,0x5aa5]+[0]*12
+   h[10]=binascii.crc_hqx(struct.pack('<20H',*(h[2:10]+h[12:])),65535)
+   return struct.pack('<24H',*h)+payload
+  p=Parser();self.assertEqual(p.feed(packet(1)),[]);self.assertEqual(p.delta_misses,1)
+  self.assertEqual(len(p.feed(packet(10,1)+packet(11))),2)
+  broken=bytearray(packet(12));broken[-1]^=1
+  self.assertEqual(p.feed(broken+packet(13)),[]);self.assertEqual(p.bad_frames,1)
+  self.assertEqual(len(p.feed(packet(20,1)+packet(21))),2)
+  bad_header=bytearray(packet(22));bad_header[26]^=1
+  self.assertEqual(p.feed(bad_header),[]);self.assertGreater(p.bad_headers,0)
  def test_fragmented_and_recovery(self):
   p=Parser();data=b'noise'+raw_packet();frames=[]
   for i in range(0,len(data),37):frames+=p.feed(data[i:i+37])
@@ -99,5 +115,5 @@ class Tests(unittest.TestCase):
 if __name__=='__main__':
  r=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(Tests))
  import json
- (ROOT/'dist/verifica-sd-software.json').write_text(json.dumps(dict(passed=r.wasSuccessful(),tests=r.testsRun,scope='Actual GBA GPIO output and VRAM reconstruction in ARM emulation; corrupted stream tests. No real pin timing, Windows USB or achieved FPS claim.'),indent=2)+'\n')
+ (ROOT/'dist/verifica-sd-software-v0.4.1.json').write_text(json.dumps(dict(passed=r.wasSuccessful(),tests=r.testsRun,scope='Actual GBA GPIO output and VRAM reconstruction in ARM emulation; corrupted stream tests. No real pin timing, Windows USB or achieved FPS claim.'),indent=2)+'\n')
  sys.exit(not r.wasSuccessful())

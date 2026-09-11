@@ -1,7 +1,7 @@
 """Bounded decoder: publish only complete frames with valid pixel CRC32."""
 import struct,zlib,binascii
 MAGIC=struct.pack('<HH',0xb47e,0x5647)
-def decode(h,payload):
+def decode(h,payload,base=None):
  if h[3]==0:
   if len(payload)!=76800:raise ValueError('Raw size')
   pixels=payload
@@ -18,10 +18,13 @@ def decode(h,payload):
     out.extend(words[i:i+n]);i+=n
   if len(out)!=38400:raise ValueError('Incomplete frame')
   pixels=struct.pack('<38400H',*out)
+ if h[3]==2:
+  if base is None:raise ValueError('Missing delta reference')
+  pixels=bytes(a^b for a,b in zip(pixels,base))
  if zlib.crc32(pixels)!=(h[8]|h[9]<<16):raise ValueError('Pixel CRC32')
  return pixels
 class Parser:
- def __init__(self):self.buffer=bytearray();self.bad_headers=0;self.bad_frames=0;self.discarded=0
+ def __init__(self):self.buffer=bytearray();self.bad_headers=0;self.bad_frames=0;self.discarded=0;self.previous=None;self.previous_seq=None;self.delta_misses=0
  def feed(self,data):
   self.buffer.extend(data);frames=[]
   while True:
@@ -31,11 +34,28 @@ class Parser:
    if i:self.discarded+=i;del self.buffer[:i]
    if len(self.buffer)<24:break
    h=struct.unpack_from('<12H',self.buffer)
-   if h[2]!=0x400 or h[3] not in (0,1) or not 1<=h[6]<=38400 or h[7]!=38400 or h[11]!=0x5aa5 or binascii.crc_hqx(self.buffer[4:20],65535)!=h[10]:
+   if h[2] not in (0x400,0x401) or h[3] not in (0,1,2) or (h[2]==0x400 and h[3]==2) or not 1<=h[6]<=38400 or h[7]!=38400 or h[11]!=0x5aa5:
     self.bad_headers+=1;del self.buffer[:1];continue
-   length=24+h[6]*2
+   header_bytes=48 if h[2]==0x401 else 24
+   if len(self.buffer)<header_bytes:break
+   checksum_data=self.buffer[4:20]+(self.buffer[24:48] if header_bytes==48 else b'')
+   if binascii.crc_hqx(checksum_data,65535)!=h[10]:
+    self.bad_headers+=1;del self.buffer[:1];continue
+   metadata={}
+   if header_bytes==48:
+    extra=struct.unpack_from('<12H',self.buffer,24)
+    metadata=dict(version='0.4.1',scene=extra[0],raw_requested=bool(extra[1]&1),sender='baseline' if extra[1]&2 else 'fast')
+    for j,name in enumerate(('render','copy','crc','encode','previous_tx')):metadata[name+'_ms']=(extra[2+j*2]|extra[3+j*2]<<16)*1000/65536
+   length=header_bytes+h[6]*2
    if len(self.buffer)<length:break
-   payload=bytes(self.buffer[24:length]);del self.buffer[:length]
-   try:frames.append((h[4]|h[5]<<16,decode(h,payload),length,h[3]))
-   except ValueError:self.bad_frames+=1
+   payload=bytes(self.buffer[header_bytes:length]);del self.buffer[:length]
+   seq=h[4]|h[5]<<16
+   if h[3]==2 and (self.previous_seq is None or seq!=((self.previous_seq+1)&0xffffffff)):
+    self.delta_misses+=1;self.previous=None;self.previous_seq=None;continue
+   try:
+    pixels=decode(h,payload,self.previous)
+    self.previous=pixels;self.previous_seq=seq
+    frames.append((seq,pixels,length,h[3],metadata))
+   except ValueError:
+    self.bad_frames+=1;self.previous=None;self.previous_seq=None
   return frames

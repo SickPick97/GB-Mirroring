@@ -2,7 +2,7 @@
 
 Progetto sperimentale per acquisire il video di un GBA/GBA SP attraverso un adattatore Link con Raspberry Pi Pico RP2040 e arrivare a una webcam USB autonoma, senza modificare internamente la console.
 
-**Versione pacchetto 0.4.0. Nuovo prototipo video: [PROVA-VIDEO-SD.md](PROVA-VIDEO-SD.md).** Protocollo software SC/SD, cavo fisso, animazione GBA e visualizzatore PC. Obiettivo 5-10 FPS da verificare su hardware; cartucce e UVC reale non ancora implementati.
+**Versione pacchetto 0.4.1. Nuovo prototipo video: [PROVA-VIDEO-SD.md](PROVA-VIDEO-SD.md).** Protocollo software SC/SD, cavo fisso, animazione GBA e visualizzatore PC. Obiettivo 5-10 FPS da verificare su hardware; cartucce e UVC reale non ancora implementati.
 
 ## Su un altro PC Windows
 
