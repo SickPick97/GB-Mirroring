@@ -19,6 +19,7 @@ def main():
     if libusb_package.get_libusb1_backend() is None:
         raise RuntimeError('Backend USB non disponibile')
     for report,binary,key in [
+        ('verifica-emerald-v0.5.1.json','gbmirroring-emerald-v0.5.1.gba','sha256'),
         ('verifica-emerald-v0.5.0.json','gbmirroring-emerald-v0.5.0.gba','sha256'),
         ('verifica-sd-gba-v0.4.2.json','gbmirroring-sd-video-v0.4.2.gba','sha256'),
         ('verifica-sd-gba-v0.4.1.json','gbmirroring-sd-video-v0.4.1.gba','sha256'),

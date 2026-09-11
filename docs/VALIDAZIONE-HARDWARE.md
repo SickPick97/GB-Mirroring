@@ -53,3 +53,8 @@ Nuova direzione 0.4.0: sender GPIO SC/SD e codec in IWRAM, ricezione passiva PIO
 
 
 0.5.0: implementato il primo loader residente per Smeraldo italiano e renderer PC. Solo verifiche software: 90/90 immagini identiche nella sequenza mGBA; 9,46 catture/s in campo statico emulato, 56,74 VBlank gioco/s. Nessun nuovo risultato hardware. Evidenza ripulita in test-results/software-v0.5.0/summary.json. Procedura PROVA-SMERALDO.md; UVC e scanline ancora aperti.
+
+
+2026-09-11, Smeraldo 0.5.0: utente conferma immagini dalla cartuccia originale sul PC, menu e overworld visibili, ma forte rallentamento del GBA. Due sessioni: 278 e 239 frame validi; negli intervalli fra primo e ultimo frame 8,405 e 8,607 FPS. Contatore VBlank del gioco circa 50,43 e 51,64/s, non misura diretta dei frame di gameplay. Entrambi gli ultimi BMP sono completamente neri. Il primo termina a sequenza 277, il secondo a 958; byte ricevuti continuano oltre gli ultimi frame e vengono scartati, CRC e header registrati zero. Seconda prova 39 riferimenti delta mancanti. Riavvio viewer ripristina il video secondo l utente. Ipotesi di disallineamento dei bit durante reinizializzazione Link, non provabile senza raw USB. Evidenza ripulita in test-results/2026-09-11-emerald-v0.5.0.
+
+0.5.1: scheduler suddiviso e parser riallineabile preparati. Solo collaudo software; nessuna nuova fluidita hardware dichiarata.

@@ -16,6 +16,16 @@ class Tests(unittest.TestCase):
  def test_corruption(self):
   p=GraphicsParser(Echo());data=bytearray(encode_snapshot(0,6,bytes(SIZE)));data[100]^=1
   self.assertEqual(p.feed(data),[]);self.assertGreater(p.bad_frames,0)
+ def test_bit_alignment_recovers(self):
+  a=bytes(SIZE);b=bytearray(a);b[900]=77
+  first=encode_snapshot(0,6,a);second=encode_snapshot(1,12,b,a)
+  def bits(data):return ''.join(format(w,'016b') for w in struct.unpack('<'+'H'*(len(data)//2),data))
+  for offset in range(1,16):
+   stream=bits(first)+'1'*offset+bits(second)+'0'*16
+   wire=struct.pack('<'+'H'*(len(stream)//16),*(int(stream[i:i+16],2) for i in range(0,len(stream)-15,16)))
+   p=GraphicsParser(Echo());result=[]
+   for i in range(0,len(wire),113):result.extend(p.feed(wire[i:i+113]))
+   self.assertEqual(len(result),2);self.assertEqual(result[-1][1],b);self.assertGreater(p.discarded_bits,0)
  def test_actual_resident_gpio(self):
   from unicorn import Uc,UC_ARCH_ARM,UC_MODE_ARM,UC_HOOK_MEM_WRITE,UC_HOOK_CODE
   from unicorn.arm_const import UC_ARM_REG_SP,UC_ARM_REG_LR,UC_ARM_REG_PC,UC_ARM_REG_CPSR
@@ -31,17 +41,25 @@ class Tests(unittest.TestCase):
    if value&1 and not state['clock']:
     state['value']=((state['value']<<1)|((value>>1)&1))&65535;state['bits']+=1
     if state['bits']==16:
-     state['words'].append(state['value']);state['bits']=0;w=state['words']
+     state['total']=state.get('total',0)+1;state['words'].append(state['value']);state['bits']=0;w=state['words']
      if len(w)>=12 and len(w)==12+w[6]:frames.extend(parser.feed(struct.pack('<'+'H'*len(w),*w)));state['words']=[]
    state['clock']=value&1
   def original(m,address,size,user):m.reg_write(UC_ARM_REG_PC,m.reg_read(UC_ARM_REG_LR))
   uc.hook_add(UC_HOOK_CODE,original,begin=0x03002750,end=0x03002750)
   uc.hook_add(UC_HOOK_MEM_WRITE,write,begin=0x04000134,end=0x04000135)
-  for game_frame in (6,12):
+  max_words=0
+  for game_frame in range(6,430):
+   before_words=state.get("total",0)
    uc.mem_write(0x030022e0,struct.pack('<I',game_frame))
-   if game_frame==12:uc.mem_write(0x04000130,struct.pack('<H',1023))
+   uc.mem_write(0x04000006,struct.pack('<H',224 if game_frame==6 else 160))
+   if game_frame>6:uc.mem_write(0x04000134,struct.pack('<H',0x803c))
+   if game_frame==7:uc.mem_write(0x04000130,struct.pack('<H',1023))
    uc.reg_write(UC_ARM_REG_CPSR,0xd2);uc.reg_write(UC_ARM_REG_SP,0x03007f00);uc.reg_write(UC_ARM_REG_LR,0x03007000)
    uc.emu_start(0x0203cf80,0x03007000,count=100000000)
+   if game_frame==6:self.assertEqual(state.get("total",0),0)
+   max_words=max(max_words,state.get("total",0)-before_words)
+   if len(frames)==2:break
+  self.assertLessEqual(max_words,155)
   expected=bytes(256)+bytes(uc.mem_read(0x05000000,1024))+bytes(uc.mem_read(0x07000000,1024))+bytes(uc.mem_read(0x06000000,98304))
   self.assertEqual(struct.unpack('<H',uc.mem_read(0x04000134,2))[0],0x8030);self.assertEqual(len(frames),2);self.assertEqual(frames[0][1],expected);self.assertEqual(frames[1][1],expected);self.assertEqual(frames[1][4]['changed_blocks'],0)
 if __name__=='__main__':unittest.main()

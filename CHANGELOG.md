@@ -1,5 +1,16 @@
 # Storico
 
+## 0.5.1 - Priorita al gioco e recupero del flusso
+
+- Test: 4 residente/protocollo, 9 SD/HTTP; mGBA 600/600 VBlank statico e con input direzionale, circa 2,49 catture/s statico dopo warmup. Non misura diretta della fluidita hardware.
+
+- Registrate due prove hardware 0.5.0: cattura dalla cartuccia riuscita, 517 frame, rallentamento percepito e nero persistente dopo transizioni.
+- Residente a lavoro limitato: massimo 64 blocchi confrontati e un blocco trasmesso per IRQ; rinvio fuori VBlank o a callback molto tardivo. Non implica permanenza completa entro VBlank.
+- Snapshot raccolto su piu fotogrammi: meno blocchi lunghi del gioco, ma streaming piu lento e possibili incoerenze transitorie durante movimento/cambi scena.
+- Decoder riallinea i pacchetti a qualsiasi bit, con validazione CRC e compatibilita 0.5.0. La perdita di allineamento e un ipotesi supportata dai sintomi, non dimostrata dai vecchi log.
+- Conservata coda USB di 64 KiB locale per diagnosi; Pico 0.4.0 e cavo invariati. Nuovo loader 0.5.1, nessun binario pubblicato sovrascritto.
+
+
 ## 0.5.0 - Primo residente sperimentale Smeraldo italiano
 
 - Loader BPEI con controllo CRC del bootstrap, residente IRQ e sender IWRAM. Nessuna modifica alla ROM; cavo e Pico SD 0.4.0 invariati.

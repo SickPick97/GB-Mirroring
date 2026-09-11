@@ -11,3 +11,9 @@ Il PC usa il core mGBA incluso con un nostro homebrew inattivo e inietta lo stat
 Verifica: python tools/build_emerald.py; python tools/test_emerald.py; python tools/test_sd_video.py. Il test tools/test_emerald_mgba.py accetta --rom e --save locali, legge senza modificare gli originali, e simula bootstrap, movimento/menu e timing. Non prova il multiboot elettrico, USB reale, tutte le battaglie o il salvataggio con residente. Il normale utente non necessita di ROM, salvataggi o toolchain sul PC.
 
 Risultato software selezionato: test-results/software-v0.5.0/summary.json. Prova fisica: ../PROVA-SMERALDO.md. Il banco homebrew 0.4.2 e distinto e non dimostra le prestazioni del gioco.
+
+
+## Aggiornamento 0.5.1
+Scheduler spostato in EWRAM per rispettare lo stesso spazio IWRAM verificato. Sender, hash e CRC restano nella coda IRQ. Una transazione viene distribuita fra IRQ: fino a 64 confronti e un invio di 256 byte per intervento; fuori VBlank o dalla linea 224 rinvia. Il limite non garantisce che la routine termini entro VBlank. L intera immagine non e piu uno snapshot atomico: possibili artefatti transitori, da misurare sul gioco reale. RCNT considera i bit in ingresso separatamente dalle uscite; reinizializzazione rilevata forza keyframe.
+
+Header 0x501 compatibile nella struttura con 0x500. Il PC cerca magic e header CRC a qualsiasi bit nelle parole PIO; un fronte extra non rende definitivamente illeggibile il flusso. Rimangono CRC payload, conteggi e sequenze; una transazione incompleta richiede comunque keyframe. La coda raw finale di 64 KiB rimane solo nei rapporti locali. I 90 confronti esatti del renderer riguardano snapshot coerenti forniti dal test, non certificano la fedelta temporale della cattura distribuita.

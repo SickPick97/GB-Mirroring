@@ -6,8 +6,32 @@ class GraphicsParser:
  def __init__(self,renderer):
   self.renderer=renderer;self.buffer=bytearray();self.bad_frames=0;self.bad_headers=0;self.discarded=0;self.delta_misses=0
   self.cache=None;self.pending=None;self.previous=None;self.sequence=None;self.seen=set();self.wire=0;self.key=False
- def fail(self):self.cache=None;self.pending=None;self.bad_frames+=1
  def feed(self,data):
+  # PIO groups every 16 edges; game reinitialization can insert an extra edge.
+  # Recover packet boundaries at any bit position, validating the header first.
+  if not hasattr(self,'raw_tail'):
+   self.raw_tail=b'';self.bits='';self.bit_resyncs=0;self.discarded_bits=0
+  data=self.raw_tail+data;self.raw_tail=data[len(data)//2*2:]
+  self.bits+=''.join(format(w,'016b') for w in struct.unpack('<'+'H'*(len(data)//2),data[:len(data)//2*2]))
+  magic=format(0xb47e,'016b')+format(0x5647,'016b');out=[]
+  while True:
+   i=self.bits.find(magic)
+   if i<0:
+    n=max(0,len(self.bits)-31);self.discarded_bits+=n;self.bits=self.bits[n:];break
+   if i:self.discarded_bits+=i;self.bit_resyncs+=1;self.bits=self.bits[i:]
+   if len(self.bits)<192:break
+   h=[int(self.bits[j:j+16],2) for j in range(0,192,16)]
+   header=struct.pack('<12H',*h)
+   if h[2] not in (0x500,0x501) or h[3]>2 or h[6]>128 or h[11]!=0x5aa5 or binascii.crc_hqx(header[4:20],65535)!=h[10]:
+    self.bad_headers+=1;self.bits=self.bits[1:];self.discarded_bits+=1;continue
+   n=192+h[6]*16
+   if len(self.bits)<n:break
+   body=struct.pack('<'+'H'*h[6],*(int(self.bits[j:j+16],2) for j in range(192,n,16)))
+   self.bits=self.bits[n:];out.extend(self.feed_aligned(header+body))
+  self.discarded=self.discarded_bits//8
+  return out
+ def fail(self):self.cache=None;self.pending=None;self.bad_frames+=1
+ def feed_aligned(self,data):
   self.buffer.extend(data);frames=[]
   while True:
    i=self.buffer.find(MAGIC)
@@ -16,7 +40,7 @@ class GraphicsParser:
    if i:self.discarded+=i;del self.buffer[:i]
    if len(self.buffer)<24:break
    h=struct.unpack_from('<12H',self.buffer)
-   if h[2]!=0x500 or h[3]>2 or h[6]>128 or h[11]!=0x5aa5 or binascii.crc_hqx(self.buffer[4:20],65535)!=h[10]:
+   if h[2] not in (0x500,0x501) or h[3]>2 or h[6]>128 or h[11]!=0x5aa5 or binascii.crc_hqx(self.buffer[4:20],65535)!=h[10]:
     self.bad_headers+=1;self.cache=None;self.pending=None;del self.buffer[:1];continue
    n=24+h[6]*2
    if len(self.buffer)<n:break
@@ -42,7 +66,7 @@ class GraphicsParser:
     if count!=len(self.seen) or (self.key and count!=393) or (lo|hi<<16)!=self.game_frame:self.fail();continue
     self.cache=self.pending;self.pending=None;self.previous=seq
     pixels=self.renderer.render(self.cache)
-    frames.append((seq,pixels,self.wire+n,4,dict(version='emerald-experimental',game_frame=self.game_frame,changed_blocks=count,keyframe=self.key,raster_dma_active=bool(raster),scope='Static graphics snapshot; scanline effects not yet reproduced')))
+    frames.append((seq,pixels,self.wire+n,4,dict(version='emerald-sliced-0.5.1' if h[2]==0x501 else 'emerald-experimental',game_frame=self.game_frame,changed_blocks=count,keyframe=self.key,raster_dma_active=bool(raster),scope='Static graphics snapshot; scanline effects not yet reproduced')))
   return frames
 
 def graphics_from_state(s):

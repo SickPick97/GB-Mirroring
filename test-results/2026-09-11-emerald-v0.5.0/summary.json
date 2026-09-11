@@ -1,0 +1,130 @@
+{
+  "scope": "Hardware cartridge streaming confirmed by user, severe perceived slowdown and black image after transitions. FPS calculated only over valid-frame intervals; game counter is not a direct gameplay FPS measurement.",
+  "sessions": [
+    {
+      "session": "20260911-093757",
+      "report": {
+        "status": "STOPPED",
+        "valid_frames": 278,
+        "sequence_gaps": 0,
+        "duplicates": 0,
+        "bytes_received": 2046208,
+        "codec": "GRAPHICS",
+        "error": null,
+        "scope": "Experimental Italian Emerald graphics. Scanline effects incomplete; no UVC.",
+        "gba": {
+          "version": "emerald-experimental",
+          "game_frame": 6348,
+          "changed_blocks": 106,
+          "keyframe": false,
+          "raster_dma_active": false,
+          "scope": "Static graphics snapshot; scanline effects not yet reproduced"
+        },
+        "unique_fps_last_5s": 0.0,
+        "delta_reference_misses": 0,
+        "crc_errors": 0,
+        "header_errors": 0,
+        "discarded_bytes": 812089,
+        "elapsed_seconds": 81.3,
+        "has_verified_frames": true,
+        "stopped_cleanly": true
+      },
+      "first_frame": {
+        "seconds": 16.0066,
+        "sequence": 0,
+        "wire_bytes": 110102,
+        "codec": 4,
+        "gba": {
+          "version": "emerald-experimental",
+          "game_frame": 4686,
+          "changed_blocks": 393,
+          "keyframe": true,
+          "raster_dma_active": false,
+          "scope": "Static graphics snapshot; scanline effects not yet reproduced"
+        }
+      },
+      "last_frame": {
+        "seconds": 48.9627,
+        "sequence": 277,
+        "wire_bytes": 29742,
+        "codec": 4,
+        "gba": {
+          "version": "emerald-experimental",
+          "game_frame": 6348,
+          "changed_blocks": 106,
+          "keyframe": false,
+          "raster_dma_active": false,
+          "scope": "Static graphics snapshot; scanline effects not yet reproduced"
+        }
+      },
+      "received_frame_fps": 8.405120751545237,
+      "game_counter_per_second": 50.43072450927143,
+      "sum_valid_wire_bytes": 1234116,
+      "last_bmp_sha256": "836b26454702a2499f3c4b4bba3c564fb910a3c653f27d7276bc1a3639be73d1",
+      "last_bmp_visual": "Entirely black"
+    },
+    {
+      "session": "20260911-093931",
+      "report": {
+        "status": "STOPPED",
+        "valid_frames": 239,
+        "sequence_gaps": 0,
+        "duplicates": 0,
+        "bytes_received": 1674704,
+        "codec": "GRAPHICS",
+        "error": null,
+        "scope": "Experimental Italian Emerald graphics. Scanline effects incomplete; no UVC.",
+        "gba": {
+          "version": "emerald-experimental",
+          "game_frame": 10434,
+          "changed_blocks": 14,
+          "keyframe": false,
+          "raster_dma_active": false,
+          "scope": "Static graphics snapshot; scanline effects not yet reproduced"
+        },
+        "unique_fps_last_5s": 0.0,
+        "delta_reference_misses": 39,
+        "crc_errors": 0,
+        "header_errors": 0,
+        "discarded_bytes": 671585,
+        "elapsed_seconds": 55.6,
+        "has_verified_frames": true,
+        "stopped_cleanly": true
+      },
+      "first_frame": {
+        "seconds": 6.2353,
+        "sequence": 720,
+        "wire_bytes": 110102,
+        "codec": 4,
+        "gba": {
+          "version": "emerald-experimental",
+          "game_frame": 9006,
+          "changed_blocks": 393,
+          "keyframe": true,
+          "raster_dma_active": false,
+          "scope": "Static graphics snapshot; scanline effects not yet reproduced"
+        }
+      },
+      "last_frame": {
+        "seconds": 33.8876,
+        "sequence": 958,
+        "wire_bytes": 3982,
+        "codec": 4,
+        "gba": {
+          "version": "emerald-experimental",
+          "game_frame": 10434,
+          "changed_blocks": 14,
+          "keyframe": false,
+          "raster_dma_active": false,
+          "scope": "Static graphics snapshot; scanline effects not yet reproduced"
+        }
+      },
+      "received_frame_fps": 8.606878993790751,
+      "game_counter_per_second": 51.641273962744506,
+      "sum_valid_wire_bytes": 922858,
+      "last_bmp_sha256": "836b26454702a2499f3c4b4bba3c564fb910a3c653f27d7276bc1a3639be73d1",
+      "last_bmp_visual": "Entirely black"
+    }
+  ],
+  "diagnosis": "Bytes continue after last recognized frame. Bit alignment loss is a hypothesis; raw USB unavailable in these reports."
+}

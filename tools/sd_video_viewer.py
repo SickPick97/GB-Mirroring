@@ -12,12 +12,13 @@ def main(emerald=False):
  folder=ROOT/('dist/emerald-reports' if emerald else 'dist/sd-video-reports')/datetime.datetime.now().strftime('%Y%m%d-%H%M%S');folder.mkdir(parents=True)
  parser=Parser();lock=threading.Lock();stop=threading.Event();latest=[None];arrivals=collections.deque()
  stats=dict(status='WAITING',valid_frames=0,sequence_gaps=0,duplicates=0,bytes_received=0,codec=None,error=None,scope='Experimental Italian Emerald graphics. Scanline effects incomplete; no UVC.' if emerald else 'Homebrew VRAM over software SD/SC. No cartridge or UVC support.')
+ raw_tail=bytearray()
  started=time.monotonic();previous=None;events=(folder/'frames.jsonl').open('w',encoding='utf-8');serial=None;server=None;worker=None;renderer=None
  def snapshot():
   with lock:
    now=time.monotonic()
    while arrivals and now-arrivals[0]>5:arrivals.popleft()
-   return dict(stats,unique_fps_last_5s=round(len(arrivals)/5,2),delta_reference_misses=parser.delta_misses,crc_errors=parser.bad_frames,header_errors=parser.bad_headers,discarded_bytes=parser.discarded,elapsed_seconds=round(now-started,1))
+   return dict(stats,unique_fps_last_5s=round(len(arrivals)/5,2),bit_resyncs=getattr(parser,"bit_resyncs",0),delta_reference_misses=parser.delta_misses,crc_errors=parser.bad_frames,header_errors=parser.bad_headers,discarded_bytes=parser.discarded,elapsed_seconds=round(now-started,1))
  def reader():
   nonlocal previous
   try:
@@ -32,6 +33,8 @@ def main(emerald=False):
     data=serial.read();now=time.monotonic()
     if data:
      last_data=now
+     if emerald:
+      raw_tail.extend(data);del raw_tail[:-65536]
      if b'ERROR SD DMA OVERRUN' in data:raise RuntimeError('Pico DMA overrun: interrompi e conserva i risultati')
      with lock:stats['bytes_received']+=len(data)
      for seq,pixels,wire_bytes,codec,metadata in parser.feed(data):
@@ -93,6 +96,7 @@ def main(emerald=False):
   r['stopped_cleanly']=not r['error'] and (worker is None or not worker.is_alive())
   if r['stopped_cleanly']:r['status']='STOPPED'
   (folder/'rapporto.json').write_text(json.dumps(r,indent=2)+'\n',encoding='utf-8')
+  if emerald and raw_tail:(folder/'usb-tail.bin').write_bytes(raw_tail)
   if latest[0]:bmp(folder/'ultimo-frame.bmp',struct.unpack('<38400H',latest[0][1]))
   print('Risultati salvati:',folder,flush=True)
  return 1 if stats['error'] else 0

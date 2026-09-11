@@ -2,7 +2,7 @@
 
 Progetto sperimentale per acquisire il video di un GBA/GBA SP attraverso un adattatore Link con Raspberry Pi Pico RP2040 e arrivare a una webcam USB autonoma, senza modificare internamente la console.
 
-**Versione pacchetto 0.5.0. Prova Smeraldo italiano: [PROVA-SMERALDO.md](PROVA-SMERALDO.md).** Loader residente e ricostruzione grafica PC pronti per il primo collaudo hardware. In mGBA: 90/90 immagini identiche nella sequenza provata e circa 9,46 catture/s nel campo statico; non sono FPS misurati sul GBA. Effetti per scanline e webcam UVC reale restano da implementare.
+**Versione pacchetto 0.5.1. [Prova Smeraldo italiano](PROVA-SMERALDO.md).** Priorita alla fluidita del GBA: invio suddiviso tra interrupt, massimo un blocco da 256 byte per intervento, e recupero dell allineamento a bit sul PC. La 0.5.0 ha trasmesso il gioco reale, ma rallentava e si bloccava dopo transizioni. La correzione 0.5.1 richiede collaudo hardware; streaming piu lento e prima immagine dopo diversi secondi.
 
 ## Su un altro PC Windows
 
@@ -20,7 +20,7 @@ Su questo nuovo PC, se Celio non viene riconosciuto da PyUSB, conserva l'errore 
 
 | Versione firmware | Risultato |
 |---|---|
-| Smeraldo 0.5.0 | Verifiche software superate; primo collaudo hardware da eseguire. |
+| Smeraldo 0.5.0 | 517 frame validi nelle due prove; 8,4-8,6 FPS prima dei blocchi. Rallentamento del gioco e nero dopo transizioni. |
 | SD video 0.4.1 | 732 frame senza errori; scene FAST a 4,05 / 3,01 / 1,93 FPS. Target ancora aperto. |
 | SD video 0.4.0 | 332 frame senza errori; RAW 1,33 FPS, fase RLE prolungata 3,55 FPS. Target 5-10 ancora aperto. |
 | UVC 0.1.0 | Immagine sintetica 240x160 a 10 FPS visualizzata in Fotocamera; riapertura verificata dall'utente. |
