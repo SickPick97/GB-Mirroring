@@ -1,5 +1,10 @@
 # Storico
 
+## Piano prestazioni e Smeraldo
+
+- Analizzati costi CPU, delta penalizzante nello scorrimento e budget del sender. Definito PIANO-10FPS-SMERALDO.md con priorita, criteri di verifica e integrazione grafica BPEI. Nessun software o firmware modificato.
+
+
 ## Riscontro hardware 0.4.1
 
 - 732 frame senza errori; scene FAST 0/1/2 a 4,05/3,01/1,93 FPS. Preparazione CPU dominante sulla scena 0 (circa 242 ms contro 4,33 ms TX). Firmware invariato, target FPS aperto.
