@@ -1,5 +1,12 @@
 # Storico
 
+## Riscontro hardware pacchetto 0.6.1
+
+- Multiboot unificato in 7,70 s, zero desync/riavvii; streaming nella stessa sessione.
+- 886 transazioni valide, 3,559 FPS medi; 446 senza blocchi cambiati. Gap di 53 sequenze per 26,487 s, recupero su keyframe; 52 delta non applicabili e un errore di validazione da diagnosticare.
+- Conteggi e lunghezze verificati; 304 pacchetti della coda finale con CRC validi. Evidenza ripulita in test-results/2026-09-11-emerald-v0.6.1. Nessun binario modificato.
+
+
 ## 0.6.1 - Correzione avvio Python portatile
 
 - Aggiunta esplicita della cartella tools al percorso import del launcher: il runtime isolato non aggiunge automaticamente la directory dello script.

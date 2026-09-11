@@ -1,0 +1,94 @@
+{
+  "package": "0.6.1",
+  "firmware": "0.6.0",
+  "source_session": "20260911-234128",
+  "multiboot": {
+    "byte": 5680,
+    "durata": 7.703228235244751,
+    "parole_inviate": 2899,
+    "risposte_lette": 2899,
+    "scartate": 44,
+    "desync": 0,
+    "riavvii": 0,
+    "parole_s": 376.33572723915165,
+    "crc": 20275
+  },
+  "report": {
+    "status": "STOPPED",
+    "valid_frames": 886,
+    "sequence_gaps": 1,
+    "duplicates": 0,
+    "bytes_received": 2315240,
+    "codec": "GRAPHICS",
+    "error": null,
+    "scope": "Experimental Italian Emerald graphics. Scanline effects incomplete; no UVC.",
+    "gba": {
+      "version": "emerald-cached-0.6.0",
+      "game_frame": 18244,
+      "changed_blocks": 22,
+      "keyframe": false,
+      "raster_dma_active": false,
+      "scope": "Graphics cache; scanline effects and temporal coherence not fully verified",
+      "end_game_frame": 18267,
+      "capture_ticks": 24,
+      "wire_words_before_end": 2257,
+      "peak_work_scanlines": 88,
+      "optimized": true,
+      "visits_low": 18280
+    },
+    "usb_queue_peak_lag_ms": 2.75,
+    "unique_fps_last_5s": 1.8,
+    "bit_resyncs": 6,
+    "delta_reference_misses": 52,
+    "crc_errors": 1,
+    "header_errors": 0,
+    "discarded_bytes": 3204,
+    "elapsed_seconds": 323.0,
+    "has_verified_frames": true,
+    "stopped_cleanly": true
+  },
+  "analysis": {
+    "first_seconds": 72.8291,
+    "last_seconds": 321.5071,
+    "verified_interval_seconds": 248.678,
+    "fps": 3.5588190350573834,
+    "first_sequence": 0,
+    "last_sequence": 938,
+    "missing_sequences": [
+      628,
+      680
+    ],
+    "missing_sequence_count": 53,
+    "gap_seconds": 26.4866,
+    "zero_changed_block_frames": 446,
+    "median_interval_seconds": 0.15090000000000714,
+    "nonkey_mean_wire_bytes": 1833.6852907639682,
+    "key_sequences": [
+      0,
+      120,
+      240,
+      360,
+      480,
+      600,
+      681,
+      699,
+      819
+    ],
+    "all_wire_lengths_match": true,
+    "tail": {
+      "validated_packets": 304,
+      "first_sequence": 930,
+      "last_sequence": 939,
+      "bad_payload_crc": 0,
+      "bad_headers": 0
+    }
+  },
+  "limitations": [
+    "FPS count validated transactions, including 446 with no changed blocks; not necessarily distinct images.",
+    "crc_errors is a broad parser validation counter, not proof of a payload CRC mismatch.",
+    "Tail does not cover the earlier sequence gap; initial cause remains unknown.",
+    "No subjective GBA smoothness confirmation supplied yet.",
+    "Peak scanline counter is modulo 228 and excludes END; not a precise CPU budget measurement.",
+    "Final BMP is visible outdoor scene, not compared against simultaneous GBA reference."
+  ]
+}
