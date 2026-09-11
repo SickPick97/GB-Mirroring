@@ -1,5 +1,12 @@
 # Storico
 
+## Piano prodotto dopo conferma fluidita 0.6.1
+
+- Utente conferma GBA super fluido. Piano unico per stato grafico rapido, risorse versionate, riduzione CPU/byte, recupero, uscita webcam e collaudo integrato.
+- Analisi aggiuntiva: transazioni senza cambiamenti mediane 7 interventi, con cambiamenti non-keyframe 21; il costo della scansione completa resta strutturale.
+- Nessun codice o binario modificato. Piano in PIANO-PRODOTTO-SMERALDO.md.
+
+
 ## Riscontro hardware pacchetto 0.6.1
 
 - Multiboot unificato in 7,70 s, zero desync/riavvii; streaming nella stessa sessione.

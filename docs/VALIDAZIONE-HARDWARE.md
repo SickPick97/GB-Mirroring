@@ -74,3 +74,6 @@ Nuova direzione 0.4.0: sender GPIO SC/SD e codec in IWRAM, ricezione passiva PIO
 Gap tra sequenze 627 e 681: 53 sequenze non visualizzate, 26,4866 s tra arrivi, recupero su keyframe. Rapporto: 1 crc_errors (contatore che include altre invalidazioni), 52 delta mancanti, 6 riallineamenti, 3204 byte scartati, nessun header errato o duplicato. Causa iniziale non provata. Coda finale: 304 pacchetti con CRC validi, sequenze 930..939, non copre il guasto. Coda USB massima 2,75 ms: nessun arretrato significativo osservato nella coda PC, non misura completa di latenza. Picco scanline 225: contatore modulo 228, prima di END, non tempo CPU preciso.
 
 Arresto pulito; BMP 240x160 ispezionato, scena esterna visibile, nessun confronto simultaneo con GBA. Fluidita percepita della console ancora da confermare. Target 10 FPS aperto; priorita: recupero rapido della cache dopo perdita e riduzione lavoro di cattura/trasmissione preservando fluidita. Evidenza test-results/2026-09-11-emerald-v0.6.1; log grezzi locali.
+
+
+2026-09-12: utente conferma gioco GBA super fluido con pacchetto 0.6.1. Baseline aggiornata; nessuna nuova dichiarazione sulla qualita di tutte le scene o sui 10 FPS. Piano PIANO-PRODOTTO-SMERALDO.md, solo analisi e documentazione.

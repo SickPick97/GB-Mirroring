@@ -87,8 +87,8 @@
     "FPS count validated transactions, including 446 with no changed blocks; not necessarily distinct images.",
     "crc_errors is a broad parser validation counter, not proof of a payload CRC mismatch.",
     "Tail does not cover the earlier sequence gap; initial cause remains unknown.",
-    "No subjective GBA smoothness confirmation supplied yet.",
     "Peak scanline counter is modulo 228 and excludes END; not a precise CPU budget measurement.",
     "Final BMP is visible outdoor scene, not compared against simultaneous GBA reference."
-  ]
+  ],
+  "user_feedback": "GBA remained super smooth, confirmed 2026-09-12"
 }
