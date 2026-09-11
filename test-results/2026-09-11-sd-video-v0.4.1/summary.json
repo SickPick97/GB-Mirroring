@@ -1,0 +1,130 @@
+{
+  "version": "0.4.1",
+  "valid_frames": 732,
+  "bytes_received": 8534304,
+  "errors": {
+    "crc_errors": 0,
+    "header_errors": 0,
+    "sequence_gaps": 0,
+    "duplicates": 0,
+    "delta_reference_misses": 0,
+    "discarded_bytes": 0
+  },
+  "phases": [
+    {
+      "scene": 0,
+      "sender": "fast",
+      "raw_requested": false,
+      "frames": 166,
+      "first_sequence": 0,
+      "last_sequence": 165,
+      "fps": 4.053267301924197,
+      "mean_times_ms": {
+        "render_ms": 51.68482768966491,
+        "copy_ms": 32.04492775790663,
+        "crc_ms": 66.37711122811558,
+        "encode_ms": 91.9638024755271
+      },
+      "mean_tx_ms": 4.330370799604669,
+      "tx_samples": 166,
+      "mean_wire_bytes": 1059.2409638554218
+    },
+    {
+      "scene": 1,
+      "sender": "fast",
+      "raw_requested": false,
+      "frames": 176,
+      "first_sequence": 166,
+      "last_sequence": 341,
+      "fps": 3.0083098112156668,
+      "mean_times_ms": {
+        "render_ms": 50.53589560768821,
+        "copy_ms": 32.044757496226914,
+        "crc_ms": 66.3772929798473,
+        "encode_ms": 101.52912139892578
+      },
+      "mean_tx_ms": 81.52883703058416,
+      "tx_samples": 176,
+      "mean_wire_bytes": 19966.875
+    },
+    {
+      "scene": 2,
+      "sender": "fast",
+      "raw_requested": false,
+      "frames": 71,
+      "first_sequence": 342,
+      "last_sequence": 412,
+      "fps": 1.9271429829970927,
+      "mean_times_ms": {
+        "render_ms": 28.208128163512324,
+        "copy_ms": 32.043671943772004,
+        "crc_ms": 66.37637715944102,
+        "encode_ms": 136.30138988226233
+      },
+      "mean_tx_ms": 255.79769510618397,
+      "tx_samples": 71,
+      "mean_wire_bytes": 62649.605633802814
+    },
+    {
+      "scene": 0,
+      "sender": "fast",
+      "raw_requested": false,
+      "frames": 43,
+      "first_sequence": 413,
+      "last_sequence": 455,
+      "fps": 4.053193337322201,
+      "mean_times_ms": {
+        "render_ms": 51.689325376998546,
+        "copy_ms": 32.044166742369185,
+        "crc_ms": 66.37715184411337,
+        "encode_ms": 93.29933343931685
+      },
+      "mean_tx_ms": 10.006926780523257,
+      "tx_samples": 43,
+      "mean_wire_bytes": 2449.767441860465
+    },
+    {
+      "scene": 0,
+      "sender": "baseline",
+      "raw_requested": false,
+      "frames": 124,
+      "first_sequence": 456,
+      "last_sequence": 579,
+      "fps": 3.991730950843296,
+      "mean_times_ms": {
+        "render_ms": 51.63537302324849,
+        "copy_ms": 32.04530285250756,
+        "crc_ms": 66.37659380512852,
+        "encode_ms": 92.14253579416582
+      },
+      "mean_tx_ms": 8.088757914881553,
+      "tx_samples": 124,
+      "mean_wire_bytes": 1027.532258064516
+    },
+    {
+      "scene": 0,
+      "sender": "fast",
+      "raw_requested": false,
+      "frames": 152,
+      "first_sequence": 580,
+      "last_sequence": 731,
+      "fps": 4.054366095833398,
+      "mean_times_ms": {
+        "render_ms": 51.683927837171055,
+        "copy_ms": 32.04466167249178,
+        "crc_ms": 66.37713783665707,
+        "encode_ms": 91.87176353053043
+      },
+      "mean_tx_ms": 4.4124173802255795,
+      "tx_samples": 151,
+      "mean_wire_bytes": 1075.157894736842
+    }
+  ],
+  "image_sha256": "38c439a5e704ddfa929ac22bb3104b4a5b6d87b11e68493446a9ac0b25c6283e",
+  "limitations": [
+    "Homebrew only; target 5-10 FPS not reached.",
+    "TX time attributed from next sequence previous_tx_ms; final sample unavailable.",
+    "Host arrival FPS and GBA timer means are distinct measurements; transitions can affect phase averages.",
+    "Final report status STREAMING does not prove clean stop."
+  ]
+}

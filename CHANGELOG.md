@@ -1,5 +1,10 @@
 # Storico
 
+## Riscontro hardware 0.4.1
+
+- 732 frame senza errori; scene FAST 0/1/2 a 4,05/3,01/1,93 FPS. Preparazione CPU dominante sulla scena 0 (circa 242 ms contro 4,33 ms TX). Firmware invariato, target FPS aperto.
+
+
 ## 0.4.1 - Sender ottimizzato e delta video
 
 - Routine ARM srotolata FAST, BASE conserva il sender 0.4.0; Pico invariato.
