@@ -3,7 +3,8 @@
 #include "codec.h"
 #define R16(a) (*(volatile uint16_t *)(a))
 #define VRAM ((volatile uint16_t*)0x06000000)
-static uint16_t pixels[38400],previous[38400],encoded[38412],header[24];
+static uint32_t previous[19200];
+static uint16_t encoded[38700],header[24];
 extern const uint32_t sd_send_start[],sd_send_end[],sd_send_fast[],sd_send_slow[];
 static void (*send_words)(const uint16_t*,unsigned);
 static uint32_t ticks(void){uint16_t hi,lo;do{hi=R16(0x04000104);lo=R16(0x04000100);}while(hi!=R16(0x04000104));return ((uint32_t)hi<<16)|lo;}
@@ -19,7 +20,7 @@ static void render(uint32_t seq,unsigned scene){
    else{v=colors[columns[x]];if(y>=65 && y<89 && x>=sx && x<sx+24)v=0;}}
   VRAM[y*240+x]=v;
  }}
- text(6,5,"SD VIDEO V041");text(6,17,scene==0?"B SCENE 0   A RAW":scene==1?"B SCENE 1   A RAW":"B SCENE 2   A RAW");
+ text(6,5,"SD VIDEO V042");text(6,17,scene==0?"B SCENE 0   A RAW":scene==1?"B SCENE 1   A RAW":"B SCENE 2   A RAW");
 }
 int main(void){
  R16(0x04000208)=0;R16(0x04000200)=0;R16(0x04000134)=0x8000;
@@ -33,16 +34,26 @@ int main(void){
  /* Stable release after initial A: do not accidentally toggle RAW on bounce. */
  uint32_t released=ticks();while((uint32_t)(ticks()-released)<3277){if(!(R16(0x04000130)&1))released=ticks();}
  for(;;){uint32_t start=ticks();uint16_t keys=(~R16(0x04000130))&0x203,pressed=keys&~oldkeys;oldkeys=keys;if(pressed&2)scene=(scene+1)%3;if(pressed&1)raw^=1;if(pressed&0x200)slow^=1;send_words=(void(*)(const uint16_t*,unsigned))(slow?sd_send_start:sd_send_fast);
-  render(seq,scene);text(130,5,slow?"L BASE":"L FAST");uint32_t rendered=ticks();for(unsigned i=0;i<38400;i++)pixels[i]=VRAM[i];
-  uint32_t copied=ticks(),crc=pixel_crc(pixels,38400),checked=ticks();unsigned delta=!raw && seq%10!=0;
-  if(delta)for(unsigned i=0;i<38400;i++)previous[i]^=pixels[i];
-  unsigned count=raw?0:encode_pixels(delta?previous:pixels,38400,encoded);
-  for(unsigned i=0;i<38400;i++){previous[i]=pixels[i];}uint32_t encoded_at=ticks();
-  header[0]=0xb47e;header[1]=0x5647;header[2]=0x401;header[3]=count?(delta?2:1):0;header[4]=seq;header[5]=seq>>16;header[6]=count?count:38400;header[7]=38400;header[8]=crc;header[9]=crc>>16;header[11]=0x5aa5;header[12]=scene;header[13]=(raw?1:0)|(slow?2:0);
-  uint32_t durations[]={rendered-start,copied-rendered,checked-copied,encoded_at-checked,previous_tx};
+  render(seq,scene);text(130,5,slow?"L BASE":"L FAST");uint32_t rendered=ticks();
+  unsigned count=0,keyframe=seq%30==0;
+  for(unsigned block=0;block<150;block++){
+   const volatile uint32_t *src=(const volatile uint32_t*)VRAM+block*128;
+   uint32_t *ref=previous+block*128;unsigned changed=keyframe;
+   if(!changed)for(unsigned i=0;i<128;i++){if(src[i]!=ref[i]){changed=1;break;}}
+   if(!changed)continue;
+   for(unsigned i=0;i<128;i++){ref[i]=src[i];}
+   uint16_t *dst=encoded+count;dst[0]=block;
+   unsigned n=raw?0:encode_pixels((const uint16_t*)ref,256,dst+2);
+   dst[1]=n?(0x8000|n):256;
+   if(!n){for(unsigned i=0;i<256;i++){dst[i+2]=((const uint16_t*)ref)[i];}n=256;}
+   count+=n+2;
+  }
+  uint32_t encoded_at=ticks(),crc=pixel_crc(encoded,count),checked=ticks();
+  header[0]=0xb47e;header[1]=0x5647;header[2]=0x402;header[3]=3;header[4]=seq;header[5]=seq>>16;header[6]=count;header[7]=38400;header[8]=crc;header[9]=crc>>16;header[11]=0x5aa5;header[12]=scene;header[13]=(raw?1:0)|(slow?2:0)|(keyframe?4:0);
+  uint32_t durations[]={rendered-start,0,checked-encoded_at,encoded_at-rendered,previous_tx};
   for(unsigned j=0;j<5;j++){header[14+j*2]=durations[j];header[15+j*2]=durations[j]>>16;}
   uint16_t integrity[20];for(unsigned j=0;j<8;j++)integrity[j]=header[j+2];for(unsigned j=0;j<12;j++)integrity[j+8]=header[j+12];header[10]=header_crc(integrity,20);
-  uint32_t sending=ticks();send_words(header,24);send_words(count?encoded:pixels,header[6]);previous_tx=ticks()-sending;seq++;
+  uint32_t sending=ticks();send_words(header,24);if(count)send_words(encoded,count);previous_tx=ticks()-sending;seq++;
   while((uint32_t)(ticks()-start)<6554){}
  }
 }

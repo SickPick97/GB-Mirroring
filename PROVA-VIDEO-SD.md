@@ -1,10 +1,10 @@
-# Video SD 0.4.1 - nuova strada, cavo fisso
+# Video SD 0.4.2 - nuova strada, cavo fisso
 
 Obiettivo del banco: video 240x160 del nostro homebrew, 5-10 FPS quando dati e tempo CPU lo consentono. Non sono prestazioni ancora dimostrate sul dispositivo e non e cattura da Smeraldo/Verde Foglia. Usa un protocollo software sincrono su SC e SD tramite RCNT GPIO; Pico passivo PIO/DMA, USB CDC standard, visualizzatore locale sul PC. Nessuna modifica hardware e nessuna inversione del cavo.
 
 ## Avvio
 
-1. Estrai il pacchetto 0.4.1 in una cartella nuova e avvia 0-CONTROLLA-PC.bat. Chiudi Fotocamera, PassoTile e i vecchi test.
+1. Estrai il pacchetto 0.5.0 in una cartella nuova e avvia 0-CONTROLLA-PC.bat. Chiudi Fotocamera, PassoTile e i vecchi test.
 2. Spegni il GBA, slot vuoto. Ripristina sul Pico dist/RIPRISTINO-CELIO-PACCHETTO-AMICO.uf2 con BOOTSEL: il firmware 0.3.7 non effettua il multiboot.
 3. Mantieni piccolo nell'adattatore, grande nel GBA, presa centrale vuota e selettore GBA. Accendi il GBA senza cartuccia.
 4. Avvia 10-CARICA-VIDEO-SD.bat. Aspetta multiboot completato e LOAD SD VIDEO UF2 sul GBA. Chiudi il BAT. NON premere ancora A.
@@ -30,14 +30,12 @@ Nuova cartella dist/sd-video-reports: rapporto.json, frames.jsonl e ultimo-frame
 
 ## Cosa e incluso
 
-Programma GBA 0.4.1 compilato (codice e codec in IWRAM, buffer in EWRAM), Pico UF2 0.4.0 invariato, decoder RLE16 e delta XOR con keyframe ogni 10 fotogrammi, app browser offline. Non e ancora una webcam UVC; il requisito finale rimane UVC autonomo. Non occorrono Python installato, librerie nuove o Internet durante la prova. Il software su PC usa solo il driver CDC di Windows.
+Programma GBA 0.4.2 compilato (codice e codec in IWRAM, buffer in EWRAM), Pico UF2 0.4.0 invariato, decoder di blocchi assoluti RLE16/RAW e keyframe ogni 30 fotogrammi, app browser offline. Non e ancora una webcam UVC; il requisito finale rimane UVC autonomo. Non occorrono Python installato, librerie nuove o Internet durante la prova. Il software su PC usa solo il driver CDC di Windows.
 
-Ogni fotogramma contiene tutti i pixel letti dalla VRAM. Non si inviano coordinate di oggetti da ridisegnare con asset sul PC. CRC32 dei pixel e CRC16 dell'header; i frame errati non vengono visualizzati. I delta richiedono il frame precedente: dopo una perdita il decoder attende un keyframe valido. Una perdita di sincronismo a livello di bit puo richiedere il riavvio della prova. RLE ripiega su RAW se non riduce i dati. Non e una garanzia di 5-10 FPS per immagini arbitrarie o giochi commerciali.
+Ogni fotogramma contiene tutti i pixel letti dalla VRAM. Non si inviano coordinate di oggetti da ridisegnare con asset sul PC. CRC32 del payload e CRC16 dell'header; i frame errati non vengono visualizzati. Gli aggiornamenti richiedono il riferimento precedente: dopo una perdita il decoder attende un keyframe valido. Una perdita di sincronismo a livello di bit puo richiedere il riavvio della prova. RLE ripiega su RAW se non riduce i dati. Non e una garanzia di 5-10 FPS per immagini arbitrarie o giochi commerciali.
 
-## Novita 0.4.1
+## Novita del banco 0.4.2 incluso nel pacchetto 0.5.0
 
-Il Pico mantiene esattamente il firmware 0.4.0. Si aggiorna il multiboot e il viewer. FAST usa una routine ARM srotolata; BASE usa quella gia provata. La compressione invia differenze XOR e un keyframe ogni 10 frame; il CRC verifica sempre tutti i pixel ricostruiti. La scena 2 resta una prova difficile, non rappresentativa della comprimibilita di Smeraldo.
+Pico 0.4.0 invariato. Il programma GBA confronta blocchi di 256 pixel a 32 bit, invia solo i blocchi cambiati in formato assoluto RLE o RAW, e calcola CRC32 sul payload. Elimina il buffer XOR e il CRC su tutta l immagine a ogni frame. Un keyframe completo arriva ogni 30 frame; dopo una perdita si attende un keyframe. Il vecchio full-pixel CRC per ogni frame e sostituito da CRC del trasporto e test di ricostruzione, non ha esattamente lo stesso significato diagnostico.
 
-Il registro include scene, raw_requested, sender e render_ms, copy_ms, crc_ms, encode_ms, previous_tx_ms. L ultimo tempo riguarda il frame precedente (zero per il primo), gli altri il corrente. encode_ms include la gestione del riferimento delta. I tempi sono letti dai timer GBA a 65536 Hz; non sono una misura della latenza schermo-monitor.
-
-Dopo la prova normale, torna alla scena 0 e confronta FAST e BASE per 20 secondi ciascuno con L. Non inserire ancora Smeraldo: il payload residente del gioco non e incluso in questa versione.
+copy_ms e zero perche non esiste piu una fase di copia integrale separata; encode_ms include confronto e aggiornamento dei blocchi. Il test resta un homebrew e non e il loader Smeraldo. Per la cartuccia seguire PROVA-SMERALDO.md e i BAT 12/13.

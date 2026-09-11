@@ -1,0 +1,9 @@
+{
+  "name": "mGBA libretro",
+  "version": "0.11-219-e31759b",
+  "sha256": "9f1d2ebca4937629fa2baa19acb8dc616de18b1b8c3a7e608f5c000ce327a233",
+  "source": "https://github.com/libretro/mgba/tree/e31759b",
+  "download": "https://buildbot.libretro.com/nightly/windows/x86_64/latest/mgba_libretro.dll.zip",
+  "license": "MPL-2.0; see LICENSE",
+  "use": "Graphics reconstruction using own homebrew. No commercial ROM required by receiver."
+}

@@ -19,3 +19,7 @@ Unicorn 2.1.4 e usato solo come dipendenza di collaudo del codice ARM, in third_
 **Multi Profile 0.3.6**
 
 Sequenza PIO master adattata dalla variante GBA del file Celio linkLayer_pio.c, copia di riferimento locale in analisi/fonti, progetto https://github.com/Celio-Link/Celio-Firmware (autori Celio e modifiche preesistenti del pacchetto). Non si dichiara che corrisponda esattamente al binario Celio ricevuto. Le 27 istruzioni conservano direzioni, temporizzazione e ordine dei bit; nuovo controllo Pico SDK e validatore GBMirroring. Uso nella repository privata; nessuna nuova licenza assegnata al codice derivato.
+
+## mGBA libretro graphics engine
+
+Unmodified Windows x86_64 core 0.11-219-e31759b, copyright mGBA contributors, MPL-2.0. License and provenance in runtime/mgba. Corresponding source: https://github.com/libretro/mgba/tree/e31759b . The receiver uses only our own homebrew and exported graphics; commercial ROMs and saves are not distributed.

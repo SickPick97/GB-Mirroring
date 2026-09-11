@@ -2,7 +2,7 @@
 
 Progetto sperimentale per acquisire il video di un GBA/GBA SP attraverso un adattatore Link con Raspberry Pi Pico RP2040 e arrivare a una webcam USB autonoma, senza modificare internamente la console.
 
-**Versione pacchetto 0.4.1. Nuovo prototipo video: [PROVA-VIDEO-SD.md](PROVA-VIDEO-SD.md).** Protocollo software SC/SD, cavo fisso, animazione GBA e visualizzatore PC. Obiettivo 5-10 FPS da verificare su hardware; cartucce e UVC reale non ancora implementati.
+**Versione pacchetto 0.5.0. Prova Smeraldo italiano: [PROVA-SMERALDO.md](PROVA-SMERALDO.md).** Loader residente e ricostruzione grafica PC pronti per il primo collaudo hardware. In mGBA: 90/90 immagini identiche nella sequenza provata e circa 9,46 catture/s nel campo statico; non sono FPS misurati sul GBA. Effetti per scanline e webcam UVC reale restano da implementare.
 
 ## Su un altro PC Windows
 
@@ -10,7 +10,7 @@ Progetto sperimentale per acquisire il video di un GBA/GBA SP attraverso un adat
 2. Scarica **Code → Download ZIP**, oppure clona la repository con GitHub Desktop.
 3. Estrai tutto in una cartella scrivibile. Non avviare i BAT dentro lo ZIP.
 4. Avvia **0-CONTROLLA-PC.bat**: verifica offline runtime e firmware, senza interrogare dispositivi.
-5. Apri [PROVA-VIDEO-SD.md](PROVA-VIDEO-SD.md); gli avvii sono **10-CARICA-VIDEO-SD.bat** e **11-VIDEO-SD.bat**.
+5. Segui [PROVA-SMERALDO.md](PROVA-SMERALDO.md): **12-CARICA-SMERALDO.bat** e **13-VIDEO-SMERALDO.bat**. Il banco homebrew resta disponibile con gli avvii 10/11.
 
 Il pacchetto contiene Python portatile, librerie USB, firmware UF2 e programmi multiboot compilati. Non serve l'intera cartella PROGETTO AMICO e non occorre installare strumenti di sviluppo per eseguire i test. Target attuale: Windows 10/11 x64, Pico RP2040 e GBA SP.
 
@@ -20,6 +20,7 @@ Su questo nuovo PC, se Celio non viene riconosciuto da PyUSB, conserva l'errore 
 
 | Versione firmware | Risultato |
 |---|---|
+| Smeraldo 0.5.0 | Verifiche software superate; primo collaudo hardware da eseguire. |
 | SD video 0.4.1 | 732 frame senza errori; scene FAST a 4,05 / 3,01 / 1,93 FPS. Target ancora aperto. |
 | SD video 0.4.0 | 332 frame senza errori; RAW 1,33 FPS, fase RLE prolungata 3,55 FPS. Target 5-10 ancora aperto. |
 | UVC 0.1.0 | Immagine sintetica 240x160 a 10 FPS visualizzata in Fotocamera; riapertura verificata dall'utente. |
@@ -44,4 +45,4 @@ I nuovi risultati rimangono in dist/link-reports o dist/normal-reports, esclusi 
 - vendor/celio_transport: i soli due moduli di trasporto/multiboot del pacchetto amico, invariati.
 - docs e test-results: documentazione e risultati selezionati.
 
-ROM commerciali, salvataggi, emulatori, materiale completo del progetto amico e dipendenze di compilazione scaricate non fanno parte della repository. Vedi [attribuzioni](THIRD_PARTY.md). La repository e destinata all'uso privato; nessuna nuova licenza viene applicata ai componenti di terzi.
+Il motore grafico mGBA e incluso in runtime/mgba con licenza e provenienza. ROM commerciali, salvataggi, materiale completo del progetto amico e dipendenze di compilazione scaricate non fanno parte della repository. Vedi [attribuzioni](THIRD_PARTY.md). La repository e destinata all'uso privato; nessuna nuova licenza viene applicata ai componenti di terzi.

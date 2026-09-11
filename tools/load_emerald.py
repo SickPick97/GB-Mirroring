@@ -11,7 +11,7 @@ sys.path.insert(0,str(ROOT/'tools'))
 from link_bench import Log,release
 
 def main():
-    folder=ROOT/'dist/sd-video-reports'/datetime.datetime.now().strftime('boot-%Y%m%d-%H%M%S')
+    folder=ROOT/'dist/emerald-reports'/datetime.datetime.now().strftime('boot-%Y%m%d-%H%M%S')
     folder.mkdir(parents=True,exist_ok=True)
     link=None
     stdout=sys.stdout
@@ -20,8 +20,8 @@ def main():
         try:
             from usb_link import UsbLink
             from mb_multi import Multiboot
-            data=(ROOT/'dist/gbmirroring-sd-video-v0.4.2.gba').read_bytes()
-            manifest=json.loads((ROOT/'dist/verifica-sd-gba-v0.4.2.json').read_text())
+            data=(ROOT/'dist/gbmirroring-emerald-v0.5.0.gba').read_bytes()
+            manifest=json.loads((ROOT/'dist/verifica-emerald-v0.5.0.json').read_text())
             if hashlib.sha256(data).hexdigest()!=manifest['sha256']:
                 raise RuntimeError('Hash del programma GBA diverso dal manifest')
             print('GBA acceso, slot VUOTO, Pico con firmware Celio. Non premere A sul GBA.')
@@ -29,10 +29,10 @@ def main():
             link.open()
             result=Multiboot(link,timing_fast=3700,timing_wait=129630,max_attempts=3,detect_s=8).run(data)
             (folder/'multiboot.json').write_text(json.dumps(result,indent=2))
-            print('\nMultiboot completato. Sul GBA deve apparire LOAD SD VIDEO UF2.')
-            print('LASCIA ACCESO il GBA e NON premere ancora A.')
+            print('\nMultiboot completato. Sul GBA deve apparire INSERT CART THEN START.')
+            print('Lascia acceso il GBA, inserisci Smeraldo italiano originale e premi START.')
             print('Ora cambia il firmware Pico con BOOTSEL: gbmirroring-sd-video-v0.4.0.uf2.')
-            print('Poi avvia 11-VIDEO-SD.bat. Premi A sul GBA solo quando il PC dice PRONTO.')
+            print('Poi avvia 13-VIDEO-SMERALDO.bat. Nel gioco premi SELECT + L + R solo quando il PC dice PRONTO.')
             return 0
         except (Exception,SystemExit,KeyboardInterrupt) as exc:
             print('ERRORE:',str(exc) or type(exc).__name__)

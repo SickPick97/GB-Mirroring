@@ -55,12 +55,12 @@ def main():
         assert branch>>24 == 0xea and target == 0xe0
     dist = ROOT/'dist'
     dist.mkdir(exist_ok=True)
-    result=dist/'gbmirroring-sd-video-v0.4.1.gba'
+    result=dist/'gbmirroring-sd-video-v0.4.2.gba'
     result.write_bytes(data)
     report = dict(status='compiled; hardware not tested', bytes=len(data),
                   sha256=hashlib.sha256(data).hexdigest(),load_address='0x02000000',
                   entry_offset='0xC0',start_offset='0xE0',cartridge_access=False)
-    (dist/'verifica-sd-gba-v0.4.1.json').write_text(json.dumps(report,indent=2)+'\n')
+    (dist/'verifica-sd-gba-v0.4.2.json').write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps(report,indent=2))
 
 if __name__ == '__main__':

@@ -1,5 +1,14 @@
 # Storico
 
+## 0.5.0 - Primo residente sperimentale Smeraldo italiano
+
+- Loader BPEI con controllo CRC del bootstrap, residente IRQ e sender IWRAM. Nessuna modifica alla ROM; cavo e Pico SD 0.4.0 invariati.
+- Esportazione dei soli blocchi grafici cambiati, CRC dei pacchetti, transazioni complete e recupero tramite keyframe. Renderer mGBA portatile incluso: non richiede ROM commerciali sul PC.
+- Avvii 12/13, istruzioni PROVA-SMERALDO.md, rapporti e anteprima locale. Nessuna UVC reale o riproduzione completa degli effetti per scanline.
+- Banco homebrew 0.4.2: confronto a blocchi e CRC sul payload codificato, riduzione copie e lavoro rispetto a 0.4.1.
+- Verifiche software: 9 test SD, 3 test residente/protocollo; avvio mGBA e 90/90 immagini esatte nella sequenza provata. Campo statico emulato: 9,46 catture/s e 56,74 VBlank gioco/s. Hardware e intera partita non certificati.
+
+
 ## Piano prestazioni e Smeraldo
 
 - Analizzati costi CPU, delta penalizzante nello scorrimento e budget del sender. Definito PIANO-10FPS-SMERALDO.md con priorita, criteri di verifica e integrazione grafica BPEI. Nessun software o firmware modificato.

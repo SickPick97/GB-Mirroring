@@ -19,6 +19,8 @@ def main():
     if libusb_package.get_libusb1_backend() is None:
         raise RuntimeError('Backend USB non disponibile')
     for report,binary,key in [
+        ('verifica-emerald-v0.5.0.json','gbmirroring-emerald-v0.5.0.gba','sha256'),
+        ('verifica-sd-gba-v0.4.2.json','gbmirroring-sd-video-v0.4.2.gba','sha256'),
         ('verifica-sd-gba-v0.4.1.json','gbmirroring-sd-video-v0.4.1.gba','sha256'),
         ('verifica-sd-gba.json','gbmirroring-sd-video-v0.4.0.gba','sha256'),
         ('verifica-sd-pico.json','gbmirroring-sd-video-v0.4.0.uf2','uf2_sha256'),
@@ -30,6 +32,9 @@ def main():
         expected=json.loads((ROOT/'dist'/report).read_text())[key]
         if hashlib.sha256((ROOT/'dist'/binary).read_bytes()).hexdigest()!=expected:
             raise ValueError('Firmware non corrispondente al manifest: '+binary)
+    graphics=json.loads((ROOT/'runtime/mgba/manifest.json').read_text())
+    if hashlib.sha256((ROOT/'runtime/mgba/mgba_libretro.dll').read_bytes()).hexdigest()!=graphics['sha256']:
+        raise ValueError('Core grafico mGBA incompleto o modificato')
     print('Pacchetto GBMirroring', (ROOT/'VERSION').read_text().strip())
     print('OK: runtime, librerie USB, moduli e firmware. Nessun dispositivo interrogato.')
     return 0

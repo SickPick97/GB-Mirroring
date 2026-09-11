@@ -8,11 +8,11 @@ from sd_video_protocol import Parser
 from win_serial import Serial
 from link_protocol import bmp
 ROOT=Path(__file__).resolve().parents[1]
-def main():
- folder=ROOT/'dist/sd-video-reports'/datetime.datetime.now().strftime('%Y%m%d-%H%M%S');folder.mkdir(parents=True)
+def main(emerald=False):
+ folder=ROOT/('dist/emerald-reports' if emerald else 'dist/sd-video-reports')/datetime.datetime.now().strftime('%Y%m%d-%H%M%S');folder.mkdir(parents=True)
  parser=Parser();lock=threading.Lock();stop=threading.Event();latest=[None];arrivals=collections.deque()
- stats=dict(status='WAITING',valid_frames=0,sequence_gaps=0,duplicates=0,bytes_received=0,codec=None,error=None,scope='Homebrew VRAM over software SD/SC. No cartridge or UVC support.')
- started=time.monotonic();previous=None;events=(folder/'frames.jsonl').open('w',encoding='utf-8');serial=None;server=None;worker=None
+ stats=dict(status='WAITING',valid_frames=0,sequence_gaps=0,duplicates=0,bytes_received=0,codec=None,error=None,scope='Experimental Italian Emerald graphics. Scanline effects incomplete; no UVC.' if emerald else 'Homebrew VRAM over software SD/SC. No cartridge or UVC support.')
+ started=time.monotonic();previous=None;events=(folder/'frames.jsonl').open('w',encoding='utf-8');serial=None;server=None;worker=None;renderer=None
  def snapshot():
   with lock:
    now=time.monotonic()
@@ -25,8 +25,8 @@ def main():
    while b'READY SD VIDEO 0.4.0\n' not in ready:
     ready.extend(serial.read())
     if time.monotonic()>deadline:raise RuntimeError('Firmware non pronto: usa SD Video 0.4.0 e attendi PRONTO prima di A')
-   print('PRONTO. Premi e rilascia A sul GBA. Apri http://127.0.0.1:8765',flush=True)
-   with lock:stats['status']='READY: premi A sul GBA'
+   print('PRONTO. Premi SELECT + L + R nel gioco.' if emerald else 'PRONTO. Premi e rilascia A sul GBA. Apri http://127.0.0.1:8765',flush=True)
+   with lock:stats['status']='READY: SELECT + L + R' if emerald else 'READY: premi A sul GBA'
    last_data=time.monotonic();last_save=0
    while not stop.is_set():
     data=serial.read();now=time.monotonic()
@@ -39,7 +39,7 @@ def main():
        if previous==seq:stats['duplicates']+=1;continue
        if previous is not None and seq!=((previous+1)&0xffffffff):stats['sequence_gaps']+=1
        stats['gba']=metadata
-       previous=seq;stats['valid_frames']+=1;stats['status']='STREAMING';stats['codec']=('RAW','RLE16','DELTA-RLE16')[codec];latest[0]=(seq,pixels);arrivals.append(now)
+       previous=seq;stats['valid_frames']+=1;stats['status']='STREAMING';stats['codec']=('RAW','RLE16','DELTA-RLE16','BLOCKS','GRAPHICS')[codec];latest[0]=(seq,pixels);arrivals.append(now)
       events.write(json.dumps(dict(seconds=round(now-started,4),sequence=seq,wire_bytes=wire_bytes,codec=codec,gba=metadata))+'\n');events.flush()
     if now-last_data>30:
      with lock:stats['status']='Nessun dato da 30 s: controlla GBA e collegamento'
@@ -51,7 +51,7 @@ def main():
  class Handler(BaseHTTPRequestHandler):
   def log_message(self,*args):pass
   def do_GET(self):
-   if self.path=='/':body=(ROOT/'tools/sd_video_viewer.html').read_bytes();mime='text/html; charset=utf-8'
+   if self.path=='/':body=(ROOT/('tools/emerald_viewer.html' if emerald else 'tools/sd_video_viewer.html')).read_bytes();mime='text/html; charset=utf-8'
    elif self.path=='/stats':body=json.dumps(snapshot()).encode();mime='application/json'
    elif self.path=='/frame':
     with lock:frame=latest[0]
@@ -64,6 +64,10 @@ def main():
    if self.headers.get('Origin') not in (None,'http://127.0.0.1:8765'):self.send_error(403);return
    self.send_response(200);self.end_headers();stop.set()
  try:
+  if emerald:
+   from graphics_renderer import Renderer
+   from graphics_stream import GraphicsParser
+   renderer=Renderer();parser=GraphicsParser(renderer)
   command="Get-PnpDevice -PresentOnly | Where-Object { $_.InstanceId -match 'VID_CAFE&PID_4023' } | ForEach-Object { $_.FriendlyName }"
   result=subprocess.run(['powershell.exe','-NoProfile','-Command',command],capture_output=True,text=True,check=True)
   ports=re.findall(r'\((COM\d+)\)',result.stdout)
@@ -84,9 +88,12 @@ def main():
    except Exception:pass
    serial.close()
   if server:server.server_close()
+  if renderer:renderer.close()
   events.close();r=snapshot();r['has_verified_frames']=r['valid_frames']>0
+  r['stopped_cleanly']=not r['error'] and (worker is None or not worker.is_alive())
+  if r['stopped_cleanly']:r['status']='STOPPED'
   (folder/'rapporto.json').write_text(json.dumps(r,indent=2)+'\n',encoding='utf-8')
   if latest[0]:bmp(folder/'ultimo-frame.bmp',struct.unpack('<38400H',latest[0][1]))
   print('Risultati salvati:',folder,flush=True)
  return 1 if stats['error'] else 0
-if __name__=='__main__':sys.exit(main())
+if __name__=='__main__':sys.exit(main('--emerald' in sys.argv))
