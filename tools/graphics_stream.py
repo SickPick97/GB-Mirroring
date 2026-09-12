@@ -56,7 +56,7 @@ class GraphicsParser:
    if i:self.discarded+=i;del self.buffer[:i]
    if len(self.buffer)<24:break
    h=struct.unpack_from('<12H',self.buffer)
-   if h[2] not in (0x500,0x501,0x600) or h[3]>(5 if h[2]==0x600 else 2) or h[6]>128 or h[11]!=0x5aa5 or binascii.crc_hqx(self.buffer[4:20],65535)!=h[10]:
+   if h[2] not in (0x500,0x501,0x600) or h[3]>(6 if h[2]==0x600 else 2) or h[6]>128 or h[11]!=0x5aa5 or binascii.crc_hqx(self.buffer[4:20],65535)!=h[10]:
     self.bad_headers+=1;self.cache=None;self.pending=None;del self.buffer[:1];continue
    n=24+h[6]*2
    if len(self.buffer)<n:break
@@ -73,10 +73,26 @@ class GraphicsParser:
     if key:self.dictionary={}
     self.pending=bytearray(SIZE) if key else bytearray(self.cache);self.game_frame=lo|hi<<16
    elif seq!=self.sequence or self.pending is None:continue
-   elif h[3] in (1,3,4,5):
+   elif h[3] in (1,3,4,5,6):
     block=h[7]&511 if h[2]==0x600 else h[7];slot=h[7]>>9
     if block>=393 or block in self.seen:self.fail();continue
-    if h[3]==3:
+    if h[3]==6:
+     words=struct.unpack('<'+'H'*(len(body)//2),body);result=[];pos=0;decoded=None
+     while pos<len(words):
+      token=words[pos];pos+=1
+      if token&0x8000:
+       count=((token&0x7fff)>>7)+3;distance=(token&127)+1
+       if distance>len(result) or len(result)+count>128:break
+       for _ in range(count):result.append(result[-distance])
+      else:
+       if not token or pos+token>len(words) or len(result)+token>128:break
+       result.extend(words[pos:pos+token]);pos+=token
+     else:
+      if len(result)==128:
+       decoded=struct.pack('<128H',*result)
+      else:self.fail();continue
+     if decoded is None:self.fail();continue
+    elif h[3]==3:
      if len(body)!=2:self.fail();continue
      slot=struct.unpack('<H',body)[0]
      if slot not in self.dictionary:self.fail();continue
@@ -111,7 +127,7 @@ class GraphicsParser:
     metadata=dict(version='emerald-sliced-0.5.1' if h[2]==0x501 else 'emerald-experimental',game_frame=self.game_frame,changed_blocks=count,keyframe=self.key,raster_dma_active=bool(raster),scope='Graphics cache; scanline effects and temporal coherence not fully verified')
     if h[2]==0x600:
      endlo,endhi,ticks,wordslo,wordshi,peak,mode,visits=struct.unpack_from('<8H',body,8)
-     metadata.update(version='emerald-selective-0.7.1' if mode&512 else 'emerald-selective-0.7.0' if (mode&255)==2 else 'emerald-cached-0.6.0',feedback_available=bool(mode&256),end_game_frame=endlo|(endhi<<16),capture_ticks=ticks,wire_words_before_end=wordslo|(wordshi<<16),peak_work_scanlines=peak,optimized=bool(mode),visits_low=visits)
+     metadata.update(version='emerald-selective-0.8.0' if mode&1024 else 'emerald-selective-0.7.1' if mode&512 else 'emerald-selective-0.7.0' if (mode&255)==2 else 'emerald-cached-0.6.0',feedback_available=bool(mode&256),end_game_frame=endlo|(endhi<<16),capture_ticks=ticks,wire_words_before_end=wordslo|(wordshi<<16),peak_work_scanlines=peak,optimized=bool(mode),visits_low=visits)
     frames.append((seq,pixels,self.wire+n,4,metadata))
   return frames
 

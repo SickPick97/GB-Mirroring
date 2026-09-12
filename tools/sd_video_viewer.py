@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parent));sys.dont_write_bytecode=True
 import json,time,threading,subprocess,re,datetime,collections,webbrowser,struct,queue
+from urllib.parse import urlsplit,parse_qs
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from sd_video_protocol import Parser
 from win_serial import Serial
@@ -11,14 +12,15 @@ from recovery_policy import RecoveryPolicy
 ROOT=Path(__file__).resolve().parents[1]
 def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
  folder=ROOT/('dist/emerald-reports' if emerald else 'dist/sd-video-reports')/datetime.datetime.now().strftime('%Y%m%d-%H%M%S');folder.mkdir(parents=True)
- parser=Parser();lock=threading.Lock();stop=threading.Event();latest=[None];arrivals=collections.deque()
+ parser=Parser();lock=threading.Lock();stop=threading.Event();latest=[None];arrivals=collections.deque();presentations=collections.deque();changes=collections.deque()
  stats=dict(changed_images=0,resync_requests=0,status='WAITING',valid_frames=0,sequence_gaps=0,duplicates=0,bytes_received=0,codec=None,error=None,scope='Experimental Italian Emerald graphics. Scanline effects incomplete; no UVC.' if emerald else 'Homebrew VRAM over software SD/SC. No cartridge or UVC support.')
  raw_tail=bytearray();render_queue=queue.Queue(2);render_thread=None
  stats.update(presented_frames=0,render_drops=0,render_peak_ms=0,phases=[])
  def present(seq,pixels):
   nonlocal last_pixels
   with lock:
-   if pixels!=last_pixels:stats['changed_images']+=1;last_pixels=pixels
+   now=time.monotonic();presentations.append(now)
+   if pixels!=last_pixels:stats['changed_images']+=1;last_pixels=pixels;changes.append(now)
    latest[0]=(seq,pixels);stats['presented_frames']+=1
  def render_loop():
   try:
@@ -36,6 +38,9 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
   with lock:
    now=time.monotonic()
    while arrivals and now-arrivals[0]>5:arrivals.popleft()
+   for times in (presentations,changes):
+    while times and now-times[0]>5:times.popleft()
+   stats.update(stream_fps_last_5s=round(len(arrivals)/5,2),presented_fps_last_5s=round(len(presentations)/5,2),changed_fps_last_5s=round(len(changes)/5,2))
    return dict(stats,usb_queue_peak_lag_ms=round(getattr(serial,"peak_lag_ms",0),2),unique_fps_last_5s=round(len(arrivals)/5,2),bit_resyncs=getattr(parser,"bit_resyncs",0),delta_reference_misses=parser.delta_misses,crc_errors=parser.bad_frames,repaired_payloads=getattr(parser,"repaired_payloads",0),repaired_headers=getattr(parser,"repaired_headers",0),payload_crc_errors=getattr(parser,"payload_crc_errors",0),transaction_errors=getattr(parser,"transaction_errors",0),last_validation_error=getattr(parser,"last_error",None),header_errors=parser.bad_headers,discarded_bytes=parser.discarded,elapsed_seconds=round(now-started,1))
  def reader():
   nonlocal previous,last_pixels
@@ -89,9 +94,11 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
   def do_GET(self):
    if self.path.split('?')[0]=='/':body=(ROOT/('tools/emerald_viewer.html' if emerald else 'tools/sd_video_viewer.html')).read_bytes();mime='text/html; charset=utf-8'
    elif self.path=='/stats':body=json.dumps(snapshot()).encode();mime='application/json'
-   elif self.path=='/frame':
+   elif urlsplit(self.path).path=='/frame':
     with lock:frame=latest[0]
     if frame is None:self.send_response(204);self.end_headers();return
+    if parse_qs(urlsplit(self.path).query).get('after')==[str(frame[0])]:
+     self.send_response(204);self.send_header('Cache-Control','no-store');self.end_headers();return
     self.send_response(200);self.send_header('Content-Type','application/octet-stream');self.send_header('Cache-Control','no-store');self.send_header('X-Frame',str(frame[0]));self.send_header('Content-Length',str(len(frame[1])));self.end_headers();self.wfile.write(frame[1]);return
    else:self.send_error(404);return
    self.send_response(200);self.send_header('Content-Type',mime);self.send_header('Cache-Control','no-store');self.send_header('Content-Length',str(len(body)));self.end_headers();self.wfile.write(body)

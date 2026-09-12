@@ -39,6 +39,8 @@ class Tests(unittest.TestCase):
      assert stats['valid_frames']==2
      response=urllib.request.urlopen(url+'/frame',timeout=2)
      assert response.read()==bytes(76800)
+     seq=response.headers['X-Frame']
+     assert urllib.request.urlopen(url+'/frame?after='+seq,timeout=2).status==204
      assert b'canvas' in urllib.request.urlopen(url,timeout=2).read()
      if emerald:
       assert b'canvas' in urllib.request.urlopen(url+'/?clean=1',timeout=2).read()
@@ -46,6 +48,8 @@ class Tests(unittest.TestCase):
       phase_stats=json.loads(urllib.request.urlopen(url+'/stats',timeout=2).read())
       assert phase_stats['phases'][-1]['phase']=='cammino'
       assert phase_stats['presented_frames']>0
+      assert phase_stats['stream_fps_last_5s']==.4
+      assert phase_stats['changed_fps_last_5s']==.2
      urllib.request.urlopen(urllib.request.Request(url+'/stop',data=b'',method='POST'),timeout=2).read()
     except Exception as exc:errors.append(exc)
    thread=threading.Thread(target=check,daemon=True);thread.start();return True
@@ -135,5 +139,5 @@ class Tests(unittest.TestCase):
 if __name__=='__main__':
  r=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(Tests))
  import json
- (ROOT/'dist/verifica-viewer-software-v0.7.1.json').write_text(json.dumps(dict(passed=r.wasSuccessful(),tests=r.testsRun,scope='Actual GBA GPIO output and VRAM reconstruction in ARM emulation; corrupted stream tests. No real pin timing, Windows USB or achieved FPS claim.'),indent=2)+'\n')
+ (ROOT/'dist/verifica-viewer-software-v0.8.0.json').write_text(json.dumps(dict(passed=r.wasSuccessful(),tests=r.testsRun,scope='Actual GBA GPIO output and VRAM reconstruction in ARM emulation; corrupted stream tests. No real pin timing, Windows USB or achieved FPS claim.'),indent=2)+'\n')
  sys.exit(not r.wasSuccessful())

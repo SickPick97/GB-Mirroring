@@ -1,8 +1,8 @@
 # GBMirroring
 
-Progetto sperimentale per acquisire il video di un GBA/GBA SP attraverso un adattatore Link con Raspberry Pi Pico RP2040 e arrivare a una webcam USB autonoma, senza modificare internamente la console.
+Streaming del video di un GBA/GBA SP attraverso un adattatore Link con Raspberry Pi Pico RP2040, senza modificare internamente la console. Uscita definitiva scelta: pagina web locale; la webcam USB autonoma non e piu un requisito.
 
-**Versione pacchetto 0.7.1. [Prova integrata Smeraldo](PROVA-SMERALDO.md).** Correzione delle pause osservate nella 0.7.0: recupero CRC degli errori singoli, richieste di ripristino senza ripetizioni dopo il recupero, cache conservata fra transizioni completate. Pico 0.7.0 invariato: chi lo ha gia installato non deve rifare il flash. Correzioni verificate in software; risultato hardware da confermare. UVC autonoma non inclusa.
+**Versione pacchetto 0.8.0. [Avvio e prova](PROVA-SMERALDO.md).** Cadenza fino a una cattura ogni 3 VBlank, nuova compressione grafica senza perdita e pagina web rinnovata. Pico 0.7.0 invariato. In emulazione circa 18 catture/s; risultato hardware da misurare. La 0.7.1 ha raggiunto 5,81 FPS medi nel test, senza blocchi alternati secondo l utente.
 
 ## Su un altro PC Windows
 

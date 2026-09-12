@@ -1,6 +1,6 @@
 # Collaborazione GBMirroring
 
-- Lingua dell'utente: italiano. Scopo finale: GBA SP senza modifiche interne, Pico RP2040, webcam USB autonoma. Il loader potra riconoscere profili di cartuccia progressivamente.
+- Lingua dell'utente: italiano. Scopo finale aggiornato il 2026-09-12: GBA SP senza modifiche interne, Pico RP2040, streaming fluido su pagina web locale curata. Webcam USB autonoma non piu richiesta dall utente. Il loader potra riconoscere profili di cartuccia progressivamente.
 - Leggere README.md, CHANGELOG.md e docs/VALIDAZIONE-HARDWARE.md prima di proseguire. Non confondere prove software, UVC sintetico e cattura reale dalle cartucce.
 - Mantenere portatili percorsi e BAT. Il runtime utente e runtime/python; i moduli preesistenti sono vendor/celio_transport. Non rendere necessaria PROGETTO AMICO per avviare i test.
 - Non modificare i moduli originali sotto vendor senza motivazione documentata. Non includere ROM commerciali, salvataggi, credenziali o materiali estranei nei commit.

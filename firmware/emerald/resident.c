@@ -61,6 +61,27 @@ __attribute__((section(".scheduler"))) static unsigned compress(const volatile u
  }
  return n;
 }
+/* Local word back-references: bounded work and no persistent graphics copy.
+   Only replace the existing encoding when strictly smaller. */
+__attribute__((section(".scheduler"))) unsigned compress_lz(const volatile uint16_t *src,unsigned limit){
+ uint16_t out[128];int16_t last[64];unsigned n=0,i=0,literal=0;
+ for(unsigned k=0;k<64;k++)last[k]=-1;
+ while(i<128){
+  unsigned value=src[i],slot=(value^(value>>6))&63,length=0;
+  int prev=last[slot];last[slot]=i;
+  if(prev>=0 && src[prev]==value){while(i+length<128 && src[prev+length]==src[i+length])length++;}
+  if(length>=3){
+   if(n+1>=limit)return limit;
+   out[n++]=0x8000|((length-3)<<7)|(i-(unsigned)prev-1);i+=length;literal=0;
+  }else{
+   if(n+2>=limit)return limit;
+   if(!literal){literal=++n;out[literal-1]=0;}
+   out[n++]=value;out[literal-1]++;i++;
+  }
+ }
+ for(unsigned k=0;k<n;k++)packet[12+k]=out[k];
+ return n;
+}
 /* Explicit half-duplex slot: GBA releases SD before holding SC high.
    Pico releases SD on the final falling edge before GBA drives it again. */
 __attribute__((section(".scheduler"))) static void poll_control(void){
@@ -96,11 +117,11 @@ __attribute__((section(".scheduler"))) void tick(void){
  if(entry_line<160 || entry_line>=224)return;
  unsigned spent=0;
  if(!active){
-  if((uint32_t)(now-last_capture)<6)return;
+  unsigned elapsed=now-last_capture;if(elapsed<3)return;
   last_capture=now;capture_frame=now;cursor=0;changed=0;active=1;capture_ticks=0;capture_words=0;peak_lines=0;
   key=!valid || since_key>=(feedback?3600:120);if(key){since_key=0;known[0]=known[1]=0;hot_known=0;}since_key++;
   if(key || U32(0x030022cc)!=0x080863a5){for(unsigned i=0;i<13;i++)dirty_mask[i]=~0u;}
-  else {dirty_mask[0]|=511;for(unsigned i=0;i<48;i++){unsigned b=9+audit_cursor;dirty_mask[b>>5]|=1u<<(b&31);audit_cursor++;if(audit_cursor==384)audit_cursor=0;}}
+  else {dirty_mask[0]|=511;for(unsigned i=0;i<(elapsed<6?24u:48u);i++){unsigned b=9+audit_cursor;dirty_mask[b>>5]|=1u<<(b&31);audit_cursor++;if(audit_cursor==384)audit_cursor=0;}}
   packet[12]=key;packet[13]=now;packet[14]=now>>16;emit(0,0,3);spent=15;
   for(unsigned i=0;i<24;i++)regblock[i]=U32(0x03000818+i*4);
   for(unsigned i=24;i<64;i++)regblock[i]=0;
@@ -127,6 +148,7 @@ __attribute__((section(".scheduler"))) void tick(void){
     for(unsigned i=0;i<128;i++)if(words[i]!=previous_hot[hot][i]){packet[12+(i>>4)]|=1u<<(i&15);packet[12+n++]=words[i];}
    }
   }
+  if(type!=3 && n>32){unsigned packed=compress_lz((const volatile uint16_t*)src,n);if(packed<n){n=packed;type=6;}}
   if(spent+n+12>155)break;
   emit(type,type==3?block:(slot<<9)|block,n);spent+=n+12;
   hashes[block][0]=h[0];hashes[block][1]=h[1];dictionary[slot][0]=h[0];dictionary[slot][1]=h[1];known[slot>>5]|=1u<<(slot&31);
@@ -137,7 +159,7 @@ __attribute__((section(".scheduler"))) void tick(void){
  unsigned end_line=U16(0x04000006),lines=(end_line+228-entry_line)%228;if(lines>peak_lines)peak_lines=lines;
  if(cursor==393 && spent+25<=155){
   packet[12]=capture_frame;packet[13]=capture_frame>>16;packet[14]=changed;packet[15]=(U16(0x040000ba)&0x8000)!=0;
-  packet[16]=now;packet[17]=now>>16;packet[18]=capture_ticks;packet[19]=capture_words;packet[20]=capture_words>>16;packet[21]=peak_lines;packet[22]=optimized|(feedback<<8)|512;packet[23]=visits;
+  packet[16]=now;packet[17]=now>>16;packet[18]=capture_ticks;packet[19]=capture_words;packet[20]=capture_words>>16;packet[21]=peak_lines;packet[22]=optimized|(feedback<<8)|1024;packet[23]=visits;
   emit(2,0,12);
   /* Flush the final END bits from a possibly shifted 16-bit RX group. */
   packet[0]=0;((void(*)(const uint16_t*,unsigned))fast_begin)(packet,1);

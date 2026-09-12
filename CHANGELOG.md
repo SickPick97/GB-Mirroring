@@ -1,5 +1,14 @@
 # Storico
 
+## 0.8.0 - Cadenza piu rapida e visualizzatore web
+
+- Hardware 0.7.1: 1059 frame consecutivi, 5,805 FPS medi tra arrivi verificati, gap massimo 2,836 s, tre keyframe. Una richiesta di recupero; 31 payload e 18 header recuperati. Utente conferma scomparsa dei blocchi alternati e migliori transizioni. Evidenza selezionata in test-results/2026-09-12-emerald-v0.7.1.
+- Obiettivo aggiornato: la pagina web e l uscita definitiva; UVC autonoma non piu richiesta.
+- Avvio cattura ogni 3 VBlank invece di 6; audit 24 blocchi quando rapido, 48 se trascorrono almeno 6 VBlank. Limite di trasmissione per intervento resta 155 parole, soglie VCOUNT e slot feedback invariati. Il maggior numero di catture e la compressione aumentano comunque il lavoro totale, da verificare sul GBA.
+- Codec locale LZ di parole, senza cache aggiuntiva persistente: usa riferimenti a sequenze gia presenti nello stesso blocco, solo se piu corto del precedente formato. Costi limitati a 128 parole, decoder con limiti su riferimenti e lunghezze. Sul campione di 200 blocchi raw/RLE della coda hardware: payload 48888 -> 37202 byte (-23,9%); non e una misura dell intero stream.
+- Pagina rinnovata, schermo intero, vista OBS pulita, diagnostica richiudibile e metriche distinte. Richieste video senza ritrasmissione dei frame invariati; statistiche aggiornate separatamente una volta al secondo.
+- Nuovo loader 0.8.0 pronto; Pico 0.7.0 invariato. B avvia la baseline 0.7.1. Controlli ARM, codec, CRC, viewer HTTP, multiboot simulato e mGBA; in emulazione circa 18 catture/s, non una promessa di FPS hardware. Nessuna modifica al cavo o alla console.
+
 ## 0.7.1 - Riduzione dei ripristini e recupero degli errori singoli
 
 - Test hardware 0.7.0: 1038 transazioni, 4,605 FPS tra arrivi verificati, gap massimo 8,609 s, 16 keyframe e 21 richieste di recupero. Utente segnala pause ripetute; evidenza selezionata in test-results/2026-09-12-emerald-v0.7.0.

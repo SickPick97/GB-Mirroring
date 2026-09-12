@@ -1,0 +1,42 @@
+{
+  "package": "0.7.1",
+  "frames": 1059,
+  "first_seconds": 146.4828,
+  "last_seconds": 328.7328,
+  "fps": 5.805212620027435,
+  "sequences": [
+    3,
+    1061
+  ],
+  "keyframes": [
+    3,
+    421,
+    492
+  ],
+  "max_gap_seconds": 2.8355999999999995,
+  "counts": {
+    "changed_images": 702,
+    "resync_requests": 1,
+    "sequence_gaps": 0,
+    "render_drops": 0,
+    "repaired_payloads": 31,
+    "repaired_headers": 18,
+    "payload_crc_errors": 46,
+    "header_errors": 12,
+    "delta_reference_misses": 2,
+    "usb_queue_peak_lag_ms": 12.31
+  },
+  "multiboot": {
+    "byte": 5728,
+    "durata": 8.132812976837158,
+    "parole_inviate": 2923,
+    "risposte_lette": 2923,
+    "scartate": 45,
+    "desync": 0,
+    "riavvii": 0,
+    "parole_s": 359.4082402146608,
+    "crc": 58805
+  },
+  "user": "Alternating stalls gone; smoother stream and improved menu transitions. Requests twice the FPS and accepts web viewer as final output; autonomous webcam no longer required.",
+  "scope": "Counters cover entire session including startup; verified-arrival FPS excludes initial wait. Image inspected, no simultaneous GBA reference."
+}

@@ -1,0 +1,7 @@
+{
+  "blocks": 200,
+  "improved_blocks": 180,
+  "before_payload_bytes": 48888,
+  "after_payload_bytes": 37202,
+  "scope": "Actual ARM encoder, validated raw/RLE blocks from final USB tail. Excludes references, hot patches, headers and rendering; not a whole-stream FPS estimate."
+}
