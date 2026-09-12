@@ -1,0 +1,8 @@
+{
+  "upstream": "https://github.com/libretro/mgba",
+  "commit": "e31759b24e7a4e3899285ff720d7b573ac328ae7",
+  "license": "MPL-2.0",
+  "source_sha256": "27449f2064ee44261429d9c75406b58df25c0ca95c5a0510058f3b60abd08507",
+  "files": 175,
+  "scope": "Unmodified headers and software renderer translation units required for this DLL; no game content."
+}

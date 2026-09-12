@@ -25,3 +25,7 @@ Sequenza PIO master adattata dalla variante GBA del file Celio linkLayer_pio.c, 
 Unmodified Windows x86_64 core 0.11-219-e31759b, copyright mGBA contributors, MPL-2.0. License and provenance in runtime/mgba. Corresponding source: https://github.com/libretro/mgba/tree/e31759b . The receiver uses only our own homebrew and exported graphics; commercial ROMs and saves are not distributed.
 
 Il firmware unificato 0.6.0 riutilizza la sequenza master PIO attribuita a Celio nel banco 0.3.7. Il protocollo multiboot esistente e richiamato da un nuovo adattatore CDC senza modifiche ai moduli vendor.
+
+## Renderer nativo in sviluppo
+
+`runtime/native/gbm_renderer.dll` compila direttamente cinque unita del renderer software mGBA, senza CPU, audio o ROM commerciale. Commit upstream completo `e31759b24e7a4e3899285ff720d7b573ac328ae7`, autori mGBA, MPL-2.0. Le unita originali non sono modificate. Sorgenti e header necessari, con licenza originale, sono inclusi in `native/renderer/mgba-source.zip`; checksum in `upstream.json`. L'adattatore e in `native/renderer/renderer.c`, la build offline in `tools/build_native_renderer.py`. Licenza e manifest del binario sono inclusi in `runtime/native`.

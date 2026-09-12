@@ -1,0 +1,10 @@
+{
+  "scope": "Emulated coherent snapshots every frame. Resource estimate is not implemented transport or hardware FPS.",
+  "frames": 900,
+  "pixel_mismatch_frames": 0,
+  "legacy_samples": 30,
+  "legacy_mismatch_frames": 0,
+  "native_ms_median": 1.3647499999998036,
+  "native_ms_p95": 2.452399999999244,
+  "estimated_bytes_per_second": 7655.085656284761
+}

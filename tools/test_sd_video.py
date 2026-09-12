@@ -44,9 +44,13 @@ class Tests(unittest.TestCase):
      assert b'canvas' in urllib.request.urlopen(url,timeout=2).read()
      if emerald:
       assert b'canvas' in urllib.request.urlopen(url+'/?clean=1',timeout=2).read()
+      assert b'class Playout' in urllib.request.urlopen(url+'/playout.js',timeout=2).read()
+      telemetry=dict(presented=2,dropped=0,resets=0,queued=0,fps=.4,late_ms=1,hidden=False)
+      urllib.request.urlopen(urllib.request.Request(url+'/presentation',data=json.dumps(telemetry).encode(),method='POST'),timeout=2).read()
       urllib.request.urlopen(urllib.request.Request(url+'/phase',data=b'cammino',method='POST'),timeout=2).read()
       phase_stats=json.loads(urllib.request.urlopen(url+'/stats',timeout=2).read())
       assert phase_stats['phases'][-1]['phase']=='cammino'
+      assert phase_stats['browser']['presented']==2
       assert phase_stats['presented_frames']>0
       assert phase_stats['stream_fps_last_5s']==.4
       assert phase_stats['changed_fps_last_5s']==.2
@@ -56,6 +60,7 @@ class Tests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d);(root/'tools').mkdir();(root/'tools/sd_video_viewer.html').write_bytes((ROOT/'tools/sd_video_viewer.html').read_bytes())
    (root/'tools/emerald_viewer.html').write_bytes((ROOT/'tools/emerald_viewer.html').read_bytes())
+   (root/'tools/playout.js').write_bytes((ROOT/'tools/playout.js').read_bytes())
    result=type('Result',(),{'stdout':'GBMirroring (COM99)'})()
    with patch.object(viewer,'ROOT',root),patch.object(viewer,'Serial',FakeSerial),patch.object(viewer.subprocess,'run',return_value=result),patch.object(viewer.webbrowser,'open',side_effect=browser),patch('unified_boot.boot') as boot_mock:
     self.assertEqual(viewer.main(emerald,unified=unified),0)
@@ -139,5 +144,5 @@ class Tests(unittest.TestCase):
 if __name__=='__main__':
  r=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(Tests))
  import json
- (ROOT/'dist/verifica-viewer-software-v0.8.0.json').write_text(json.dumps(dict(passed=r.wasSuccessful(),tests=r.testsRun,scope='Actual GBA GPIO output and VRAM reconstruction in ARM emulation; corrupted stream tests. No real pin timing, Windows USB or achieved FPS claim.'),indent=2)+'\n')
+ (ROOT/'build/verifica-viewer-development.json').write_text(json.dumps(dict(passed=r.wasSuccessful(),tests=r.testsRun,scope='Actual GBA GPIO output and VRAM reconstruction in ARM emulation; corrupted stream tests. No real pin timing, Windows USB or achieved FPS claim.'),indent=2)+'\n')
  sys.exit(not r.wasSuccessful())

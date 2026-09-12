@@ -42,6 +42,9 @@ def main():
     graphics=json.loads((ROOT/'runtime/mgba/manifest.json').read_text())
     if hashlib.sha256((ROOT/'runtime/mgba/mgba_libretro.dll').read_bytes()).hexdigest()!=graphics['sha256']:
         raise ValueError('Core grafico mGBA incompleto o modificato')
+    native=json.loads((ROOT/'runtime/native/manifest.json').read_text())
+    if hashlib.sha256((ROOT/'runtime/native/gbm_renderer.dll').read_bytes()).hexdigest()!=native['sha256']:
+        raise ValueError('Renderer nativo incompleto o modificato')
     print('Pacchetto GBMirroring', (ROOT/'VERSION').read_text().strip())
     print('OK: runtime, librerie USB, moduli e firmware. Nessun dispositivo interrogato.')
     return 0

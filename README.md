@@ -2,7 +2,7 @@
 
 Streaming del video di un GBA/GBA SP attraverso un adattatore Link con Raspberry Pi Pico RP2040, senza modificare internamente la console. Uscita definitiva scelta: pagina web locale; la webcam USB autonoma non e piu un requisito.
 
-**Pacchetto 0.8.0 collaudato: 10,26 FPS medi, zero errori di protocollo; scatti percepiti solo sul PC.** [Avvio](PROVA-SMERALDO.md). [Nuovo piano 30-60 FPS](PIANO-STREAMING-30-60.md): sola analisi, nessuna nuova versione software. Utente accetta 150-250 ms di ritardo e cache grafica locale automatica. Target 30-50+ ancora da raggiungere.
+**Pacchetto 0.8.0 collaudato: 10,26 FPS medi, zero errori di protocollo; scatti percepiti solo sul PC.** [Avvio](PROVA-SMERALDO.md). [Nuovo piano 30-60 FPS](PIANO-STREAMING-30-60.md): [Sviluppo in corso](docs/SVILUPPO-30-FPS.md): renderer diretto e presentazione temporizzata implementati sul PC; nuovo trasporto GBA ancora da completare. Nessuna nuova release hardware. Per il pacchetto collaudato usare il tag 0.8.0. Utente accetta 150-250 ms di ritardo e cache grafica locale automatica. Target 30-50+ ancora da raggiungere.
 
 ## Su un altro PC Windows
 
