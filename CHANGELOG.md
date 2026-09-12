@@ -1,5 +1,11 @@
 # Storico
 
+## Analisi hardware 0.8.0 e piano 30-60 FPS
+
+- 3119 frame consecutivi, 10,2575 FPS medi, zero CRC/header/recuperi/salti. Intervalli mediana 60,1 ms, p95 228,2 ms; utente segnala scatti soltanto sul PC. Evidenza selezionata in test-results/2026-09-12-emerald-v0.8.0.
+- Utente accetta ritardo 150-250 ms e cache locale automatica dalla cartuccia. Piano strutturale in PIANO-STREAMING-30-60.md: stato rapido, risorse versionate, renderer diretto e presentazione temporizzata. Target minimo circa 30, obiettivo 50+; fattibilita per tutte le scene ancora da verificare.
+- Nessun sorgente applicativo, firmware, binario o numero di versione modificato.
+
 ## 0.8.0 - Cadenza piu rapida e visualizzatore web
 
 - Hardware 0.7.1: 1059 frame consecutivi, 5,805 FPS medi tra arrivi verificati, gap massimo 2,836 s, tre keyframe. Una richiesta di recupero; 31 payload e 18 header recuperati. Utente conferma scomparsa dei blocchi alternati e migliori transizioni. Evidenza selezionata in test-results/2026-09-12-emerald-v0.7.1.

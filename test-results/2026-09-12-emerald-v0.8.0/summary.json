@@ -1,0 +1,196 @@
+{
+  "package": "0.8.0",
+  "overall": {
+    "frames": 3119,
+    "fps": 10.257503472352441,
+    "interval_ms": {
+      "0.5": 60.1,
+      "0.95": 228.2,
+      "0.99": 513.8,
+      "1": 8314.4
+    },
+    "median_capture_ticks": 2
+  },
+  "phases": [
+    {
+      "label": "statico",
+      "start": 191.099,
+      "end": 213.328,
+      "metrics": {
+        "frames": 190,
+        "fps": 8.517043098941905,
+        "interval_ms": {
+          "0.5": 60.3,
+          "0.95": 302.4,
+          "0.99": 513.9,
+          "1": 2661.2
+        },
+        "median_capture_ticks": 2.0
+      }
+    },
+    {
+      "label": "cammino",
+      "start": 213.328,
+      "end": 234.414,
+      "metrics": {
+        "frames": 106,
+        "fps": 4.988550089793907,
+        "interval_ms": {
+          "0.5": 90.7,
+          "0.95": 1109.1,
+          "0.99": 1709.7,
+          "1": 2309.1
+        },
+        "median_capture_ticks": 3.5
+      }
+    },
+    {
+      "label": "menu",
+      "start": 234.414,
+      "end": 248.352,
+      "metrics": {
+        "frames": 205,
+        "fps": 14.675836666570756,
+        "interval_ms": {
+          "0.5": 46.1,
+          "0.95": 137.0,
+          "0.99": 184.1,
+          "1": 2304.9
+        },
+        "median_capture_ticks": 1
+      }
+    },
+    {
+      "label": "centro",
+      "start": 248.352,
+      "end": 312.487,
+      "metrics": {
+        "frames": 602,
+        "fps": 9.381214469235545,
+        "interval_ms": {
+          "0.5": 61.0,
+          "0.95": 288.2,
+          "0.99": 513.8,
+          "1": 2669.2
+        },
+        "median_capture_ticks": 3.0
+      }
+    },
+    {
+      "label": "battaglia",
+      "start": 312.487,
+      "end": 345.4421,
+      "metrics": {
+        "frames": 291,
+        "fps": 8.809957074243632,
+        "interval_ms": {
+          "0.5": 46.8,
+          "0.95": 227.7,
+          "0.99": 398.0,
+          "1": 8314.4
+        },
+        "median_capture_ticks": 1
+      }
+    }
+  ],
+  "phase_scope": "Manual labels, not independently verified scene boundaries; early part unlabelled.",
+  "first_seconds": 41.4685,
+  "last_seconds": 345.4411,
+  "first_sequence": 0,
+  "last_sequence": 3118,
+  "keyframes": [
+    {
+      "sequence": 0,
+      "seconds": 41.4685,
+      "wire_bytes": 33488,
+      "capture_ticks": 149
+    },
+    {
+      "sequence": 824,
+      "seconds": 103.0893,
+      "wire_bytes": 25326,
+      "capture_ticks": 118
+    },
+    {
+      "sequence": 1023,
+      "seconds": 116.2298,
+      "wire_bytes": 33876,
+      "capture_ticks": 148
+    },
+    {
+      "sequence": 1308,
+      "seconds": 160.6456,
+      "wire_bytes": 23536,
+      "capture_ticks": 109
+    },
+    {
+      "sequence": 1844,
+      "seconds": 201.539,
+      "wire_bytes": 25308,
+      "capture_ticks": 118
+    },
+    {
+      "sequence": 1861,
+      "seconds": 205.0376,
+      "wire_bytes": 33870,
+      "capture_ticks": 147
+    },
+    {
+      "sequence": 2009,
+      "seconds": 232.5144,
+      "wire_bytes": 25466,
+      "capture_ticks": 130
+    },
+    {
+      "sequence": 2086,
+      "seconds": 241.2114,
+      "wire_bytes": 25502,
+      "capture_ticks": 120
+    },
+    {
+      "sequence": 2293,
+      "seconds": 254.546,
+      "wire_bytes": 33536,
+      "capture_ticks": 147
+    },
+    {
+      "sequence": 2829,
+      "seconds": 313.9794,
+      "wire_bytes": 16788,
+      "capture_ticks": 75
+    },
+    {
+      "sequence": 2893,
+      "seconds": 328.0142,
+      "wire_bytes": 32950,
+      "capture_ticks": 152
+    }
+  ],
+  "wire_bytes_verified": 2266564,
+  "header_bytes_estimate": 581832,
+  "counts": {
+    "changed_images": 1807,
+    "resync_requests": 0,
+    "sequence_gaps": 0,
+    "crc_errors": 0,
+    "header_errors": 0,
+    "render_drops": 0,
+    "render_peak_ms": 32.76,
+    "usb_queue_peak_lag_ms": 11.44,
+    "repaired_payloads": 0,
+    "repaired_headers": 0
+  },
+  "multiboot": {
+    "byte": 6224,
+    "durata": 8.216517210006714,
+    "parole_inviate": 3255,
+    "risposte_lette": 3255,
+    "scartate": 37,
+    "desync": 0,
+    "riavvii": 0,
+    "parole_s": 396.15325043508795,
+    "crc": 51504
+  },
+  "user_feedback": "Microlags only on PC; GBA smooth. Accepts 150-250 ms delay and automatic local graphics cache preparation. Requests plan only for >=30 FPS, preferably 50 or near 60.",
+  "scope": "No implementation changes. Host logs do not measure browser presentation times; VBlank counter is not a gameplay/audio benchmark."
+}
