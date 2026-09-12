@@ -4,11 +4,35 @@
 #include "hardware/pio.h"
 #include "hardware/dma.h"
 #include "tusb.h"
+/* control.pio assembled words, checked against the independent PIO model. */
+static const uint16_t control_code[]={0xe080,0x2080,0xe05f,0x00c5,0x0000,0x0083,0xe020,0x8080,0x6001,0xe081,0x2000,0x6001,0x2080,0x2000,0xe080,0x000f};
+static const struct pio_program video_control_program={.instructions=control_code,.length=16,.origin=-1};
 static uint32_t ring[8192] __attribute__((aligned(32768)));
 static const uint16_t instructions[]={0x2000,0x2080,0x4001};
 static const struct pio_program program={.instructions=instructions,.length=3,.origin=-1};
+static uint csm,coffset;
+static bool control_enabled,control_request,control_active;
+static uint64_t control_until;
+static uint32_t control_shift;static unsigned control_bits,control_count;static uint16_t control_packet[24];
+static void control_word(uint16_t w){
+ for(int i=15;i>=0;i--){
+  control_shift=(control_shift<<1)|((w>>i)&1);
+  if(control_shift==0xb47e5647){control_count=2;control_bits=0;control_packet[0]=0xb47e;control_packet[1]=0x5647;continue;}
+  if(!control_count || ++control_bits<16)continue;
+  control_bits=0;control_packet[control_count++]=(uint16_t)control_shift;
+  if(control_count!=24)continue;
+  control_count=0;
+  if(!control_enabled || control_packet[2]!=0x600 || control_packet[3]!=2 || control_packet[6]!=12 || control_packet[11]!=0x5aa5 || (control_packet[22]&255)!=2)continue;
+  uint16_t h=65535;uint32_t crc=~0u;const uint8_t *p=(const uint8_t*)control_packet;
+  for(unsigned j=4;j<20;j++){h^=(uint16_t)p[j]<<8;for(unsigned k=0;k<8;k++)h=(uint16_t)((h<<1)^((h&0x8000)?0x1021:0));}
+  for(unsigned j=24;j<48;j++){crc^=p[j];for(unsigned k=0;k<8;k++)crc=(crc>>1)^((0u-(crc&1))&0xedb88320u);}
+  if(h!=control_packet[10] || (~crc)!=(uint32_t)(control_packet[8]|((uint32_t)control_packet[9]<<16)))continue;
+  pio_sm_set_enabled(pio0,csm,false);pio_sm_clear_fifos(pio0,csm);pio_sm_restart(pio0,csm);pio_sm_exec(pio0,csm,pio_encode_jmp(coffset));
+  pio_sm_put(pio0,csm,control_request?2:0);control_request=false;control_until=time_us_64()+1500;control_active=true;pio_sm_set_enabled(pio0,csm,true);
+ }
+}
 static uint sm,offset;static int dma;static bool armed;static uint32_t consumed;
-static void video_stop(void){pio_sm_set_enabled(pio0,sm,false);dma_channel_abort(dma);armed=false;}
+static void video_stop(void){pio_sm_set_enabled(pio0,csm,false);pio_sm_set_consecutive_pindirs(pio0,csm,3,1,false);pio_sm_set_enabled(pio0,sm,false);dma_channel_abort(dma);armed=false;control_enabled=false;control_active=false;control_count=0;}
 static void video_start(void){video_stop();pio_sm_clear_fifos(pio0,sm);pio_sm_restart(pio0,sm);pio_sm_exec(pio0,sm,pio_encode_jmp(offset));pio_sm_exec(pio0,sm,pio_encode_mov(pio_isr,pio_null));pio0->fdebug=0xffffffff;dma_channel_set_write_addr(dma,ring,false);dma_channel_set_trans_count(dma,0xffffffff,true);consumed=0;armed=true;pio_sm_set_enabled(pio0,sm,true);tud_cdc_write_str("READY SD VIDEO 0.4.0\n");tud_cdc_write_flush();}
 
 /* Multiplayer PIO from the hardware-tested 0.3.7; only one bus owner. */
@@ -29,15 +53,20 @@ static void boot_start(void){
 }
 static void begin_video(void){
  release_bus();gpio_pull_up(0);gpio_pull_up(3);pio_gpio_init(pio0,0);pio_gpio_init(pio0,3);video_start();
+ pio_sm_clear_fifos(pio0,csm);pio_sm_restart(pio0,csm);pio_sm_exec(pio0,csm,pio_encode_jmp(coffset));
 }
 static void command(const char *s){
  if(!strcmp(s,"BOOT"))boot_start();
  else if(!strcmp(s,"START"))begin_video();
+ else if(!strcmp(s,"CONTROL")){if(armed)control_enabled=true;}
+ else if(!strcmp(s,"RESYNC")){if(armed)control_request=true;}
  else if(!strcmp(s,"STOP"))release_bus();
  else if(s[0]=='T'){unsigned v=(unsigned)strtoul(s+1,0,10);if(v<=1000000)timing=v;}
  else if(s[0]=='W'){unsigned v=(unsigned)strtoul(s+1,0,10);if(v<=4096){remaining=v*2;half=false;}}
 }
 int main(void){
+ csm=pio_claim_unused_sm(pio0,true);coffset=pio_add_program(pio0,&video_control_program);
+ pio_sm_config cc=pio_get_default_sm_config();sm_config_set_wrap(&cc,coffset,coffset+15);sm_config_set_set_pins(&cc,3,1);sm_config_set_out_pins(&cc,3,1);sm_config_set_jmp_pin(&cc,0);sm_config_set_out_shift(&cc,true,false,32);sm_config_set_clkdiv(&cc,16);pio_sm_init(pio0,csm,coffset,&cc);
  sm=pio_claim_unused_sm(pio0,true);offset=pio_add_program(pio0,&program);pio_sm_config c=pio_get_default_sm_config();
  sm_config_set_wrap(&c,offset,offset+2);sm_config_set_in_pins(&c,3);sm_config_set_in_shift(&c,false,true,16);sm_config_set_fifo_join(&c,PIO_FIFO_JOIN_RX);pio_sm_init(pio0,sm,offset,&c);
  dma=dma_claim_unused_channel(true);dma_channel_config dc=dma_channel_get_default_config(dma);channel_config_set_transfer_data_size(&dc,DMA_SIZE_32);channel_config_set_read_increment(&dc,false);channel_config_set_write_increment(&dc,true);channel_config_set_ring(&dc,true,15);channel_config_set_dreq(&dc,pio_get_dreq(pio0,sm,false));dma_channel_configure(dma,&dc,ring,&pio0->rxf[sm],0,false);
@@ -45,7 +74,8 @@ int main(void){
  tusb_rhport_init_t init={.role=TUSB_ROLE_DEVICE,.speed=TUSB_SPEED_FULL};tusb_init(0,&init);
  char cmd[32];unsigned n=0;
  for(;;){
-  tud_task();if(!tud_cdc_connected()){release_bus();remaining=0;n=0;continue;}
+  tud_task();if(control_active && time_us_64()>=control_until){pio_sm_set_enabled(pio0,csm,false);pio_sm_set_consecutive_pindirs(pio0,csm,3,1,false);control_active=false;}
+  if(!tud_cdc_connected()){release_bus();remaining=0;n=0;continue;}
   while(tud_cdc_available()){
    if(remaining && head-tail>=8192)break;
    unsigned ch=(unsigned char)tud_cdc_read_char();
@@ -63,7 +93,7 @@ int main(void){
   uint32_t produced=0xffffffff-dma_channel_hw_addr(dma)->transfer_count;__dmb();
   if(produced-consumed>8192 || (pio0->fdebug&(1u<<sm))){video_stop();tud_cdc_write_str("\nERROR SD DMA OVERRUN\n");tud_cdc_write_flush();continue;}
   unsigned count=produced-consumed,capacity=tud_cdc_write_available()/2;if(count>capacity)count=capacity;if(count>256)count=256;
-  uint16_t bytes[256];for(unsigned i=0;i<count;i++)bytes[i]=(uint16_t)ring[(consumed+i)&8191];
+  uint16_t bytes[256];for(unsigned i=0;i<count;i++){bytes[i]=(uint16_t)ring[(consumed+i)&8191];control_word(bytes[i]);}
   if(count){consumed+=tud_cdc_write(bytes,count*2)/2;tud_cdc_write_flush();}
  }
 }

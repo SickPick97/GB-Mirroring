@@ -77,3 +77,6 @@ Arresto pulito; BMP 240x160 ispezionato, scena esterna visibile, nessun confront
 
 
 2026-09-12: utente conferma gioco GBA super fluido con pacchetto 0.6.1. Baseline aggiornata; nessuna nuova dichiarazione sulla qualita di tutte le scene o sui 10 FPS. Piano PIANO-PRODOTTO-SMERALDO.md, solo analisi e documentazione.
+
+
+0.7.0 preparata, solo verifiche software: 9,158 FPS statico e 9,258 con input direzionale in mGBA, 600/600 VBlank nelle due finestre. Osservazione delle code italiane e maschera dirty verificate con ARM sintetico; NACK provoca keyframe nel modello ARM; PIO verificato su impulsi normali e slot di risposta. Nessuna misura elettrica del feedback o FPS reali. Il modello mGBA non prova il ritorno sul cavo. Evidenza test-results/software-v0.7.0. Procedura unica PROVA-SMERALDO.md.

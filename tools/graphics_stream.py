@@ -5,6 +5,7 @@ SIZE=393*256
 class GraphicsParser:
  def __init__(self,renderer):
   self.renderer=renderer;self.buffer=bytearray();self.bad_frames=0;self.bad_headers=0;self.discarded=0;self.delta_misses=0
+  self.payload_crc_errors=0;self.transaction_errors=0;self.last_error=None
   self.cache=None;self.pending=None;self.previous=None;self.sequence=None;self.seen=set();self.wire=0;self.key=False;self.dictionary={}
  def feed(self,data):
   # PIO groups every 16 edges; game reinitialization can insert an extra edge.
@@ -30,7 +31,10 @@ class GraphicsParser:
    self.bits=self.bits[n:];out.extend(self.feed_aligned(header+body))
   self.discarded=self.discarded_bits//8
   return out
- def fail(self):self.cache=None;self.pending=None;self.dictionary={};self.bad_frames+=1
+ def fail(self,reason='transaction'):
+  self.cache=None;self.pending=None;self.dictionary={};self.bad_frames+=1;self.last_error=reason
+  if reason=='payload_crc':self.payload_crc_errors+=1
+  else:self.transaction_errors+=1
  def feed_aligned(self,data):
   self.buffer.extend(data);frames=[]
   while True:
@@ -45,7 +49,7 @@ class GraphicsParser:
    n=24+h[6]*2
    if len(self.buffer)<n:break
    body=bytes(self.buffer[24:n]);del self.buffer[:n]
-   if zlib.crc32(body)!=(h[8]|h[9]<<16):self.fail();continue
+   if zlib.crc32(body)!=(h[8]|h[9]<<16):self.fail("payload_crc");continue
    seq=h[4]|h[5]<<16
    if h[3]==0:
     if len(body)!=6:self.fail();continue
@@ -95,7 +99,7 @@ class GraphicsParser:
     metadata=dict(version='emerald-sliced-0.5.1' if h[2]==0x501 else 'emerald-experimental',game_frame=self.game_frame,changed_blocks=count,keyframe=self.key,raster_dma_active=bool(raster),scope='Graphics cache; scanline effects and temporal coherence not fully verified')
     if h[2]==0x600:
      endlo,endhi,ticks,wordslo,wordshi,peak,mode,visits=struct.unpack_from('<8H',body,8)
-     metadata.update(version='emerald-cached-0.6.0',end_game_frame=endlo|(endhi<<16),capture_ticks=ticks,wire_words_before_end=wordslo|(wordshi<<16),peak_work_scanlines=peak,optimized=bool(mode),visits_low=visits)
+     metadata.update(version='emerald-selective-0.7.0' if (mode&255)==2 else 'emerald-cached-0.6.0',feedback_available=bool(mode&256),end_game_frame=endlo|(endhi<<16),capture_ticks=ticks,wire_words_before_end=wordslo|(wordshi<<16),peak_work_scanlines=peak,optimized=bool(mode),visits_low=visits)
     frames.append((seq,pixels,self.wire+n,4,metadata))
   return frames
 

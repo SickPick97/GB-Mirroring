@@ -63,6 +63,13 @@ scan_next:
  cmp r0,#224
  orrhs r4,r4,#0x80000000
  bhs 4f
+ ldr r0,=dirty_mask
+ mov r1,r4,lsr #5
+ ldr r2,[r0,r1,lsl #2]
+ and r1,r4,#31
+ mov r3,#1
+ tst r2,r3,lsl r1
+ beq skip_clean
  cmp r4,#0
  moveq r8,r5
  beq 2f
@@ -90,6 +97,14 @@ scan_next:
  cmp r0,r2
  cmpeq r1,r3
  bne 3f
+ ldr r0,=dirty_mask
+ mov r1,r4,lsr #5
+ ldr r2,[r0,r1,lsl #2]
+ and r3,r4,#31
+ mov r10,#1
+ bic r2,r2,r10,lsl r3
+ str r2,[r0,r1,lsl #2]
+skip_clean:
  add r4,r4,#1
  b 1b
 3:

@@ -1,5 +1,15 @@
 # Storico
 
+## 0.7.0 - Scansione selettiva e recupero su richiesta
+
+- Osservazione read-only delle code DMA3 e sprite BPEI prima dell IRQ originale. Nell overworld: dirty mask e audit progressivo; negli altri callback resta la scansione completa.
+- CRC compatti, buffer di compressione riutilizzato e dizionario 32 voci. Risoluzione e colori invariati; limite di 155 parole per intervento conservato.
+- Finestra half-duplex dopo END per conferma/richiesta di keyframe; Pico si arma solo dopo END identificato con CRC e rilascia SD a fine finestra. Se il feedback manca rimane il refresh periodico. Percorso elettrico da collaudare.
+- Ricezione, decodifica e rendering separati; coda presentazioni limitata. Recupero automatico/manuale, tracce attorno agli errori, fasi della prova e modalita Browser pulita. Opzione B avvia il loader 0.6.0 con lo stesso firmware Pico.
+- Test: 6 residente/protocollo, 2 modello PIO, 2 multiboot CDC, 10 viewer/SD; firme e build verificate. In mGBA 92/93 catture per 600 frame (9,16/9,26 FPS), 600 VBlank gioco in entrambe le finestre. Non certifica prestazioni hardware o gameplay/audio.
+- Questa consegna non completa tutto il piano: restano commit per risorsa, aggiornamenti piu fini, effetti scanline e renderer UVC autonomo. Nessuna dichiarazione di 10 FPS hardware prima del test.
+
+
 ## Piano prodotto dopo conferma fluidita 0.6.1
 
 - Utente conferma GBA super fluido. Piano unico per stato grafico rapido, risorse versionate, riduzione CPU/byte, recupero, uscita webcam e collaudo integrato.

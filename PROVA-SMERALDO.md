@@ -1,38 +1,37 @@
-# Smeraldo - pacchetto integrato 0.6.1
+# Prova unica Smeraldo 0.7.0
 
-Un firmware Pico per multiboot e video; un solo avvio PC, controlli offline e misure automatiche. Cavo e GBA invariati. Non servono ROM sul PC o strumenti di compilazione. Questa e una versione sperimentale: primo collaudo del firmware unificato, non webcam UVC autonoma.
+Pacchetto candidato: nuovo loader e firmware Pico gia compilati. Nessuna modifica al GBA o al cavo. In emulazione circa 9,16-9,26 catture/s; gli FPS reali e il nuovo feedback sul cavo devono essere verificati. Non e ancora la webcam UVC autonoma.
 
-## Preparazione unica
+## Preparazione, una sola volta per questo aggiornamento
 
-1. Estrai tutto il pacchetto in una cartella nuova e scrivibile. Chiudi gli altri programmi dell adattatore.
-2. Spegni il GBA e rimuovi la cartuccia. Collega il Pico via USB tenendo BOOTSEL e copia dist/gbmirroring-unified-v0.6.0.uf2 su RPI-RP2. Attendi il riavvio USB.
-3. Mantieni il cavo come sempre: piccolo nell adattatore, grande nel GBA, selettore GBA, presa centrale vuota. Accendi il GBA senza cartuccia.
+1. Estrai tutto lo ZIP 0.7.0 in una cartella nuova e scrivibile. Chiudi i vecchi BAT/viewer.
+2. Con GBA spento, collega il Pico tenendo BOOTSEL. Copia **dist/gbmirroring-unified-v0.7.0.uf2** nell unita RPI-RP2. Attendi il riavvio. Questo flash serve per aggiornare da 0.6.0; non si ripete durante la sessione.
+3. Conserva il cavo nella posizione attuale e il selettore GBA. Accendi il GBA senza cartuccia.
 
-## Una sola procedura
+## Avvio e prova
 
-4. Avvia 14-AVVIA-SMERALDO.bat. Verifica automaticamente i file. Premi INVIO per il nuovo multiboot. Non scegliere R durante questo primo avvio.
-5. Quando il GBA mostra INSERT CART THEN START, lascialo acceso, inserisci Smeraldo italiano originale e premi START. Se appare WRONG CART OR REVISION, fermati e segnala il messaggio.
-6. NON cambiare firmware, non scollegare USB e non chiudere il BAT. Il programma passa da solo alla ricezione video e apre la pagina locale.
-7. Entra nella partita; quando la console PC dice PRONTO premi insieme SELECT+L+R e rilasciali. Attendi fino a 15 secondi per la prima immagine.
-8. Nella stessa sessione: resta fermo 30 secondi, cammina per 60 secondi, entra/esci dal Centro Pokemon, apri/chiudi la squadra e il menu. Metti in pausa la cattura con SELECT+L+R per 10 secondi e confronta la velocita del GBA; riattivala e continua per altri 30 secondi. Tutte le misure vengono raccolte automaticamente, senza altri BAT o prove di banda separate.
-9. Metti in pausa con SELECT+L+R, poi premi Termina e salva rapporto nella pagina. Spegni il GBA prima di rimuovere la cartuccia. In questa prova evita progressi che vorresti salvare: compatibilita dell intera partita e salvataggio con residente non certificati.
+4. Apri **14-AVVIA-SMERALDO.bat** e premi INVIO. I file vengono controllati prima del multiboot.
+5. Quando il GBA lo richiede, inserisci Smeraldo italiano originale e premi START. Non cambiare firmware e non scollegare USB.
+6. Entra nella partita. Quando il programma dice PRONTO, premi e rilascia SELECT + L + R. Attendi fino a 15 secondi per la prima immagine.
+7. Nel pannello seleziona la fase prima di provarla: fermo (30 s), cammino (almeno 60 s), menu/squadra, entrata e uscita Centro Pokemon, una battaglia, pausa e ripresa. Dedica circa 10 minuti alla sessione. Confronta anche il gioco con cattura attiva e in pausa tramite SELECT + L + R.
+8. Se l immagine si ferma, attendi il recupero automatico. Il pulsante **Ripristina immagine** invia la stessa richiesta; se non riparte entro 15 s, registra il problema e usa pausa/ripresa sul GBA. Non invertire il cavo.
+9. Metti in pausa la cattura, poi premi **Termina e salva rapporto**. Conserva l intera cartella **dist/emerald-reports/<data-ora>**. Comprende anche eventuali errore-*.bin, oltre a rapporto, frames, immagine e console. Invia tutta la cartella e indica fluidita GBA, eventuali artefatti e fasi problematiche.
 
-Invia la cartella dist/emerald-reports/<data-ora> intera: rapporto.json, frames.jsonl, ultimo-frame.bmp, usb-tail.bin, console.txt e multiboot.json se presenti. In caso di errore prima del viewer e disponibile anche avvio-<data-ora>.txt nella cartella emerald-reports.
+## Ripresa e alternativa
 
-## Ripresa e problemi
+- R nello stesso BAT riprende un residente gia caricato. Metti prima in pausa sul GBA, attendi PRONTO e riattiva la cattura. Dopo spegnimento serve invece INVIO e nuovo multiboot.
+- Se la nuova cattura presenta problemi, puoi spegnere il GBA, togliere la cartuccia, riaccenderlo e scegliere **B**: carica il loader precedente 0.6.0 mantenendo lo stesso firmware Pico 0.7.0. Non richiede un altro UF2. Non e un passaggio obbligatorio del test.
+- L errore WRONG CART OR REVISION ferma il loader: conserva il messaggio. Non sono supportate tutte le cartucce GBA.
+- Il Pico usa CDC standard Windows. Non applicare driver Zadig.
 
-- Se chiudi il programma lasciando il gioco acceso: metti prima in pausa la cattura, riapri lo stesso BAT e scegli R. Attendi PRONTO, quindi riattiva SELECT+L+R. R non ricarica il payload.
-- Dopo spegnimento o soft reset del GBA occorre il multiboot da slot vuoto: scegli INVIO. Il firmware Pico resta installato; BOOTSEL serve solo per installazione e aggiornamenti futuri.
-- Nessun Pico trovato: verifica di aver installato UNIFIED 0.6.0. Usa il driver CDC standard Windows, senza Zadig.
-- Multiboot fallito: conserva la cartella/console. Spegni il GBA prima di riprovare; non aggiungere cambi UF2 alla procedura.
-- Immagine assente dopo 15 secondi: termina e conserva i log. Nessuna inversione del cavo. Un reinvio completo puo essere richiesto mettendo in pausa e riattivando la cattura.
+## Uso con OBS
 
-## Cosa cambia e cosa e verificato
+Il viewer offre la pagina senza controlli **http://127.0.0.1:8765/?clean=1**, per una sorgente Browser 240 x 160. Il programma GBMirroring deve restare aperto. Questa modalita e utile per acquisire l anteprima sul PC; non rende il Pico una webcam USB autonoma.
 
-Cache di 64 risorse grafiche sul ricevitore, riferimenti per contenuti ripetuti, RLE selettivo e modifiche parziali di registri/OAM. Scansione dei blocchi invariati in IWRAM. Limite di 155 parole inviate per intervento, confronto con deadline video e telemetria integrata. Ricezione USB PC su thread separato con coda limitata. Conservati CRC e recupero dell allineamento a bit.
+## Limiti e verifica
 
-Verifiche software: avvio BPEI, rifiuto firma errata, decodifica delle scritture ARM reali, errori protocollo, multiboot attraverso trasporto CDC simulato, viewer HTTP e pacchetto portatile. Campo statico emulato: circa 6,47 catture/s; input direzionale circa 3,68 catture/s, 600 VBlank gioco su 600 in entrambe le finestre. Questi non sono risultati hardware. I 90 confronti esatti del renderer riguardano snapshot coerenti del test, non tutta la cattura distribuita del gioco.
+Il percorso veloce osserva le code di copie nel callback overworld italiano verificato, con audit progressivo. Negli altri contesti mantiene la scansione completa: menu e battaglie possono avere FPS diversi. La cattura resta distribuita nel tempo e puo mostrare incoerenze transitorie; gli effetti scanline non sono implementati.
 
-L obiettivo 10 FPS non e ancora raggiunto nei test. Restano da implementare rilevamento selettivo delle modifiche del gioco e gestione delle risorse dipendente dallo stato; non sono inclusi effetti per scanline o UVC. La cattura resta distribuita nel tempo: possibili artefatti temporanei e ritardo ai cambi scena. Il contatore VBlank non prova da solo fluidita del gameplay o dell audio.
+Le richieste di recupero usano uno slot half-duplex con rilascio della linea; la sua funzionalita elettrica e da collaudare. Se la risposta manca resta il refresh periodico. Il rapporto distingue feedback_available, richieste, errori CRC payload e altre invalidazioni. Il recupero invia ancora un frame completo e non garantisce meno di un secondo.
 
-Il pacchetto 0.6.1 corregge solo l avvio PC. Se il Pico ha gia UNIFIED 0.6.0, non ripetere BOOTSEL o il flash.
+Test software: residente ARM, osservatore copie, protocollo, PIO, multiboot simulato, viewer HTTP e avvio portatile. I 90 confronti grafici esatti usano snapshot coerenti, non certificano tutta la cattura sul cavo. Il contatore VBlank non misura da solo gameplay o audio. Compatibilita dell intera partita e salvataggio con residente non certificati.

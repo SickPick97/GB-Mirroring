@@ -42,10 +42,11 @@ class BootTransport:
   if self.worker and self.worker.is_alive():raise RuntimeError('Lettore multiboot non terminato')
   self.worker=None
 
-def boot(serial,folder):
+def boot(serial,folder,baseline=False):
+ version="0.6.0" if baseline else "0.7.0"
  sys.path.insert(0,str(ROOT/'vendor/celio_transport'));from mb_multi import Multiboot
- data=(ROOT/'dist/gbmirroring-emerald-v0.6.0.gba').read_bytes()
- expected=json.loads((ROOT/'dist/verifica-emerald-v0.6.0.json').read_text())['sha256']
+ data=(ROOT/('dist/gbmirroring-emerald-v'+version+'.gba')).read_bytes()
+ expected=json.loads((ROOT/('dist/verifica-emerald-v'+version+'.json')).read_text())['sha256']
  if hashlib.sha256(data).hexdigest()!=expected:raise RuntimeError('Loader non corrisponde al manifest')
  transport=BootTransport(serial)
  try:

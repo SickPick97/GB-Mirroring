@@ -29,7 +29,7 @@ class SerialModel:
    return b''
 class Tests(unittest.TestCase):
  def test_multiboot_over_cdc(self):
-  rom=prepara_rom((ROOT/'dist/gbmirroring-emerald-v0.6.0.gba').read_bytes());serial=SerialModel(rom);link=BootTransport(serial)
+  rom=prepara_rom((ROOT/'dist/gbmirroring-emerald-v0.7.0.gba').read_bytes());serial=SerialModel(rom);link=BootTransport(serial)
   try:
    result=Multiboot(link,timing_fast=3700,timing_wait=129630,max_attempts=1,verbose=False).run(rom)
    self.assertEqual(serial.slave.verifica(),[]);self.assertEqual(result['desync'],0);self.assertIn(129630,serial.timings);self.assertIn(3700,serial.timings)

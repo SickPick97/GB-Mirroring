@@ -8,6 +8,17 @@ original_irq: .word 0
 wrapper:
  push {r0-r3,r12,lr}
  ldr r3, original_irq
+ ldr r2,=0x03002750
+ cmp r3,r2
+ bne call_original
+ mov r3,sp
+ ldr sp,=0x0203fc00
+ push {r3,lr}
+ bl observe
+ pop {r3,lr}
+ mov sp,r3
+call_original:
+ ldr r3,original_irq
  mov lr, pc
  bx r3
  ldr r0, original_irq

@@ -2,7 +2,7 @@
 
 Progetto sperimentale per acquisire il video di un GBA/GBA SP attraverso un adattatore Link con Raspberry Pi Pico RP2040 e arrivare a una webcam USB autonoma, senza modificare internamente la console.
 
-**Versione pacchetto 0.6.1. [Prova integrata Smeraldo](PROVA-SMERALDO.md).** Un firmware Pico per multiboot e video, un solo avvio **14-AVVIA-SMERALDO.bat**, cache grafica e misure automatiche nella stessa sessione. Primo collaudo integrato riuscito: multiboot e video senza cambio firmware, 886 frame validi e 3,56 FPS medi. Un intervallo di 26,5 s senza immagini valide resta da correggere; target 10 FPS e UVC ancora aperti.
+**Versione pacchetto 0.7.0, da collaudare. [Prova integrata Smeraldo](PROVA-SMERALDO.md).** Un firmware Pico, un avvio 14-AVVIA-SMERALDO.bat, osservazione delle copie grafiche nell'overworld e recupero su richiesta. Test emulati: circa 9,16 FPS statico e 9,26 con input direzionale; nessun nuovo risultato hardware. UVC autonoma non inclusa. La baseline hardware fluida resta 0.6.1.
 
 ## Su un altro PC Windows
 

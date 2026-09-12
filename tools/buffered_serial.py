@@ -2,7 +2,7 @@
 import queue,threading,time
 class BufferedSerial:
  def __init__(self,serial):
-  self.serial=serial;self.queue=queue.Queue(128);self.stop=threading.Event();self.error=None;self.peak_lag_ms=0
+  self.write_lock=threading.Lock();self.serial=serial;self.queue=queue.Queue(128);self.stop=threading.Event();self.error=None;self.peak_lag_ms=0
   self.worker=threading.Thread(target=self.pump,daemon=True);self.worker.start()
  def pump(self):
   try:
@@ -16,7 +16,8 @@ class BufferedSerial:
   try:
    when,data=self.queue.get(timeout=.1);self.peak_lag_ms=max(self.peak_lag_ms,(time.monotonic()-when)*1000);return data
   except queue.Empty:return b''
- def write(self,data):return self.serial.write(data)
+ def write(self,data):
+  with self.write_lock:return self.serial.write(data)
  def close(self):
   self.stop.set();self.worker.join(2)
   self.serial.close()

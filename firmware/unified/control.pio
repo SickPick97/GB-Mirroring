@@ -1,0 +1,25 @@
+; SC is GPIO0, SD is GPIO3. Only drive SD in the explicit long-high slot.
+; Normal sender pulses are shorter than the qualification interval.
+.program video_control
+.wrap_target
+start:
+    set pindirs, 0
+    wait 1 gpio 0
+    set y, 31
+qualify:
+    jmp pin high
+    jmp start
+high:
+    jmp y-- qualify
+    set x, 0
+    pull noblock
+    out pins, 1
+    set pindirs, 1
+    wait 0 gpio 0
+    out pins, 1
+    wait 1 gpio 0
+    wait 0 gpio 0
+    set pindirs, 0
+idle:
+    jmp idle
+.wrap

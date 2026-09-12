@@ -1,0 +1,39 @@
+{
+  "scope": "Software only; no hardware USB, multiboot electrical timing, or full-game certification",
+  "boot": true,
+  "modified_boot_signature_rejected": true,
+  "graphics": {
+    "frames": 90,
+    "exact_frames": 90,
+    "mean_delta_wire_bytes": 2276.8314606741574,
+    "mean_pc_render_seconds": 0.04343898777777777,
+    "scope": "Repeatable movement/menu sequence from local save; not all battles/scanline effects"
+  },
+  "timing": {
+    "emulated_frames": 600,
+    "captures": 92,
+    "game_vblanks": 600,
+    "capture_fps": 9.158216754006228,
+    "game_vblanks_per_second": 59.72750056960584,
+    "scope": "Static field in mGBA; not physical performance"
+  },
+  "moving_timing": {
+    "emulated_frames": 600,
+    "captures": 93,
+    "capture_fps": 9.257762588288903,
+    "game_vblanks": 600,
+    "scope": "Held directional input in mGBA; VBlank counts do not prove gameplay or audio smoothness"
+  },
+  "limitations": [
+    "Timing is emulator-only. Feedback GPIO electrical path is not hardware validated.",
+    "90 exact graphics comparisons use coherent snapshots, not the sliced resident wire stream.",
+    "Selective observer enabled only for the verified overworld callback; other contexts use full scanning.",
+    "Per-resource transactional recovery, scanline effects and native UVC renderer are not implemented."
+  ],
+  "unit_tests": {
+    "emerald": 6,
+    "control_pio": 2,
+    "unified_boot": 2,
+    "sd_viewer": 10
+  }
+}

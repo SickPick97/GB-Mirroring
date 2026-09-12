@@ -9,7 +9,7 @@ DLL=ROOT/'runtime/mgba/mgba_libretro.dll'
 def boot_test(rom,mutate=False):
  if mutate:
   rom=bytearray(rom);rom[0xa0]^=1;rom=bytes(rom)
- c=Core(DLL,rom);c.run(3);s=c.state();b=(ROOT/'dist/gbmirroring-emerald-v0.6.0.gba').read_bytes();s[0x21000:0x21000+len(b)]=b
+ c=Core(DLL,rom);c.run(3);s=c.state();b=(ROOT/'dist/gbmirroring-emerald-v0.7.0.gba').read_bytes();s[0x21000:0x21000+len(b)]=b
  pc=0x020000e0;struct.pack_into('<I',s,0x5c,pc+4);struct.pack_into('<I',s,0x60,0xdf);struct.pack_into('<II',s,0x2f8,*struct.unpack_from('<II',b,0xe0));struct.pack_into('<I',s,0x318,pc)
  c.restore(s);c.run(10);c.run(3,1<<3);c.run(360);s=c.state();irq=struct.unpack_from('<I',s,0x20ffc)[0];c.close()
  assert (irq==0x0203cf80)!=mutate
@@ -37,6 +37,6 @@ def main():
   s=c.state();return (struct.unpack_from('<I',s,0x21000+symbols['sequence']-0x02000000)[0],struct.unpack_from('<I',s,0x1b2e0)[0])
  a=counts();c.run(600);b=counts();c.run(600,1<<7);moving=counts();c.close();assert b[0]>a[0] and b[1]>a[1]
  report['timing']=dict(emulated_frames=600,captures=b[0]-a[0],game_vblanks=b[1]-a[1],capture_fps=(b[0]-a[0])*(16777216/280896)/600,game_vblanks_per_second=(b[1]-a[1])*(16777216/280896)/600,scope='Static field in mGBA; not physical performance')
- report['moving_timing']=dict(emulated_frames=600,captures=moving[0]-b[0],game_vblanks=moving[1]-b[1],scope='Held directional input in mGBA; VBlank counts do not prove gameplay or audio smoothness')
+ report['moving_timing']=dict(emulated_frames=600,captures=moving[0]-b[0],capture_fps=(moving[0]-b[0])*(16777216/280896)/600,game_vblanks=moving[1]-b[1],scope='Held directional input in mGBA; VBlank counts do not prove gameplay or audio smoothness')
  (out/'integration-report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
 if __name__=='__main__':main()
