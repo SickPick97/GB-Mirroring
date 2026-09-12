@@ -80,3 +80,8 @@ Arresto pulito; BMP 240x160 ispezionato, scena esterna visibile, nessun confront
 
 
 0.7.0 preparata, solo verifiche software: 9,158 FPS statico e 9,258 con input direzionale in mGBA, 600/600 VBlank nelle due finestre. Osservazione delle code italiane e maschera dirty verificate con ARM sintetico; NACK provoca keyframe nel modello ARM; PIO verificato su impulsi normali e slot di risposta. Nessuna misura elettrica del feedback o FPS reali. Il modello mGBA non prova il ritorno sul cavo. Evidenza test-results/software-v0.7.0. Procedura unica PROVA-SMERALDO.md.
+
+
+2026-09-12, hardware 0.7.0: 1038 transazioni in 225,185 s tra primo e ultimo arrivo, 4,605 FPS; 729 immagini cambiate. Sedici keyframe, 21 richieste di ripristino; 11 CRC payload, 4 header e 3 transazioni non validi. Gap massimo 8,609 s. Coda USB picco 9,9 ms e zero render drop: il log non indica un arretrato di rendering come causa principale. Multiboot 8,020 s, zero desync/riavvii. Utente segnala alternanza aggiornamenti/blocchi e rientri lenti dai menu. BMP esterno ispezionato, senza riferimento simultaneo. Evidenza selezionata e ripulita in test-results/2026-09-12-emerald-v0.7.0.
+
+0.7.1: correzione software del recupero e della conservazione cache. Replay parziali consentono recupero CRC di tre header e un payload, incluso errore compatibile con un bit perso; code sovrapposte, non sono un nuovo test hardware. Errori multipli e caricamenti completi rimangono possibili. Nessuna nuova misura sul GBA; Pico 0.7.0 invariato.

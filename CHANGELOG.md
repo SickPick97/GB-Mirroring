@@ -1,5 +1,13 @@
 # Storico
 
+## 0.7.1 - Riduzione dei ripristini e recupero degli errori singoli
+
+- Test hardware 0.7.0: 1038 transazioni, 4,605 FPS tra arrivi verificati, gap massimo 8,609 s, 16 keyframe e 21 richieste di recupero. Utente segnala pause ripetute; evidenza selezionata in test-results/2026-09-12-emerald-v0.7.0.
+- Decoder: ricerca limitata di un bit invertito, inserito o perso; accetta soltanto una soluzione unica verificata dal CRC. Header riparati verificati anche contro CRC payload. Errori multipli restano scartati. Le code reali consentono il recupero di tre header e un payload; replay parziale, non certifica tutta la sessione.
+- Ripristino automatico solo per errori irrisolti: nessuna richiesta per attesa iniziale, nessuna nuova richiesta causata da contatori storici dopo un frame valido, nessuna ripetizione durante una transazione in corso.
+- Residente conserva il riferimento dopo reset Link a transazione completata e forza nuova verifica delle risorse. Trasmissioni interrotte con modifiche richiedono ancora un keyframe.
+- Loader 0.7.1 pronto; Pico 0.7.0 immutato, nessun nuovo flash per chi lo usa gia. Test ARM, errori sintetici, multiboot simulato, viewer e mGBA; prestazioni hardware della correzione ancora da misurare. Keyframe completi e costi di cambi scena non eliminati; 10 FPS hardware non garantiti.
+
 ## 0.7.0 - Scansione selettiva e recupero su richiesta
 
 - Osservazione read-only delle code DMA3 e sprite BPEI prima dell IRQ originale. Nell overworld: dirty mask e audit progressivo; negli altri callback resta la scansione completa.

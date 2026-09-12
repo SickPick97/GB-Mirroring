@@ -1,0 +1,27 @@
+{
+  "scope": "Software only; no hardware USB, multiboot electrical timing, or full-game certification",
+  "boot": true,
+  "modified_boot_signature_rejected": true,
+  "graphics": {
+    "frames": 90,
+    "exact_frames": 90,
+    "mean_delta_wire_bytes": 2276.8314606741574,
+    "mean_pc_render_seconds": 0.04647526555555562,
+    "scope": "Repeatable movement/menu sequence from local save; not all battles/scanline effects"
+  },
+  "timing": {
+    "emulated_frames": 600,
+    "captures": 92,
+    "game_vblanks": 600,
+    "capture_fps": 9.158216754006228,
+    "game_vblanks_per_second": 59.72750056960584,
+    "scope": "Static field in mGBA; not physical performance"
+  },
+  "moving_timing": {
+    "emulated_frames": 600,
+    "captures": 93,
+    "capture_fps": 9.257762588288903,
+    "game_vblanks": 600,
+    "scope": "Held directional input in mGBA; VBlank counts do not prove gameplay or audio smoothness"
+  }
+}

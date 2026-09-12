@@ -7,6 +7,7 @@ from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from sd_video_protocol import Parser
 from win_serial import Serial
 from link_protocol import bmp
+from recovery_policy import RecoveryPolicy
 ROOT=Path(__file__).resolve().parents[1]
 def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
  folder=ROOT/('dist/emerald-reports' if emerald else 'dist/sd-video-reports')/datetime.datetime.now().strftime('%Y%m%d-%H%M%S');folder.mkdir(parents=True)
@@ -35,7 +36,7 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
   with lock:
    now=time.monotonic()
    while arrivals and now-arrivals[0]>5:arrivals.popleft()
-   return dict(stats,usb_queue_peak_lag_ms=round(getattr(serial,"peak_lag_ms",0),2),unique_fps_last_5s=round(len(arrivals)/5,2),bit_resyncs=getattr(parser,"bit_resyncs",0),delta_reference_misses=parser.delta_misses,crc_errors=parser.bad_frames,payload_crc_errors=getattr(parser,"payload_crc_errors",0),transaction_errors=getattr(parser,"transaction_errors",0),last_validation_error=getattr(parser,"last_error",None),header_errors=parser.bad_headers,discarded_bytes=parser.discarded,elapsed_seconds=round(now-started,1))
+   return dict(stats,usb_queue_peak_lag_ms=round(getattr(serial,"peak_lag_ms",0),2),unique_fps_last_5s=round(len(arrivals)/5,2),bit_resyncs=getattr(parser,"bit_resyncs",0),delta_reference_misses=parser.delta_misses,crc_errors=parser.bad_frames,repaired_payloads=getattr(parser,"repaired_payloads",0),repaired_headers=getattr(parser,"repaired_headers",0),payload_crc_errors=getattr(parser,"payload_crc_errors",0),transaction_errors=getattr(parser,"transaction_errors",0),last_validation_error=getattr(parser,"last_error",None),header_errors=parser.bad_headers,discarded_bytes=parser.discarded,elapsed_seconds=round(now-started,1))
  def reader():
   nonlocal previous,last_pixels
   try:
@@ -45,10 +46,10 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
     if time.monotonic()>deadline:raise RuntimeError('Firmware non pronto: usa SD Video 0.4.0 e attendi PRONTO prima di A')
    print('PRONTO. Premi SELECT + L + R nel gioco.' if emerald else 'PRONTO. Premi e rilascia A sul GBA. Apri http://127.0.0.1:8765',flush=True)
    with lock:stats['status']='READY: SELECT + L + R' if emerald else 'READY: premi A sul GBA'
-   last_data=time.monotonic();last_save=0;last_recovery=0;last_faults=0;last_good=last_data
+   last_data=time.monotonic();last_save=0;recovery=RecoveryPolicy()
    if unified:serial.write(b'CONTROL\n'+(b'RESYNC\n' if resume else b''))
    while not stop.is_set():
-    data=serial.read();now=time.monotonic()
+    data=serial.read();now=time.monotonic();received_valid=False
     if data:
      last_data=now
      if emerald:
@@ -59,7 +60,7 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
       with lock:
        if previous==seq:stats['duplicates']+=1;continue
        if previous is not None and seq!=((previous+1)&0xffffffff):stats['sequence_gaps']+=1
-       last_good=now
+       received_valid=True
        stats['gba']=metadata
        previous=seq;stats['valid_frames']+=1;stats['status']='STREAMING';stats['codec']=('RAW','RLE16','DELTA-RLE16','BLOCKS','GRAPHICS')[codec];arrivals.append(now)
       if emerald:
@@ -72,8 +73,8 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
       else:present(seq,pixels)
       events.write(json.dumps(dict(seconds=round(now-started,4),sequence=seq,wire_bytes=wire_bytes,codec=codec,gba=metadata))+'\n');events.flush()
     faults=parser.bad_frames+parser.delta_misses+parser.bad_headers
-    if unified and ((faults>last_faults) or (now-last_good>5 and data)) and now-last_recovery>4:
-     serial.write(b'RESYNC\n');last_recovery=now;last_faults=faults
+    if unified and recovery.update(now,faults,received_valid and parser.cache is not None,getattr(parser,'pending',None) is not None):
+     serial.write(b'RESYNC\n')
      with lock:stats['resync_requests']+=1
      (folder/('errore-'+str(stats['resync_requests']%4)+'.bin')).write_bytes(raw_tail)
     if now-last_data>30:

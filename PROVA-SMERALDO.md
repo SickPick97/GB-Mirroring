@@ -1,12 +1,14 @@
-# Prova unica Smeraldo 0.7.0
+# Prova unica Smeraldo 0.7.1
 
-Pacchetto candidato: nuovo loader e firmware Pico gia compilati. Nessuna modifica al GBA o al cavo. In emulazione circa 9,16-9,26 catture/s; gli FPS reali e il nuovo feedback sul cavo devono essere verificati. Non e ancora la webcam UVC autonoma.
+Nuovo loader 0.7.1 e programma PC corretti; firmware Pico 0.7.0 invariato. Nessuna modifica al GBA o al cavo. In emulazione circa 9,16-9,26 catture/s; gli FPS reali e il nuovo feedback sul cavo devono essere verificati. Non e ancora la webcam UVC autonoma.
 
 ## Preparazione, una sola volta per questo aggiornamento
 
-1. Estrai tutto lo ZIP 0.7.0 in una cartella nuova e scrivibile. Chiudi i vecchi BAT/viewer.
-2. Con GBA spento, collega il Pico tenendo BOOTSEL. Copia **dist/gbmirroring-unified-v0.7.0.uf2** nell unita RPI-RP2. Attendi il riavvio. Questo flash serve per aggiornare da 0.6.0; non si ripete durante la sessione.
+1. Estrai tutto lo ZIP 0.7.1 in una cartella nuova e scrivibile. Chiudi i vecchi BAT/viewer.
+2. Se hai gia il Pico 0.7.0 del test precedente, salta il flash. Solo per chi proviene da 0.6.0: con GBA spento, collega il Pico tenendo BOOTSEL. Copia **dist/gbmirroring-unified-v0.7.0.uf2** nell unita RPI-RP2. Attendi il riavvio. Questo flash serve per aggiornare da 0.6.0; non si ripete durante la sessione.
 3. Conserva il cavo nella posizione attuale e il selettore GBA. Accendi il GBA senza cartuccia.
+
+Per questo aggiornamento spegni il GBA ed esegui un nuovo multiboot con INVIO: R lascerebbe in memoria il vecchio residente.
 
 ## Avvio e prova
 

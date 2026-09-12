@@ -1,11 +1,12 @@
 """Transactional graphics cache: GBA 0x500 packets, no game ROM on receiver."""
 import struct,zlib,binascii
+from wire_repair import from_bits,valid_header,repair_payload,repair_header
 MAGIC=struct.pack('<HH',0xb47e,0x5647)
 SIZE=393*256
 class GraphicsParser:
  def __init__(self,renderer):
   self.renderer=renderer;self.buffer=bytearray();self.bad_frames=0;self.bad_headers=0;self.discarded=0;self.delta_misses=0
-  self.payload_crc_errors=0;self.transaction_errors=0;self.last_error=None
+  self.repaired_payloads=0;self.repaired_headers=0;self.payload_crc_errors=0;self.transaction_errors=0;self.last_error=None
   self.cache=None;self.pending=None;self.previous=None;self.sequence=None;self.seen=set();self.wire=0;self.key=False;self.dictionary={}
  def feed(self,data):
   # PIO groups every 16 edges; game reinitialization can insert an extra edge.
@@ -23,11 +24,22 @@ class GraphicsParser:
    if len(self.bits)<192:break
    h=[int(self.bits[j:j+16],2) for j in range(0,192,16)]
    header=struct.pack('<12H',*h)
-   if h[2] not in (0x500,0x501,0x600) or h[3]>(5 if h[2]==0x600 else 2) or h[6]>128 or h[11]!=0x5aa5 or binascii.crc_hqx(header[4:20],65535)!=h[10]:
+   if not valid_header(header):
+    if len(self.bits)<193:break
+    fixed,waiting=repair_header(self.bits)
+    if fixed:
+     header,body,end=fixed;self.bits=self.bits[end:];self.repaired_headers+=1
+     out.extend(self.feed_aligned(header+body));continue
+    if waiting:break
     self.bad_headers+=1;self.bits=self.bits[1:];self.discarded_bits+=1;continue
    n=192+h[6]*16
    if len(self.bits)<n:break
    body=struct.pack('<'+'H'*h[6],*(int(self.bits[j:j+16],2) for j in range(192,n,16)))
+   if zlib.crc32(body)!=(h[8]|h[9]<<16) and h[6]:
+    if len(self.bits)<n+1:break
+    fixed=repair_payload(self.bits[192:n+1],h[6]*16,h[8]|h[9]<<16)
+    if fixed:
+     body,delta=fixed;n+=delta;self.repaired_payloads+=1
    self.bits=self.bits[n:];out.extend(self.feed_aligned(header+body))
   self.discarded=self.discarded_bits//8
   return out
@@ -99,7 +111,7 @@ class GraphicsParser:
     metadata=dict(version='emerald-sliced-0.5.1' if h[2]==0x501 else 'emerald-experimental',game_frame=self.game_frame,changed_blocks=count,keyframe=self.key,raster_dma_active=bool(raster),scope='Graphics cache; scanline effects and temporal coherence not fully verified')
     if h[2]==0x600:
      endlo,endhi,ticks,wordslo,wordshi,peak,mode,visits=struct.unpack_from('<8H',body,8)
-     metadata.update(version='emerald-selective-0.7.0' if (mode&255)==2 else 'emerald-cached-0.6.0',feedback_available=bool(mode&256),end_game_frame=endlo|(endhi<<16),capture_ticks=ticks,wire_words_before_end=wordslo|(wordshi<<16),peak_work_scanlines=peak,optimized=bool(mode),visits_low=visits)
+     metadata.update(version='emerald-selective-0.7.1' if mode&512 else 'emerald-selective-0.7.0' if (mode&255)==2 else 'emerald-cached-0.6.0',feedback_available=bool(mode&256),end_game_frame=endlo|(endhi<<16),capture_ticks=ticks,wire_words_before_end=wordslo|(wordshi<<16),peak_work_scanlines=peak,optimized=bool(mode),visits_low=visits)
     frames.append((seq,pixels,self.wire+n,4,metadata))
   return frames
 

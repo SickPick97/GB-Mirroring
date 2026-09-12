@@ -135,5 +135,5 @@ class Tests(unittest.TestCase):
 if __name__=='__main__':
  r=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(Tests))
  import json
- (ROOT/'dist/verifica-viewer-software-v0.7.0.json').write_text(json.dumps(dict(passed=r.wasSuccessful(),tests=r.testsRun,scope='Actual GBA GPIO output and VRAM reconstruction in ARM emulation; corrupted stream tests. No real pin timing, Windows USB or achieved FPS claim.'),indent=2)+'\n')
+ (ROOT/'dist/verifica-viewer-software-v0.7.1.json').write_text(json.dumps(dict(passed=r.wasSuccessful(),tests=r.testsRun,scope='Actual GBA GPIO output and VRAM reconstruction in ARM emulation; corrupted stream tests. No real pin timing, Windows USB or achieved FPS claim.'),indent=2)+'\n')
  sys.exit(not r.wasSuccessful())

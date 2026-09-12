@@ -86,7 +86,12 @@ __attribute__((section(".scheduler"))) void tick(void){
  if(pressed&&!held){enabled^=1;valid=0;active=0;}held=pressed;
  if(!enabled)return;
  entry_line=U16(0x04000006);entry_rcnt=U16(0x04000134);
- if((entry_rcnt&0xfff3)!=0x8030){valid=0;active=0;}
+ if((entry_rcnt&0xfff3)!=0x8030){
+  /* Keep a completed reference across Link reinitialization. Partial
+     transactions have already changed sender hashes and need a keyframe. */
+  if(active && changed)valid=0;
+  active=0;for(unsigned i=0;i<13;i++)dirty_mask[i]=~0u;
+ }
  U16(0x04000134)=0x8030;
  if(entry_line<160 || entry_line>=224)return;
  unsigned spent=0;
@@ -132,7 +137,7 @@ __attribute__((section(".scheduler"))) void tick(void){
  unsigned end_line=U16(0x04000006),lines=(end_line+228-entry_line)%228;if(lines>peak_lines)peak_lines=lines;
  if(cursor==393 && spent+25<=155){
   packet[12]=capture_frame;packet[13]=capture_frame>>16;packet[14]=changed;packet[15]=(U16(0x040000ba)&0x8000)!=0;
-  packet[16]=now;packet[17]=now>>16;packet[18]=capture_ticks;packet[19]=capture_words;packet[20]=capture_words>>16;packet[21]=peak_lines;packet[22]=optimized|(feedback<<8);packet[23]=visits;
+  packet[16]=now;packet[17]=now>>16;packet[18]=capture_ticks;packet[19]=capture_words;packet[20]=capture_words>>16;packet[21]=peak_lines;packet[22]=optimized|(feedback<<8)|512;packet[23]=visits;
   emit(2,0,12);
   /* Flush the final END bits from a possibly shifted 16-bit RX group. */
   packet[0]=0;((void(*)(const uint16_t*,unsigned))fast_begin)(packet,1);

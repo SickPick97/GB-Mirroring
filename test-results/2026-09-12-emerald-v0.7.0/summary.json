@@ -1,0 +1,86 @@
+{
+  "package": "0.7.0",
+  "valid_frames": 1038,
+  "fps_between_verified_arrivals": 4.605106561366487,
+  "max_arrival_gap_seconds": 8.608699999999999,
+  "keyframes": 16,
+  "multiboot": {
+    "byte": 5664,
+    "durata": 8.019666910171509,
+    "parole_inviate": 2891,
+    "risposte_lette": 2891,
+    "scartate": 43,
+    "desync": 0,
+    "riavvii": 0,
+    "parole_s": 360.4887874249846,
+    "crc": 1848
+  },
+  "counters": {
+    "resync_requests": 21,
+    "payload_crc_errors": 11,
+    "header_errors": 4,
+    "transaction_errors": 3,
+    "changed_images": 729,
+    "render_drops": 0,
+    "usb_queue_peak_lag_ms": 9.9
+  },
+  "user_observation": "Updates alternate with 2-3 second stalls; slow return from menus/battles/team.",
+  "replay_071": [
+    {
+      "file": "errore-0.bin",
+      "sha256": "d369d6959bb1269dbc76d6965cdf56d80c76a4141858e5ff5e7d545bbcbb61a8",
+      "frames": 7,
+      "repaired_headers": 2,
+      "repaired_payloads": 0,
+      "bad_frames": 0,
+      "bad_headers": 0,
+      "remaining_bits": 233,
+      "seconds": 0.0328
+    },
+    {
+      "file": "errore-1.bin",
+      "sha256": "437abc004f04fa74822dfb1992bc2f8271bcc73484cc283d383b9f2d21ee6330",
+      "frames": 8,
+      "repaired_headers": 1,
+      "repaired_payloads": 0,
+      "bad_frames": 0,
+      "bad_headers": 0,
+      "remaining_bits": 2233,
+      "seconds": 0.0316
+    },
+    {
+      "file": "errore-2.bin",
+      "sha256": "4667aa43c0a1d3a62484f0e6372ef2f591e37eff7eaf30dbfe3d42b051ea52c1",
+      "frames": 0,
+      "repaired_headers": 0,
+      "repaired_payloads": 1,
+      "bad_frames": 0,
+      "bad_headers": 0,
+      "remaining_bits": 759,
+      "seconds": 0.0437
+    },
+    {
+      "file": "errore-3.bin",
+      "sha256": "ca62f36fa43962d642b0b7e452f9923f74966038cc8d8008a9b7d040e9b88932",
+      "frames": 31,
+      "repaired_headers": 0,
+      "repaired_payloads": 0,
+      "bad_frames": 0,
+      "bad_headers": 0,
+      "remaining_bits": 1879,
+      "seconds": 0.034
+    },
+    {
+      "file": "usb-tail.bin",
+      "sha256": "33b076abb25c820c343028c2ed3c4c60e55ed0adbf48abe74b61d61551f190ff",
+      "frames": 0,
+      "repaired_headers": 0,
+      "repaired_payloads": 0,
+      "bad_frames": 0,
+      "bad_headers": 0,
+      "remaining_bits": 233,
+      "seconds": 0.027
+    }
+  ],
+  "replay_scope": "Local replay of overlapping partial tails; frame counts cannot be added. Missing initial keyframes and truncated final headers remain incomplete. No hardware 0.7.1 measurement."
+}

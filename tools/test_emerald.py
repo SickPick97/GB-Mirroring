@@ -35,7 +35,7 @@ class Tests(unittest.TestCase):
   self.assertEqual(p.feed(encode_snapshot(3,24,b,a)),[])
   self.assertEqual(p.feed(encode_snapshot(4,30,a))[0][1],a)
  def test_corruption(self):
-  p=GraphicsParser(Echo());data=bytearray(encode_snapshot(0,6,bytes(SIZE)));data[100]^=1
+  p=GraphicsParser(Echo());data=bytearray(encode_snapshot(0,6,bytes(SIZE)));data[100]^=0xa5;data[200]^=0x5a
   self.assertEqual(p.feed(data),[]);self.assertGreater(p.bad_frames,0)
  def test_bit_alignment_recovers(self):
   a=bytes(SIZE);b=bytearray(a);b[900]=77
@@ -91,7 +91,7 @@ class Tests(unittest.TestCase):
   def original(m,address,size,user):m.reg_write(UC_ARM_REG_PC,m.reg_read(UC_ARM_REG_LR))
   uc.hook_add(UC_HOOK_CODE,original,begin=0x03002750,end=0x03002750)
   uc.hook_add(UC_HOOK_MEM_WRITE,write,begin=0x04000134,end=0x04000135)
-  max_words=0;mutated=False;restored=False
+  max_words=0;mutated=False;restored=False;mode_reset=False
   original_oam=bytes(uc.mem_read(0x07000000,1024))
   for game_frame in range(6,1200):
    if len(frames)==2 and not mutated:
@@ -102,6 +102,8 @@ class Tests(unittest.TestCase):
    uc.mem_write(0x030022e0,struct.pack('<I',game_frame))
    uc.mem_write(0x04000006,struct.pack('<H',224 if game_frame==6 else 160))
    if game_frame>6:uc.mem_write(0x04000134,struct.pack('<H',0x803c))
+   if len(frames)==3 and not mode_reset:
+    uc.mem_write(0x04000134,struct.pack('<H',0x8000));mode_reset=True
    if game_frame==7:uc.mem_write(0x04000130,struct.pack('<H',1023))
    uc.reg_write(UC_ARM_REG_CPSR,0xd2);uc.reg_write(UC_ARM_REG_SP,0x03007f00);uc.reg_write(UC_ARM_REG_LR,0x03007000)
    uc.emu_start(0x0203cf80,0x03007000,count=100000000)
@@ -109,6 +111,7 @@ class Tests(unittest.TestCase):
    max_words=max(max_words,state.get("total",0)-before_words)
    if len(frames)==5:break
   self.assertTrue(state['nack'],str((state['poll_reads'],len(frames))));self.assertTrue(frames[4][4]['keyframe'],str([x[4]['keyframe'] for x in frames]))
+  self.assertFalse(frames[3][4]['keyframe'])
   self.assertLessEqual(max_words,155)
   expected=bytes(256)+bytes(uc.mem_read(0x05000000,1024))+bytes(uc.mem_read(0x07000000,1024))+bytes(uc.mem_read(0x06000000,98304))
   self.assertEqual(struct.unpack('<H',uc.mem_read(0x04000134,2))[0],0x8030);self.assertEqual(len(frames),5);self.assertEqual(frames[0][1],expected);self.assertEqual(frames[1][1],expected);self.assertEqual(frames[1][4]['changed_blocks'],0);self.assertEqual(frames[3][1],expected);self.assertEqual(frames[2][1][5*256:5*256+2],b'\x43\x21')
