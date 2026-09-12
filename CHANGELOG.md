@@ -5,6 +5,7 @@
 - Renderer C diretto, sorgenti mGBA fissati e inclusi con licenza; zero differenze su 900 immagini della sequenza di gioco emulata. Mediana 1,365 ms, p95 2,452 ms sulla macchina di sviluppo.
 - WebSocket binario, buffer temporizzato 200 ms e telemetria browser. Test dei modi video, sprite/finestre/blending, socket, presentazione e pipeline senza dispositivi fisici.
 - Gestore separato di risorse immutabili con attesa delle dipendenze e controlli su contenuti, epoca, ordine e memoria. Non ancora integrato nel residente/Link.
+- Prova isolata del residente Thumb/ARM: recuperati 880 byte, conteggi emulati equivalenti alla baseline. Build soltanto locale e test dedicati; firmware pubblicati invariati.
 - Nessun nuovo firmware o tag: 30 FPS hardware, cache automatica e nuovo trasporto restano da completare. Stato in docs/SVILUPPO-30-FPS.md. Release 0.8.0 immutata.
 
 ## Analisi hardware 0.8.0 e piano 30-60 FPS

@@ -24,3 +24,11 @@ Non e una nuova release hardware. Il minimo di circa 30 FPS rimane da raggiunger
 File nuovi: `native/renderer`, `runtime/native`, `tools/native_renderer.py`, `tools/frame_hub.py`, `tools/playout.js`, `tools/graphics_resources.py` e relativi test. Il viewer principale usa gia renderer e WebSocket nella versione di sviluppo; il tag 0.8.0 resta invariato.
 
 `tools/evaluate_fast_trace.py` richiede ROM/stato locali espliciti. `build/emerald/start.state` e l'introduzione, non l'overworld. La sequenza positiva usa `build/emerald/fast-field.state`, preparata con lo stesso bootstrap del test di integrazione e il salvataggio locale. La stima di 7655 B/s e un limite teorico con cache ideale, non un protocollo trasmesso ne una misura hardware. Il rapporto ripulito conserva soltanto contatori.
+
+## Prova isolata di memoria del residente
+
+`tools/probe_resident_budget.py` compila soltanto in build/emerald-next. C in Thumb, trasporto/hash ARM mantenuti; ritorni BX e simboli funzione espliciti per interworking ARMv4T. Non modifica i sorgenti firmware stabili o i binari dist.
+
+Residente 4560 -> 3680 byte; spazio prima dello stack 448 -> 1328 byte, recuperati 880. Il confronto locale da stato identico registra 179 catture / 600 VBlank sia fermo sia con input direzionale, contro 178/179 della baseline. Sono conteggi mGBA, non FPS fisici. La cadenza resta quella precedente: questa prova libera memoria, non raggiunge da sola il target.
+
+Comandi di verifica: `python tools/test_resident_candidate.py` per protocollo ARM, codec, feedback e massimo 155 parole; `python tools/test_resident_budget.py --rom <ROM locale> --state <stato locale>` per confronto emulato. Prima build Thumb respinta per un salto interworking mancante; versione corretta richiede dichiarazioni `.type ..., %function` e ritorni `bx lr` nelle routine ARM. Non trasferire alla cieca soltanto il flag -mthumb.

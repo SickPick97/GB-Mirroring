@@ -1,0 +1,31 @@
+{
+  "scope": "Local mGBA; counts are captures and VBlanks, not physical FPS or audio certification",
+  "variants": [
+    {
+      "variant": "build/emerald",
+      "static": [
+        178,
+        600
+      ],
+      "moving": [
+        179,
+        600
+      ],
+      "resident_bytes": 4560,
+      "ram_free": 448
+    },
+    {
+      "variant": "build/emerald-next",
+      "static": [
+        179,
+        600
+      ],
+      "moving": [
+        179,
+        600
+      ],
+      "resident_bytes": 3680,
+      "ram_free": 1328
+    }
+  ]
+}
