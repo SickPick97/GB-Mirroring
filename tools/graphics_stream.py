@@ -56,7 +56,7 @@ class GraphicsParser:
    if i:self.discarded+=i;del self.buffer[:i]
    if len(self.buffer)<24:break
    h=struct.unpack_from('<12H',self.buffer)
-   if h[2] not in (0x500,0x501,0x600) or h[3]>(7 if h[2]==0x600 else 2) or h[6]>128 or h[11]!=0x5aa5 or binascii.crc_hqx(self.buffer[4:20],65535)!=h[10]:
+   if h[2] not in (0x500,0x501,0x600) or h[3]>(8 if h[2]==0x600 else 2) or h[6]>128 or h[11]!=0x5aa5 or binascii.crc_hqx(self.buffer[4:20],65535)!=h[10]:
     self.bad_headers+=1;self.cache=None;self.pending=None;del self.buffer[:1];continue
    n=24+h[6]*2
    if len(self.buffer)<n:break
@@ -78,17 +78,26 @@ class GraphicsParser:
     while pos+4<=len(body):
      tag,descriptor=struct.unpack_from('<HH',body,pos);pos+=4
      kind=descriptor>>8;size=(descriptor&255)*2
-     if kind not in (1,3,4,5,6) or not 0<size<=256 or pos+size>len(body):break
+     if kind not in (1,3,4,5,6,8) or not 0<size<=256 or pos+size>len(body):break
      parts.append(packet(seq,kind,tag,body[pos:pos+size],version=0x600));pos+=size
     else:
      if pos==len(body) and parts:
       expanded=b''.join(parts);self.wire+=n-len(expanded)
       self.buffer[:0]=expanded;continue
     self.fail('batch_bounds')
-   elif h[3] in (1,3,4,5,6):
+   elif h[3] in (1,3,4,5,6,8):
     block=h[7]&511 if h[2]==0x600 else h[7];slot=h[7]>>9
     if block>=393 or block in self.seen:self.fail();continue
-    if h[3]==6:
+    if h[3]==8:
+     if self.key or block<9 or len(body)<6:self.fail('stripe_base');continue
+     mask,checksum=struct.unpack_from('<HI',body)
+     if len(body)!=6+16*bin(mask).count('1'):self.fail('stripe_bounds');continue
+     decoded=bytearray(self.pending[block*256:(block+1)*256]);pos=6
+     for stripe in range(16):
+      if mask&(1<<stripe):decoded[stripe*16:(stripe+1)*16]=body[pos:pos+16];pos+=16
+     if zlib.crc32(decoded)!=checksum:self.fail('stripe_reference_crc');continue
+     decoded=bytes(decoded)
+    elif h[3]==6:
      words=struct.unpack('<'+'H'*(len(body)//2),body);result=[];pos=0;decoded=None
      while pos<len(words):
       token=words[pos];pos+=1
@@ -127,7 +136,7 @@ class GraphicsParser:
       if len(decoded)==256:decoded=bytes(decoded)
      if not valid_runs or len(decoded)!=256:self.fail();continue
     else:decoded=body
-    if len(decoded)!=256 or slot>=64:self.fail();continue
+    if len(decoded)!=256 or slot>=128:self.fail();continue
     if h[2]==0x600 and h[3]!=3:self.dictionary[slot]=bytes(decoded)
     self.seen.add(block);self.wire+=n;self.pending[block*256:(block+1)*256]=decoded
    else:
@@ -139,7 +148,7 @@ class GraphicsParser:
     metadata=dict(version='emerald-sliced-0.5.1' if h[2]==0x501 else 'emerald-experimental',game_frame=self.game_frame,changed_blocks=count,keyframe=self.key,raster_dma_active=bool(raster),scope='Graphics cache; scanline effects and temporal coherence not fully verified')
     if h[2]==0x600:
      endlo,endhi,ticks,wordslo,wordshi,peak,mode,visits=struct.unpack_from('<8H',body,8)
-     metadata.update(version='emerald-batched-0.9.0' if mode&2048 else 'emerald-selective-0.8.0' if mode&1024 else 'emerald-selective-0.7.1' if mode&512 else 'emerald-selective-0.7.0' if (mode&255)==2 else 'emerald-cached-0.6.0',feedback_available=bool(mode&256),end_game_frame=endlo|(endhi<<16),capture_ticks=ticks,wire_words_before_end=wordslo|(wordshi<<16),peak_work_scanlines=peak,optimized=bool(mode),visits_low=visits)
+     metadata.update(version='emerald-cache-0.10.0' if mode&8192 else 'emerald-sparse-development' if mode&4096 else 'emerald-batched-0.9.0' if mode&2048 else 'emerald-selective-0.8.0' if mode&1024 else 'emerald-selective-0.7.1' if mode&512 else 'emerald-selective-0.7.0' if (mode&255)==2 else 'emerald-cached-0.6.0',feedback_available=bool(mode&256),end_game_frame=endlo|(endhi<<16),capture_ticks=ticks,wire_words_before_end=wordslo|(wordshi<<16),peak_work_scanlines=peak,optimized=bool(mode),visits_low=visits)
     frames.append((seq,pixels,self.wire+n,4,metadata))
   return frames
 

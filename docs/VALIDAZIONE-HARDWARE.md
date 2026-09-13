@@ -98,3 +98,9 @@ Richiesta attuale: piano soltanto, minimo circa 30 FPS e obiettivo vicino a 50-6
 
 
 2026-09-13, pacchetto 0.9.0: solo collaudo software. Trasporto batch e renderer nativo, 433/410 catture per 600 frame emulati con tutti i 600 VBlank; non misura fisica e non prova di gameplay/audio. Corretto il wrap VCOUNT prima delle misure finali. Target almeno 30 FPS nel browser, GBA da preservare vicino alla fluidita normale; l utente indica circa 50 FPS sul GBA, dato dichiarato e non misurato dal software. Pico 0.7.0 invariato; collaudo unico ancora necessario.
+
+
+2026-09-13, hardware 0.9.0, sessione 20260913-035203: 2327 frame 0..2326, 218,825 s tra primo/ultimo, 10,6295 FPS; 999 immagini cambiate, cinque keyframe. Zero CRC, header errati, salti, recuperi e render drop. Renderer picco 1,65 ms; coda USB 0,49 ms. Intervalli mediana 35,1 ms, p95 321,4 ms. Utente vede circa 30 FPS fermo nell overworld e circa 4 in movimento; conferma gameplay e audio GBA fluidi. Fasi manuali non isolano precisamente tutto il movimento. BMP ispezionato, scena esterna montana con Centro Pokemon; nessun riferimento simultaneo per confronto pixel. Evidenza ripulita in test-results/2026-09-13-emerald-v0.9.0; log grezzi locali. Target 30 sostenuti durante il gioco non raggiunto.
+
+
+0.10.0: nuova release verificata soltanto in software. Cammino emulato 33,20 FPS medi contro 9,81 della 0.9.0; minimi inferiori a 30, squadra stabile circa 23. Main 1197/1200 contro 1198/1200 senza residente. Pico 0.7.0 invariato. Nessun nuovo test hardware effettuato; dati in test-results/software-v0.10.0. Il target continuo resta aperto.

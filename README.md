@@ -2,12 +2,12 @@
 
 Streaming del video di un GBA/GBA SP attraverso un adattatore Link con Raspberry Pi Pico RP2040, senza modificare internamente la console. Uscita definitiva scelta: pagina web locale; la webcam USB autonoma non e piu un requisito.
 
-**Pacchetto 0.9.0 pronto per il collaudo hardware.** Trasporto raggruppato, renderer nativo e browser con buffer 200 ms. Due finestre emulatore: circa 43,1 e 40,8 catture/s; non certificano 30 FPS fisici o fluidita del gameplay. Il requisito e almeno 30 FPS nel browser, preservando il GBA vicino alla sua fluidita normale (utente indica circa 50 FPS). [Avvio e prova unica](PROVA-SMERALDO.md). Baseline hardware 0.8.0: 10,26 FPS medi, GBA fluido. La cache automatica da ROM e il trasporto a dipendenze separate del [piano completo](PIANO-STREAMING-30-60.md) non sono implementati in questa versione.
+**0.10.0 pronta per il collaudo hardware.** Sullo stesso percorso emulato, 33,2 catture/s contro 9,8 della 0.9.0, con ciclo principale del gioco vicino a 60/s. Non certifica 30 FPS costanti sul GBA reale; squadra e transizioni restano sotto il target in alcune prove. Pico 0.7.0 invariato. [Avvio e risultati](PROVA-SMERALDO.md).
 
 ## Su un altro PC Windows
 
 1. Accedi alla repository privata con il tuo account GitHub.
-2. Scarica **Code → Download ZIP**, oppure clona la repository con GitHub Desktop.
+2. Scarica **Code â†’ Download ZIP**, oppure clona la repository con GitHub Desktop.
 3. Estrai tutto in una cartella scrivibile. Non avviare i BAT dentro lo ZIP.
 4. Segui la preparazione in **PROVA-SMERALDO.md** e installa il firmware unificato una sola volta.
 5. Avvia **14-AVVIA-SMERALDO.bat**: controllo dei file, multiboot e anteprima nello stesso programma. Il banco homebrew resta disponibile con gli avvii 10/11.
@@ -29,7 +29,7 @@ Su questo nuovo PC, se Celio non viene riconosciuto da PyUSB, conserva l'errore 
 | Link 0.2.0 / banco 0.3.4 | Multiplayer a cavo fisso: otto velocita pulite, conferma 60 s a 3451,4 B/s; screenshot completo in 23,45 s. |
 | Normal 0.3.2 / 0.3.3 | Entrambe le prove senza header: 290664 parole, campioni registrati nulli su GP1 e GP3. Percorso del segnale da chiarire. |
 
-[Registro hardware](docs/VALIDAZIONE-HARDWARE.md) · [Storico modifiche](CHANGELOG.md) · [Piano](PIANO-GBMIRRORING.md).
+[Registro hardware](docs/VALIDAZIONE-HARDWARE.md) Â· [Storico modifiche](CHANGELOG.md) Â· [Piano](PIANO-GBMIRRORING.md).
 
 ## Aggiornamenti e risultati
 

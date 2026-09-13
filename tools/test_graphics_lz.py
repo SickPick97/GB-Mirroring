@@ -16,6 +16,9 @@ class Tests(unittest.TestCase):
   sym=elf_symbols((ROOT/'build/emerald/resident.elf').read_bytes());u=Uc(UC_ARCH_ARM,UC_MODE_ARM)
   u.mem_map(0x02000000,0x40000);u.mem_map(0x03000000,0x8000)
   u.mem_write(0x0203cf80,(ROOT/'build/emerald/resident.bin').read_bytes())
+  blob=(ROOT/'build/emerald/resident.bin').read_bytes()
+  start=sym['__hot_load__'][0]-0x0203cf80
+  u.mem_write(sym['__hot_start__'][0],blob[start:start+sym['__hot_end__'][0]-sym['__hot_start__'][0]])
   rng=random.Random(872);cases=[list(range(16))*8,[23]*128,list(range(128))]
   cases += [[rng.randrange(65536) for _ in range(128)] for _ in range(20)]
   cases += [(lambda tile:(tile*32)[:128])([rng.randrange(65536) for _ in range(4)]) for _ in range(20)]

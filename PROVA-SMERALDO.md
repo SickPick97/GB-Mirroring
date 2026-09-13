@@ -1,12 +1,12 @@
-# Avvio e collaudo unico 0.9.0
+# Avvio e collaudo unico 0.10.0
 
-Obiettivo: almeno 30 FPS nello stream del browser, conservando la fluidita normale sul GBA. Le misure emulatore superano 40 catture/s nelle finestre provate, ma i 30 FPS sul collegamento reale restano da confermare. Questa versione e pronta da eseguire; non serve compilare.
+Versione pronta da eseguire, senza compilare. Nel confronto locale in mGBA, sullo stesso percorso con input direzionale, la cattura passa da 9,8 FPS (0.9.0) a 33,2 FPS. Il ciclo principale del gioco rimane vicino a 60 aggiornamenti/s. Sono misure emulatore: non certificano 30 FPS fisici o costanti in tutte le scene. Squadra e transizioni possono ancora scendere sotto il target.
 
 ## Avvio
 
-1. Estrai tutto lo ZIP 0.9.0 in una nuova cartella scrivibile. Chiudi vecchi BAT e pagine del viewer.
+1. Estrai tutto lo ZIP 0.10.0 in una nuova cartella scrivibile. Chiudi vecchi BAT e pagine del viewer.
 2. **Mantieni il Pico 0.7.0: nessun nuovo flash.** Solo se provieni da firmware piu vecchi, installa dist/gbmirroring-unified-v0.7.0.uf2 con BOOTSEL. Conserva cavo e selettore nella posizione attuale.
-3. Spegni il GBA, togli la cartuccia e riaccendilo. Apri **14-AVVIA-SMERALDO.bat** e premi **INVIO**: carica il nuovo loader 0.9.0. Non usare R per questo primo avvio, altrimenti rimane il vecchio residente.
+3. Spegni il GBA, togli la cartuccia e riaccendilo. Apri **14-AVVIA-SMERALDO.bat** e premi **INVIO**: carica il nuovo loader 0.10.0. Non usare R per questo primo avvio, altrimenti rimane il vecchio residente.
 4. Quando richiesto sul GBA, inserisci Smeraldo italiano originale e premi START. Entra nella partita.
 5. Quando il programma PC indica PRONTO, premi **SELECT + L + R** sul GBA. Si apre http://127.0.0.1:8765. Attendi la prima immagine; il browser aggiunge un buffer di circa 200 ms.
 
@@ -28,6 +28,10 @@ R riprende il residente gia caricato nella stessa sessione della console. B, dop
 
 Per OBS usa una sorgente Browser **http://127.0.0.1:8765/?clean=1**, dimensioni 240 x 160 o multipli. Il BAT deve rimanere aperto. Il Pico non viene riconfigurato come webcam.
 
-## Limiti dichiarati
+## Cosa cambia e limiti
 
-Il batch riduce gli header e il lavoro di scansione; il renderer diretto riduce il costo PC. La transazione grafica resta globale e puo durare piu frame: non e ancora il trasporto a dipendenze separate del piano completo. Non e presente la cache iniziale da ROM. Fuori dall overworld resta una scansione conservativa, e gli effetti per scanline non sono completamente riprodotti. Transizioni e scene complesse possono scendere sotto il target. I conteggi emulatore e i VBlank non certificano da soli fluidita reale o 30 FPS sostenuti.
+La cache dei blocchi passa da 32 a 128 voci. Compressione RLE, LZ e patch dei registri/OAM vengono eseguite nella RAM veloce; eliminata una copia di 256 byte che veniva eseguita anche quando sarebbe stata scartata. Il trasmettitore mantiene lo stesso ordine dei bit e il limite di 155 parole per intervento. Nessun nuovo firmware Pico.
+
+Pokédex e squadra usano le code di copia osservate e un controllo ciclico della VRAM, come l'overworld; un cambio di callback richiede una scansione completa. Gli altri callback mantengono la scansione conservativa. Le risorse nuove e i riferimenti completi richiedono ancora tempo: non e garantito il minimo di 30 FPS durante tutte le transizioni. Nel test squadra stabile la cattura resta circa 23 FPS; la finestra peggiore di un secondo nel cammino provato e circa 13 catture. Nessuna interpolazione o duplicazione di frame viene contata come un aggiornamento nuovo.
+
+Gli effetti per scanline rimangono incompleti. La nuova versione va confrontata sul collegamento reale: invia una sola sessione con cammino continuo, menu/squadra, Centro Pokemon e battaglia.

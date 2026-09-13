@@ -1,5 +1,22 @@
 # Storico
 
+## 0.10.0 - Compressione in RAM veloce e cache ampliata
+
+- Compressione RLE/LZ e patch registri/OAM in IWRAM; sender raggruppato a quattro bit per liberare spazio senza cambiare ordine o polarita. Tolta una copia RAW ridondante. Dizionario 32 -> 128 voci con confronto dei due hash, parser esteso e test del limite 127.
+- Scansione selettiva anche per i callback italiani del Pokedex e della squadra, verificati sul codice locale; controllo completo al cambio di callback e fallback conservativo per callback sconosciuti.
+- Cammino ripetibile emulato: 667 catture/1200 frame, 33,20 FPS contro 197/1200, 9,81 FPS della 0.9.0. Finestra minima di un secondo: 13 catture; nessuna garanzia di 30 costanti. Ciclo Main: 1197/1200 contro 1198/1200 senza residente. Non sono misure hardware/audio.
+- Loader pronto da 5424 byte, residente 3768 byte, Pico 0.7.0 invariato. Avvio unico 14-AVVIA-SMERALDO.bat; B conserva la baseline 0.8.0. Protocollo ARM, compressione, fallback RAW incomprimibile, CRC, boot mGBA e multiboot simulato verificati.
+- Persistono tempi di caricamento e cali in alcune scene: squadra stabile circa 23 FPS emulati. Cache iniziale da ROM e trasporto a risorse indipendenti non integrati. Obiettivo 30 sostenuti in ogni situazione ancora aperto.
+- Ripristinati ROM e salvataggio locali per i test: entrambi letti senza modificarli, esclusi dalla repository e dal pacchetto.
+
+## Risultato hardware 0.9.0 e prototipo di patch VRAM
+
+- 2327 frame consecutivi, 10,6295 FPS medi, zero CRC/header/gap/render drop. Renderer picco 1,65 ms, coda USB picco 0,49 ms. Utente: circa 30 da fermo, circa 4 camminando; gioco e audio GBA ancora fluidi.
+- Transazioni senza modifiche: mediana 78 byte e 1 intervento; con 5-16 blocchi modificati: 1518 byte e 10 interventi; oltre 16 blocchi: 3608 byte e 21 interventi. Il browser non e il collo di bottiglia osservato.
+- Prototipo isolato di patch VRAM da 16 byte, con CRC32 del blocco ricostruito per respingere collisioni del filtro CRC16 o riferimenti sbagliati. Cache limitata, ombra registri compattata e dizionario ridotto per rientrare in RAM. Test ARM: modifica di 16 byte ricostruita esattamente in una transazione da 128 byte.
+- Replay parziale della coda: confronto ideale 36686 -> 25952 byte su 272 aggiornamenti VRAM noti (-29,3%). Non e un dato sull intera sessione; non basta a dimostrare il passaggio da 4 a 30 FPS.
+- Nessuna nuova release. Il prototipo compila solo in build/emerald-sparse; il launcher resta 0.9.0. ROM e salvataggio locali risultano eliminati: per prove reali in emulazione recuperare almeno il file GBA, il salvataggio e opzionale. Il trasporto a risorse separate rimane da completare.
+
 ## 0.9.0 - Pacchetti raggruppati e presentazione temporizzata
 
 - Raggruppa piu aggiornamenti grafici sotto un solo header/CRC; controlla limiti e conteggio byte, mantiene compatibilita con la baseline. Scan delle maschere a parole e audit 8/24 blocchi, invece di 24/48. Avvio possibile a ogni VBlank; limite 155 parole per intervento mantenuto, costo totale da verificare sulla console.

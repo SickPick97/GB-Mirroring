@@ -1,8 +1,9 @@
 """Run existing ARM protocol/codec checks on the isolated budget candidate."""
-import shutil,tempfile,unittest
+import shutil,tempfile,unittest,os
 from pathlib import Path
 import test_emerald,test_graphics_lz
 ROOT=Path(__file__).resolve().parents[1]
+CANDIDATE=ROOT/'build'/os.environ.get('GBM_CANDIDATE','emerald-next')
 
 class ScanBounds(unittest.TestCase):
  def test_empty_mask_finishes_and_visible_lines_yield(self):
@@ -10,7 +11,7 @@ class ScanBounds(unittest.TestCase):
   from unicorn import Uc,UC_ARCH_ARM,UC_MODE_ARM
   from unicorn.arm_const import UC_ARM_REG_SP,UC_ARM_REG_LR,UC_ARM_REG_R0,UC_ARM_REG_R1,UC_ARM_REG_R2,UC_ARM_REG_R3
   from verify_firmware import elf_symbols
-  folder=ROOT/'build/emerald-next';sym=elf_symbols((folder/'resident.elf').read_bytes())
+  folder=CANDIDATE;sym=elf_symbols((folder/'resident.elf').read_bytes())
   u=Uc(UC_ARCH_ARM,UC_MODE_ARM)
   for address,size in ((0x02000000,0x40000),(0x03000000,0x8000),(0x04000000,0x1000)):u.mem_map(address,size)
   blob=(folder/'resident.bin').read_bytes();u.mem_write(0x0203cf80,blob)
@@ -26,7 +27,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='gbm-candidate-') as directory:
         root=Path(directory);target=root/'build/emerald';target.mkdir(parents=True)
         for name in ('resident.elf','resident.bin'):
-            shutil.copyfile(ROOT/'build/emerald-next'/name,target/name)
+            shutil.copyfile(CANDIDATE/name,target/name)
         originals=(test_emerald.ROOT,test_graphics_lz.ROOT)
         try:
             test_emerald.ROOT=root;test_graphics_lz.ROOT=root

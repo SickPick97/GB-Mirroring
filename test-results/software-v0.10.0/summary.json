@@ -1,0 +1,105 @@
+{
+  "scope": "Local mGBA only. No physical Link, browser presentation or audio certification. ROM/save remain local.",
+  "target_30_in_every_scene_achieved": false,
+  "variants": [
+    {
+      "scope": "Emulated directional input, no physical Link or browser measurement",
+      "frames": 1200,
+      "leg_frames": 48,
+      "scenario": "walking",
+      "captures": 197,
+      "capture_fps": 9.805264676843624,
+      "variant": "emerald-next",
+      "minimum_60_frame_window": 5,
+      "capture_gap_frames_median": 3.0,
+      "capture_gap_frames_p95": 16,
+      "capture_gap_frames_max": 23
+    },
+    {
+      "scope": "Emulated directional input, no physical Link or browser measurement",
+      "frames": 1200,
+      "leg_frames": 48,
+      "scenario": "walking",
+      "captures": 667,
+      "capture_fps": 33.19853573327258,
+      "variant": "emerald-cache",
+      "minimum_60_frame_window": 13,
+      "capture_gap_frames_median": 1,
+      "capture_gap_frames_p95": 4,
+      "capture_gap_frames_max": 21
+    },
+    {
+      "scope": "Emulated directional input, no physical Link or browser measurement",
+      "frames": 1200,
+      "leg_frames": 48,
+      "scenario": "team",
+      "captures": 536,
+      "capture_fps": 26.67828358775727,
+      "variant": "emerald-cache",
+      "minimum_60_frame_window": 0,
+      "capture_gap_frames_median": 1.0,
+      "capture_gap_frames_p95": 5,
+      "capture_gap_frames_max": 152
+    },
+    {
+      "scope": "Emulated directional input, no physical Link or browser measurement",
+      "frames": 1200,
+      "leg_frames": 48,
+      "scenario": "team-stay",
+      "captures": 493,
+      "capture_fps": 24.53804815067973,
+      "variant": "emerald-cache",
+      "minimum_60_frame_window": 0,
+      "capture_gap_frames_median": 1,
+      "capture_gap_frames_p95": 7,
+      "capture_gap_frames_max": 68,
+      "settled_last_500_frames_fps": 23.05481521986785
+    },
+    {
+      "scope": "Emulated directional input, no physical Link or browser measurement",
+      "frames": 1200,
+      "leg_frames": 48,
+      "scenario": "pokedex-stay",
+      "captures": 817,
+      "capture_fps": 40.664473304473304,
+      "variant": "emerald-cache",
+      "minimum_60_frame_window": 1,
+      "capture_gap_frames_median": 1,
+      "capture_gap_frames_p95": 2,
+      "capture_gap_frames_max": 58,
+      "settled_last_500_frames_fps": 44.915080428343586
+    }
+  ],
+  "gameplay": {
+    "scope": "Local mGBA directional-input test with Main callback instrumentation; not hardware or audio certification",
+    "results": [
+      {
+        "variant": "unmodified_game",
+        "emulated_frames": 1200,
+        "main_iterations": 1198,
+        "main_fps": 59.62795473532316
+      },
+      {
+        "variant": "emerald-cache",
+        "emulated_frames": 1200,
+        "main_iterations": 1197,
+        "main_fps": 59.57818181818181
+      }
+    ]
+  },
+  "loader_sha256": "9dd17ad94a465252de2c1f8fd1a2d62fe2d1f57bf59535851e9f70c7761b6f21",
+  "tests": {
+    "arm_candidate": 9,
+    "raw_fallback": 1,
+    "dictionary_bounds": 1,
+    "batches": 2,
+    "wire_repair": 4,
+    "multiboot": 2,
+    "mgba_boot": true,
+    "altered_signature_rejected": true,
+    "portable_integrity": true,
+    "portable_relocated_launcher": true,
+    "browser_playout": true,
+    "frame_hub": 2
+  }
+}
