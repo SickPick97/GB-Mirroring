@@ -1,4 +1,6 @@
-# Stato dello sviluppo dopo 0.8.0
+# Checkpoint storico dello sviluppo dopo 0.8.0
+
+Aggiornamento: il pacchetto 0.9.0 integra il percorso PC e un trasporto batch. Vedere CHANGELOG e PROVA-SMERALDO. Il testo seguente conserva il checkpoint precedente e i limiti del piano non ancora implementati.
 
 Non e una nuova release hardware. Il minimo di circa 30 FPS rimane da raggiungere sul collegamento; nessun nuovo flash o collaudo fisico richiesto per questo checkpoint.
 

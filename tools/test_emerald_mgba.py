@@ -6,10 +6,10 @@ from graphics_renderer import Renderer
 from graphics_stream import GraphicsParser,graphics_from_state,encode_snapshot
 ROOT=Path(__file__).resolve().parents[1]
 DLL=ROOT/'runtime/mgba/mgba_libretro.dll'
-def boot_test(rom,mutate=False):
+def boot_test(rom,mutate=False,version='0.8.0'):
  if mutate:
   rom=bytearray(rom);rom[0xa0]^=1;rom=bytes(rom)
- c=Core(DLL,rom);c.run(3);s=c.state();b=(ROOT/'dist/gbmirroring-emerald-v0.8.0.gba').read_bytes();s[0x21000:0x21000+len(b)]=b
+ c=Core(DLL,rom);c.run(3);s=c.state();b=(ROOT/('dist/gbmirroring-emerald-v'+version+'.gba')).read_bytes();s[0x21000:0x21000+len(b)]=b
  pc=0x020000e0;struct.pack_into('<I',s,0x5c,pc+4);struct.pack_into('<I',s,0x60,0xdf);struct.pack_into('<II',s,0x2f8,*struct.unpack_from('<II',b,0xe0));struct.pack_into('<I',s,0x318,pc)
  c.restore(s);c.run(10);c.run(3,1<<3);c.run(360);s=c.state();irq=struct.unpack_from('<I',s,0x20ffc)[0];c.close()
  assert (irq==0x0203cf80)!=mutate

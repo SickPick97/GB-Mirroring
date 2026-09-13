@@ -1,5 +1,15 @@
 # Storico
 
+## 0.9.0 - Pacchetti raggruppati e presentazione temporizzata
+
+- Raggruppa piu aggiornamenti grafici sotto un solo header/CRC; controlla limiti e conteggio byte, mantiene compatibilita con la baseline. Scan delle maschere a parole e audit 8/24 blocchi, invece di 24/48. Avvio possibile a ogni VBlank; limite 155 parole per intervento mantenuto, costo totale da verificare sulla console.
+- Corretto il controllo quando VCOUNT torna a zero; la scansione cede nelle linee visibili. Maschera finale vuota termina a 393, senza oltrepassare il limite. Test ARM dedicato.
+- Residente Thumb/ARM 3936 byte, loader 5600 byte. Restano 816 byte prima dello stack. Pico 0.7.0 invariato. INVIO carica 0.9.0, B conserva 0.8.0.
+- Integra renderer nativo, WebSocket, buffer 200 ms e contatore dei frame mostrati nel browser. Fonti native e licenza incluse.
+- Ultimo confronto mGBA: 433/410 catture per 600 frame, 600 VBlank in entrambe le finestre. Non sono 43/41 FPS fisici, non certificano movimento, gameplay o audio. Il target riguarda il browser; preservare la fluidita GBA e requisito separato.
+- Test ARM/protocollo, batch malformati, CRC, PIO, multiboot simulato, avvio mGBA, viewer e runtime portatile. Nessun test fisico avviato dall agente.
+- Restano limiti: transazione globale e snapshot distribuiti, scansione completa fuori overworld, effetti scanline incompleti. Cache iniziale da ROM e trasporto a dipendenze separate non integrati. Non si dichiara completato tutto il piano o garantito il minimo 30 FPS hardware.
+
 ## Sviluppo dopo 0.8.0 - percorso PC e dipendenze
 
 - Renderer C diretto, sorgenti mGBA fissati e inclusi con licenza; zero differenze su 900 immagini della sequenza di gioco emulata. Mediana 1,365 ms, p95 2,452 ms sulla macchina di sviluppo.
