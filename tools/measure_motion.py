@@ -10,11 +10,11 @@ from link_protocol import bmp
 ROOT=Path(__file__).resolve().parents[1]
 
 def main():
-    ap=argparse.ArgumentParser();ap.add_argument('--candidate',default='emerald-cache')
-    ap.add_argument('--frames',type=int,default=1200);ap.add_argument('--leg',type=int,default=48);ap.add_argument('--menus',action='store_true');ap.add_argument('--team',action='store_true');ap.add_argument('--stay',action='store_true');args=ap.parse_args()
-    folder=ROOT/'build'/args.candidate;scenario=('team' if args.team else 'pokedex' if args.menus else 'walking')+('-stay' if args.stay else '');out=ROOT/'build/motion'/args.candidate/scenario;out.mkdir(parents=True,exist_ok=True)
+    ap=argparse.ArgumentParser();ap.add_argument('--candidate',default='emerald-cache');ap.add_argument('--state',type=Path,default=ROOT/'build/motion/field.state')
+    ap.add_argument('--frames',type=int,default=1200);ap.add_argument('--leg',type=int,default=48);ap.add_argument('--vertical',action='store_true');ap.add_argument('--menus',action='store_true');ap.add_argument('--team',action='store_true');ap.add_argument('--stay',action='store_true');args=ap.parse_args()
+    folder=ROOT/'build'/args.candidate;scenario=('team' if args.team else 'pokedex' if args.menus else 'vertical' if args.vertical else 'walking')+('-stay' if args.stay else '');out=args.state.parent/args.candidate/scenario;out.mkdir(parents=True,exist_ok=True)
     sym=elf_symbols((folder/'resident.elf').read_bytes())
-    state=bytearray((ROOT/'build/motion/field.state').read_bytes())
+    state=bytearray(args.state.read_bytes())
     blob=bytearray((folder/'resident.bin').read_bytes())
     struct.pack_into('<I',blob,4,struct.unpack_from('<I',state,0x20ffc)[0])
     state[0x5df80:0x60c00]=bytes(0x2c80);state[0x5df80:0x5df80+len(blob)]=blob
@@ -27,7 +27,7 @@ def main():
     try:
         core.run();core.restore(state);core.run(480);initial=read(core.state(),'sequence')
         for frame in range(args.frames):
-            keys=1<<(7 if frame%(args.leg*2)<args.leg else 6)
+            keys=1<<((5 if frame%(args.leg*2)<args.leg else 4) if args.vertical else (7 if frame%(args.leg*2)<args.leg else 6))
             if args.menus or args.team:
                 keys=(1<<3 if 120<=frame<123 else 1<<8 if 240<=frame<243 else 1 if 480<=frame<483 or 660<=frame<663 else 0)
             if args.stay and frame>=480:keys=0

@@ -56,7 +56,7 @@ class GraphicsParser:
    if i:self.discarded+=i;del self.buffer[:i]
    if len(self.buffer)<24:break
    h=struct.unpack_from('<12H',self.buffer)
-   if h[2] not in (0x500,0x501,0x600) or h[3]>(8 if h[2]==0x600 else 2) or h[6]>128 or h[11]!=0x5aa5 or binascii.crc_hqx(self.buffer[4:20],65535)!=h[10]:
+   if h[2] not in (0x500,0x501,0x600) or h[3]>(9 if h[2]==0x600 else 2) or h[6]>128 or h[11]!=0x5aa5 or binascii.crc_hqx(self.buffer[4:20],65535)!=h[10]:
     self.bad_headers+=1;self.cache=None;self.pending=None;del self.buffer[:1];continue
    n=24+h[6]*2
    if len(self.buffer)<n:break
@@ -67,7 +67,7 @@ class GraphicsParser:
     if len(body)!=6:self.fail();continue
     key,lo,hi=struct.unpack('<3H',body)
     if key not in (0,1):self.fail();continue
-    self.sequence=seq;self.seen=set();self.wire=n;self.key=bool(key)
+    self.sequence=seq;self.seen=set();self.wire=n;self.key=bool(key);self.regions={};self.codecs={}
     if not key and (self.cache is None or seq!=((self.previous+1)&0xffffffff)):
      self.delta_misses+=1;self.pending=None;self.cache=None;continue
     if key:self.dictionary={}
@@ -78,17 +78,30 @@ class GraphicsParser:
     while pos+4<=len(body):
      tag,descriptor=struct.unpack_from('<HH',body,pos);pos+=4
      kind=descriptor>>8;size=(descriptor&255)*2
-     if kind not in (1,3,4,5,6,8) or not 0<size<=256 or pos+size>len(body):break
+     if kind not in (1,3,4,5,6,8,9) or not 0<size<=256 or pos+size>len(body):break
      parts.append(packet(seq,kind,tag,body[pos:pos+size],version=0x600));pos+=size
     else:
      if pos==len(body) and parts:
       expanded=b''.join(parts);self.wire+=n-len(expanded)
       self.buffer[:0]=expanded;continue
     self.fail('batch_bounds')
-   elif h[3] in (1,3,4,5,6,8):
+   elif h[3] in (1,3,4,5,6,8,9):
     block=h[7]&511 if h[2]==0x600 else h[7];slot=h[7]>>9
     if block>=393 or block in self.seen:self.fail();continue
-    if h[3]==8:
+    if h[3]==9:
+     if self.key or not 233<=block<257 or len(body)<10:self.fail('column_base');continue
+     mask,first,second=struct.unpack_from('<HII',body)
+     if mask>255 or len(body)!=10+32*bin(mask).count('1'):self.fail('column_bounds');continue
+     decoded=bytearray(self.pending[block*256:(block+1)*256]);pos=10
+     for column in range(8):
+      if mask&(1<<column):
+       for row in range(4):
+        offset=row*64+column*8;decoded[offset:offset+8]=body[pos:pos+8];pos+=8
+     if block_hash(decoded)!=(first,second):
+      self.column_failure=(block,mask,bytes(decoded),(first,second),block_hash(decoded))
+      self.fail('column_reference_hash');continue
+     decoded=bytes(decoded)
+    elif h[3]==8:
      if self.key or block<9 or len(body)<6:self.fail('stripe_base');continue
      mask,checksum=struct.unpack_from('<HI',body)
      if len(body)!=6+16*bin(mask).count('1'):self.fail('stripe_bounds');continue
@@ -137,6 +150,9 @@ class GraphicsParser:
      if not valid_runs or len(decoded)!=256:self.fail();continue
     else:decoded=body
     if len(decoded)!=256 or slot>=128:self.fail();continue
+    region='registers' if block==0 else 'palette' if block<5 else 'objects' if block<9 else 'field_maps' if 233<=block<257 else 'vram_other'
+    counters=self.regions.setdefault(region,dict(blocks=0,payload_bytes=0));counters['blocks']+=1;counters['payload_bytes']+=len(body)
+    self.codecs[str(h[3])]=self.codecs.get(str(h[3]),0)+1
     if h[2]==0x600 and h[3]!=3:self.dictionary[slot]=bytes(decoded)
     self.seen.add(block);self.wire+=n;self.pending[block*256:(block+1)*256]=decoded
    else:
@@ -146,11 +162,19 @@ class GraphicsParser:
     self.cache=self.pending;self.pending=None;self.previous=seq
     pixels=self.renderer.render(self.cache)
     metadata=dict(version='emerald-sliced-0.5.1' if h[2]==0x501 else 'emerald-experimental',game_frame=self.game_frame,changed_blocks=count,keyframe=self.key,raster_dma_active=bool(raster),scope='Graphics cache; scanline effects and temporal coherence not fully verified')
+    metadata.update(resource_regions=self.regions,block_codecs=self.codecs)
     if h[2]==0x600:
      endlo,endhi,ticks,wordslo,wordshi,peak,mode,visits=struct.unpack_from('<8H',body,8)
-     metadata.update(version='emerald-cache-0.10.0' if mode&8192 else 'emerald-sparse-development' if mode&4096 else 'emerald-batched-0.9.0' if mode&2048 else 'emerald-selective-0.8.0' if mode&1024 else 'emerald-selective-0.7.1' if mode&512 else 'emerald-selective-0.7.0' if (mode&255)==2 else 'emerald-cached-0.6.0',feedback_available=bool(mode&256),end_game_frame=endlo|(endhi<<16),capture_ticks=ticks,wire_words_before_end=wordslo|(wordshi<<16),peak_work_scanlines=peak,optimized=bool(mode),visits_low=visits)
+     metadata.update(version='emerald-columns-0.11.0' if mode&16384 else 'emerald-cache-0.10.0' if mode&8192 else 'emerald-sparse-development' if mode&4096 else 'emerald-batched-0.9.0' if mode&2048 else 'emerald-selective-0.8.0' if mode&1024 else 'emerald-selective-0.7.1' if mode&512 else 'emerald-selective-0.7.0' if (mode&255)==2 else 'emerald-cached-0.6.0',feedback_available=bool(mode&256),end_game_frame=endlo|(endhi<<16),capture_ticks=ticks,wire_words_before_end=wordslo|(wordshi<<16),peak_work_scanlines=peak,optimized=bool(mode),visits_low=visits)
     frames.append((seq,pixels,self.wire+n,4,metadata))
   return frames
+
+def block_hash(data):
+ a=b=0
+ for value in struct.unpack('<64I',data):
+  a=(((a<<5)|(a>>27))^value)&0xffffffff
+  b=(((b<<7)|(b>>25))+value)&0xffffffff
+ return a,b
 
 def graphics_from_state(s):
  if len(s)<0x61000 or s[0x1c:0x20]!=b'BPEI':raise ValueError('Italian Emerald state required')

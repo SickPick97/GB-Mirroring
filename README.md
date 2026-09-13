@@ -2,7 +2,7 @@
 
 Streaming del video di un GBA/GBA SP attraverso un adattatore Link con Raspberry Pi Pico RP2040, senza modificare internamente la console. Uscita definitiva scelta: pagina web locale; la webcam USB autonoma non e piu un requisito.
 
-**0.10.0 collaudata: target non raggiunto nell'overworld in movimento.** Utente: stutter forti all'aperto, NPC fluidi da fermo e Centro Pokemon fluido anche camminando. Sessione: 20,16 FPS medi, zero errori Link e zero render drop; aggiornamenti grafici grandi causano pause. Il benchmark emulato non rappresenta abbastanza la scena hardware. [Registro](docs/VALIDAZIONE-HARDWARE.md).
+**0.11.0 pronta per il collaudo: patch delle mappe durante il cammino.** Nel confronto emulato a Ceneride il cammino orizzontale passa da 13,64 a 21,35 catture/s; gameplay emulato invariato. Il target di 30 FPS costanti nel browser resta aperto. 120 scene ricostruite esattamente dal codice ARM; Pico 0.7.0 compatibile, nessun nuovo flash necessario. [Istruzioni](PROVA-SMERALDO.md) e [registro](docs/VALIDAZIONE-HARDWARE.md).
 
 ## Su un altro PC Windows
 

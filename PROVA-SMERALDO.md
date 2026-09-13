@@ -1,37 +1,40 @@
-# Avvio e collaudo unico 0.10.0
+# Avvio e collaudo unico 0.11.0
 
-Versione pronta da eseguire, senza compilare. Nel confronto locale in mGBA, sullo stesso percorso con input direzionale, la cattura passa da 9,8 FPS (0.9.0) a 33,2 FPS. Il ciclo principale del gioco rimane vicino a 60 aggiornamenti/s. Sono misure emulatore: non certificano 30 FPS fisici o costanti in tutte le scene. Squadra e transizioni possono ancora scendere sotto il target.
+Pacchetto pronto, senza compilazione. Corregge il trasporto delle porzioni di mappa che cambiano durante il cammino. Nella prova emulata orizzontale di Ceneride passa da 13,64 a 21,35 catture/s (+57%). Il ciclo principale del gioco mantiene 1198 aggiornamenti in 1200 frame, come senza residente. **Non abbiamo ancora raggiunto o verificato 30 FPS costanti nel browser.**
 
 ## Avvio
 
-1. Estrai tutto lo ZIP 0.10.0 in una nuova cartella scrivibile. Chiudi vecchi BAT e pagine del viewer.
-2. **Mantieni il Pico 0.7.0: nessun nuovo flash.** Solo se provieni da firmware piu vecchi, installa dist/gbmirroring-unified-v0.7.0.uf2 con BOOTSEL. Conserva cavo e selettore nella posizione attuale.
-3. Spegni il GBA, togli la cartuccia e riaccendilo. Apri **14-AVVIA-SMERALDO.bat** e premi **INVIO**: carica il nuovo loader 0.10.0. Non usare R per questo primo avvio, altrimenti rimane il vecchio residente.
+1. Estrai tutto lo ZIP 0.11.0 in una nuova cartella scrivibile. Chiudi il vecchio BAT e la vecchia pagina.
+2. Il Pico unificato **0.7.0 resta compatibile**: per questa versione non occorre riflasharlo. Mantieni cavo e selettore attuali. Se parti da un Pico con firmware diverso, usa `dist/gbmirroring-unified-v0.7.0.uf2` con BOOTSEL.
+3. Spegni il GBA, togli la cartuccia e riaccendilo. Apri **14-AVVIA-SMERALDO.bat** e premi **INVIO**, per caricare il nuovo residente. Non scegliere R al primo avvio della nuova versione.
 4. Quando richiesto sul GBA, inserisci Smeraldo italiano originale e premi START. Entra nella partita.
-5. Quando il programma PC indica PRONTO, premi **SELECT + L + R** sul GBA. Si apre http://127.0.0.1:8765. Attendi la prima immagine; il browser aggiunge un buffer di circa 200 ms.
+5. Quando il PC indica PRONTO, premi **SELECT + L + R** sul GBA. Il visualizzatore si apre su http://127.0.0.1:8765. Attendi la prima immagine.
 
-## Una sessione di circa 10 minuti
+## Una sola sessione
 
-Nella diagnostica registra la fase prima di provarla: fermo, cammino continuo, menu/squadra, entrata e uscita Centro Pokemon, battaglia, pausa/ripresa. Confronta sul GBA cattura attiva e in pausa (SELECT + L + R): il miglioramento del browser non deve costare fluidita o audio sulla console.
+Parti da **Ceneride, fuori dal Centro Pokemon**. Prima di ogni tratto seleziona la fase nella diagnostica della pagina:
 
-- **STREAM**: aggiornamenti verificati ricevuti dal GBA.
-- **NEL BROWSER**: frame effettivamente mostrati, senza contare i refresh che ripetono l ultima immagine.
-- **IMMAGINI CAMBIATE**: esclude gli stati visivamente identici; da fermo puo essere basso anche con uno stream regolare.
+- cammina per circa un minuto a destra e sinistra, poi in verticale;
+- entra nel Centro Pokemon e cammina anche dentro;
+- esci, apri e chiudi squadra e menu; prova una battaglia se disponibile;
+- controlla che gioco e audio sul GBA restino fluidi. SELECT + L + R mette in pausa e riprende la cattura per il confronto.
 
-Le metriche sono finestre di cinque secondi: attendi che si stabilizzino. Non misurano gli FPS del gameplay GBA. Non sono implementati frame interpolati.
+Concludi con **Termina e salva rapporto** e invia l'intera cartella `dist/emerald-reports/<data-ora>`. I nuovi contatori registrano automaticamente quanti blocchi e byte riguardano mappe, palette, oggetti e altre risorse: non serve una prova separata di misura.
 
-Al termine metti in pausa la cattura e premi **Termina e salva rapporto**. Invia l intera cartella **dist/emerald-reports/<data-ora>**, indicando se gameplay e audio sul GBA sono rimasti fluidi. Comprende rapporto.json, frames.jsonl, ultimo-frame.bmp, log e coda USB. Non serve fare prove separate di firmware o compilazione.
+STREAM conta aggiornamenti verificati ricevuti; NEL BROWSER conta immagini presentate, senza contare il refresh della stessa immagine. IMMAGINI CAMBIATE esclude i frame visivamente identici. Le finestre sono di cinque secondi; queste metriche non misurano gli FPS del gioco fisico.
 
-## Ripresa, OBS e recupero
+## Ripresa e OBS
 
-R riprende il residente gia caricato nella stessa sessione della console. B, dopo spegnimento e nuovo avvio senza cartuccia, carica la baseline 0.8.0 mantenendo lo stesso Pico. Il pulsante Ripristina immagine richiede un riferimento completo senza cambiare cavo.
+R riprende il residente gia caricato nella stessa sessione della console. B carica la baseline 0.8.0 dopo spegnimento e riavvio senza cartuccia. Ripristina immagine richiede un riferimento completo mantenendo cavo e firmware.
 
-Per OBS usa una sorgente Browser **http://127.0.0.1:8765/?clean=1**, dimensioni 240 x 160 o multipli. Il BAT deve rimanere aperto. Il Pico non viene riconfigurato come webcam.
+Per OBS: sorgente Browser `http://127.0.0.1:8765/?clean=1`, dimensioni 240 x 160 o multipli. Il BAT deve restare aperto. Il buffer del browser e circa 200 ms.
 
 ## Cosa cambia e limiti
 
-La cache dei blocchi passa da 32 a 128 voci. Compressione RLE, LZ e patch dei registri/OAM vengono eseguite nella RAM veloce; eliminata una copia di 256 byte che veniva eseguita anche quando sarebbe stata scartata. Il trasmettitore mantiene lo stesso ordine dei bit e il limite di 155 parole per intervento. Nessun nuovo firmware Pico.
+Le mappe usano patch di gruppi di quattro colonne, invece di inviare sempre il blocco completo. La ricostruzione controlla entrambe le firme del blocco, oltre al CRC del pacchetto: una firma compatta in collisione provoca recupero, non l'accettazione della patch errata. Le patch senza colonne rilevate ripiegano sui codec completi.
 
-Pokédex e squadra usano le code di copia osservate e un controllo ciclico della VRAM, come l'overworld; un cambio di callback richiede una scansione completa. Gli altri callback mantengono la scansione conservativa. Le risorse nuove e i riferimenti completi richiedono ancora tempo: non e garantito il minimo di 30 FPS durante tutte le transizioni. Nel test squadra stabile la cattura resta circa 23 FPS; la finestra peggiore di un secondo nel cammino provato e circa 13 catture. Nessuna interpolazione o duplicazione di frame viene contata come un aggiornamento nuovo.
+Il dizionario scende da 128 a 64 voci per lasciare spazio alle firme delle mappe; registri/OAM restano differenziali. Il limite resta 155 parole per intervento. In una prova piu favorevole a Porto Selcepoli la media emulata scende da 33,20 a 31,46: il beneficio non e uniforme. Ceneride verticale passa da 21,25 a 21,95; il Centro da 18,96 a 20,76. Squadra e cambi scena rimangono sotto il target. Gli effetti per scanline sono ancora incompleti.
 
-Gli effetti per scanline rimangono incompleti. La nuova versione va confrontata sul collegamento reale: invia una sola sessione con cammino continuo, menu/squadra, Centro Pokemon e battaglia.
+120 scene emulatore con movimento e menu sono state inviate dal codice ARM ed esattamente ricostruite sul PC. La prova mantiene ogni scena stabile durante l'invio: controlla il codec, non certifica la coerenza temporale o le prestazioni sul collegamento fisico. Il pacchetto non contiene ROM o salvataggi e non richiede PROGETTO AMICO per funzionare.
+
+Un futuro aggiornamento del Pico e consentito: il vincolo mantenuto e usare un solo firmware per multiboot e streaming durante tutta la procedura.

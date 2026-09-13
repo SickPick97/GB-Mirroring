@@ -1,5 +1,13 @@
 # Storico
 
+## 0.11.0 - Patch delle mappe e scenario Ceneride
+
+- Codec batch 9 per gruppi di quattro colonne nelle mappe. Firme compatte calcolate in ARM e controllo delle due firme integrali sul PC; ripiego sui codec completi se nessun gruppo risulta cambiato. Corrette collisioni strutturate trovate con scene reali.
+- Dizionario 64 voci, shadow registri compatto, nessun nuovo lavoro LZ su patch gia selezionate. Mantiene 155 parole per intervento, range RAM e firmware Pico unificato 0.7.0. Loader 5824 byte, residente 4160 byte.
+- Fixture Ceneride da copia in memoria del salvataggio locale. Confronto emulato orizzontale 13,64 -> 21,35 FPS; verticale 21,25 -> 21,95; Centro 18,96 -> 20,76. Porto Selcepoli 33,20 -> 31,46: beneficio non uniforme. Main 1198/1200 con e senza cattura.
+- Replay di 120 scene congelate: codice ARM reale, GPIO simulato, cache PC identica byte per byte. Verificati codec, fallback RAW, limiti, recupero, boot e firma cartuccia, multiboot simulato e pacchetto portatile. Nessuna certificazione hardware o 30 FPS ovunque; squadra e transizioni restano sotto il target.
+- Contatori automatici per regione grafica e codec nei rapporti, senza un secondo test manuale. Utente disponibile ad aggiornare il Pico tra release, mantenendo un firmware unico durante la procedura.
+
 ## Collaudo hardware 0.10.0 - target esterno ancora aperto
 
 - Sessione 181547: 4052 frame, 20,16 FPS medi, nessun errore Link o scarto renderer. Stutter esterno in movimento ancora forte secondo l utente; Centro Pokemon fluido anche camminando.

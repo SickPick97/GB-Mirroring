@@ -1,0 +1,165 @@
+{
+  "scope": "Software only; no physical Link/browser FPS or hardware audio certification",
+  "target_30_everywhere_achieved": false,
+  "fixture": "Ceneride map geometry, in-memory save copy; NPC/events not identical to user session",
+  "variants": [
+    {
+      "scope": "Emulated directional input, no physical Link or browser measurement",
+      "frames": 1200,
+      "leg_frames": 48,
+      "scenario": "walking",
+      "captures": 274,
+      "capture_fps": 13.637779296726665,
+      "location": "Ceneride",
+      "variant": "emerald-cache",
+      "minimum_60_frame_window": 4,
+      "maximum_capture_gap_frames": 20
+    },
+    {
+      "scope": "Emulated directional input, no physical Link or browser measurement",
+      "frames": 1200,
+      "leg_frames": 48,
+      "scenario": "vertical",
+      "captures": 427,
+      "capture_fps": 21.253035619351408,
+      "location": "Ceneride",
+      "variant": "emerald-cache",
+      "minimum_60_frame_window": 13,
+      "maximum_capture_gap_frames": 12
+    },
+    {
+      "scope": "Emulated directional input, no physical Link or browser measurement",
+      "frames": 1200,
+      "leg_frames": 48,
+      "scenario": "walking",
+      "captures": 429,
+      "capture_fps": 21.352581453634084,
+      "location": "Ceneride",
+      "variant": "emerald-columns",
+      "minimum_60_frame_window": 10,
+      "maximum_capture_gap_frames": 18
+    },
+    {
+      "scope": "Emulated directional input, no physical Link or browser measurement",
+      "frames": 1200,
+      "leg_frames": 48,
+      "scenario": "vertical",
+      "captures": 441,
+      "capture_fps": 21.949856459330142,
+      "location": "Ceneride",
+      "variant": "emerald-columns",
+      "minimum_60_frame_window": 10,
+      "maximum_capture_gap_frames": 13
+    },
+    {
+      "scope": "Emulated directional input, no physical Link or browser measurement",
+      "frames": 1200,
+      "leg_frames": 48,
+      "scenario": "team-stay",
+      "captures": 394,
+      "capture_fps": 19.610529353687248,
+      "location": "Ceneride",
+      "variant": "emerald-columns",
+      "minimum_60_frame_window": 0,
+      "maximum_capture_gap_frames": 65,
+      "settled_last_500_frames_fps": 21.143535201640464
+    },
+    {
+      "scope": "Emulated directional input, no physical Link or browser measurement",
+      "frames": 1200,
+      "leg_frames": 48,
+      "scenario": "walking",
+      "captures": 381,
+      "capture_fps": 18.963481430849853,
+      "location": "Centro Pokemon",
+      "variant": "emerald-cache",
+      "minimum_60_frame_window": 14,
+      "maximum_capture_gap_frames": 11
+    },
+    {
+      "scope": "Emulated directional input, no physical Link or browser measurement",
+      "frames": 1200,
+      "leg_frames": 48,
+      "scenario": "walking",
+      "captures": 417,
+      "capture_fps": 20.75530644793803,
+      "location": "Centro Pokemon",
+      "variant": "emerald-columns",
+      "minimum_60_frame_window": 15,
+      "maximum_capture_gap_frames": 10
+    },
+    {
+      "scope": "Emulated directional input, no physical Link or browser measurement",
+      "frames": 1200,
+      "leg_frames": 48,
+      "scenario": "walking",
+      "captures": 667,
+      "capture_fps": 33.19853573327258,
+      "location": "Porto Selcepoli",
+      "variant": "emerald-cache",
+      "minimum_60_frame_window": 13,
+      "maximum_capture_gap_frames": 21
+    },
+    {
+      "scope": "Emulated directional input, no physical Link or browser measurement",
+      "frames": 1200,
+      "leg_frames": 48,
+      "scenario": "team-stay",
+      "captures": 493,
+      "capture_fps": 24.53804815067973,
+      "location": "Porto Selcepoli",
+      "variant": "emerald-cache",
+      "minimum_60_frame_window": 0,
+      "maximum_capture_gap_frames": 68,
+      "settled_last_500_frames_fps": 23.174270221007063
+    },
+    {
+      "scope": "Emulated directional input, no physical Link or browser measurement",
+      "frames": 1200,
+      "leg_frames": 48,
+      "scenario": "walking",
+      "captures": 632,
+      "capture_fps": 31.45648363332574,
+      "location": "Porto Selcepoli",
+      "variant": "emerald-columns",
+      "minimum_60_frame_window": 15,
+      "maximum_capture_gap_frames": 23
+    }
+  ],
+  "gameplay": {
+    "scope": "Local mGBA directional-input test with Main callback instrumentation; not hardware or audio certification",
+    "results": [
+      {
+        "variant": "unmodified_game",
+        "emulated_frames": 1200,
+        "main_iterations": 1198,
+        "main_fps": 59.62795473532316
+      },
+      {
+        "variant": "emerald-columns",
+        "emulated_frames": 1200,
+        "main_iterations": 1198,
+        "main_fps": 59.62795473532316
+      }
+    ]
+  },
+  "replay": {
+    "scope": "Frozen mGBA scenes sent by real ARM instructions in Unicorn; byte equality, not timing or physical validation",
+    "frames": 120,
+    "exact_frames": 120
+  },
+  "checks": {
+    "resident_suite": 9,
+    "column_parser": 4,
+    "column_arm": 1,
+    "raw_arm": 1,
+    "wire_repair": 4,
+    "unified_multiboot": 2,
+    "boot_guard": true,
+    "portable_runtime": true
+  },
+  "binaries": {
+    "gbmirroring-emerald-v0.11.0.gba": "ffaddd240e57d2855180a08b3745617e4c20dbea0512f8f371f8c429f927353c",
+    "gbmirroring-unified-v0.7.0.uf2": "b241dba38bdfa0e5fe58a06d249e34e1f1c1fa508529ee60ed22afb509b59d95"
+  }
+}

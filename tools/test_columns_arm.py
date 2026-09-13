@@ -1,5 +1,5 @@
-"""Execute the real Thumb/ARM cache sender with an incompressible VRAM block."""
-import sys,struct,unittest,random,os
+"""Execute the real Thumb/ARM column sender with four strided tilemap changes."""
+import sys,struct,unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'third_party/test-runtime'))
@@ -12,8 +12,8 @@ class Echo:
  def render(self,data):return bytes(data)
 
 class Tests(unittest.TestCase):
- def test_real_raw_fallback_roundtrip(self):
-  folder=ROOT/'build'/os.environ.get('GBM_CANDIDATE','emerald-cache');sy=elf_symbols((folder/'resident.elf').read_bytes());blob=(folder/'resident.bin').read_bytes()
+ def test_real_column_roundtrip(self):
+  folder=ROOT/'build/emerald-columns';sy=elf_symbols((folder/'resident.elf').read_bytes());blob=(folder/'resident.bin').read_bytes()
   u=Uc(UC_ARCH_ARM,UC_MODE_ARM)
   for address,size in ((0x02000000,0x40000),(0x03000000,0x8000),(0x04000000,0x1000),(0x05000000,0x1000),(0x06000000,0x20000),(0x07000000,0x1000)):u.mem_map(address,size)
   u.mem_write(0x0203cf80,blob);offset=sy['__hot_load__'][0]-0x0203cf80
@@ -28,12 +28,14 @@ class Tests(unittest.TestCase):
     if state['bits']==16:state['words'].append(state['word']);state['bits']=0
    state['clock']=value&1
   u.hook_add(UC_HOOK_MEM_WRITE,write,begin=0x04000134,end=0x04000135)
-  frames=[];mutated=False;rng=random.Random(9182);mutation=bytes(rng.getrandbits(8) for _ in range(256))
+  frames=[];mutated=False
   for tick in range(1,1000):
    if frames and not mutated:
-    u.mem_write(0x06017f00,mutation);mutated=True
-    address=sy['dirty_mask'][0]+(392>>5)*4
-    mask=struct.unpack('<I',u.mem_read(address,4))[0];u.mem_write(address,struct.pack('<I',mask|(1<<(392&31))))
+
+    for row in range(4):u.mem_write(0x0600e008+row*64,b'\x77'*8)
+    mutated=True
+    address=sy['dirty_mask'][0]+(233>>5)*4
+    mask=struct.unpack('<I',u.mem_read(address,4))[0];u.mem_write(address,struct.pack('<I',mask|(1<<(233&31))))
    u.mem_write(0x030022e0,struct.pack('<I',tick));u.reg_write(UC_ARM_REG_SP,0x0203fc00);u.reg_write(UC_ARM_REG_LR,0x03007000)
    u.emu_start(sy['tick'][0],0x03007000,count=5000000)
    self.assertLessEqual(len(state['words']),155)
@@ -41,9 +43,11 @@ class Tests(unittest.TestCase):
    frames.extend(receiver.feed(wire))
    if len(frames)>=2:break
   self.assertEqual(len(frames),2);self.assertEqual(receiver.bad_frames,0)
-  expected=bytearray(bytes(2304)+vram);expected[2304+0x17f00:2304+0x18000]=mutation
+  expected=bytearray(bytes(2304)+vram);
+  for row in range(4):expected[2304+0xe008+row*64:2304+0xe010+row*64]=b'\x77'*8
   self.assertEqual(frames[1][1],expected)
-  self.assertGreaterEqual(frames[1][2],256)
-  print('Raw delta bytes:',frames[1][2])
+  self.assertEqual(frames[1][4]['block_codecs'],{'9':1})
+  self.assertLess(frames[1][2],180)
+  print('Column delta bytes:',frames[1][2])
 
 if __name__=='__main__':unittest.main()
