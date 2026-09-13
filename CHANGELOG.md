@@ -1,5 +1,11 @@
 # Storico
 
+## Collaudo hardware 0.10.0 - target esterno ancora aperto
+
+- Sessione 181547: 4052 frame, 20,16 FPS medi, nessun errore Link o scarto renderer. Stutter esterno in movimento ancora forte secondo l utente; Centro Pokemon fluido anche camminando.
+- Aggiornamenti grandi: 17+ blocchi richiedono in mediana 2936 byte e 16 interventi. Rendering PC picco 1,38 ms. Il log non identifica gli indirizzi dei blocchi: la riscrittura dei tilemap durante lo scorrimento rimane un ipotesi da verificare.
+- Registrata evidenza ripulita; nessun nuovo binario. Le misure emulatore precedenti non certificano questa scena hardware.
+
 ## 0.10.0 - Compressione in RAM veloce e cache ampliata
 
 - Compressione RLE/LZ e patch registri/OAM in IWRAM; sender raggruppato a quattro bit per liberare spazio senza cambiare ordine o polarita. Tolta una copia RAW ridondante. Dizionario 32 -> 128 voci con confronto dei due hash, parser esteso e test del limite 127.

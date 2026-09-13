@@ -104,3 +104,6 @@ Richiesta attuale: piano soltanto, minimo circa 30 FPS e obiettivo vicino a 50-6
 
 
 0.10.0: nuova release verificata soltanto in software. Cammino emulato 33,20 FPS medi contro 9,81 della 0.9.0; minimi inferiori a 30, squadra stabile circa 23. Main 1197/1200 contro 1198/1200 senza residente. Pico 0.7.0 invariato. Nessun nuovo test hardware effettuato; dati in test-results/software-v0.10.0. Il target continuo resta aperto.
+
+
+2026-09-13, hardware 0.10.0, sessione 181547: 4052 frame consecutivi 0..4051 in 200,9644 s fra arrivi, 20,1578 FPS medi; 1484 immagini cambiate. Zero CRC/header/gap/richieste resync/render drop. Picco rendering 1,38 ms, coda USB 2,1 ms. Intervalli mediana 30 ms, p95 212,6 ms, massimo 9,4206 s; tre keyframe. Delta con 17+ blocchi: mediana 2936 byte e 16 interventi; esempi da 5 KB/25 interventi. Utente: stutter forti camminando nell overworld, NPC relativamente fluidi da fermo, Centro Pokemon fluido anche in movimento. BMP finale: interno del Centro Pokemon, nessun riferimento simultaneo. Fasi manuali non isolano con precisione ogni movimento. Ipotesi: aggiornamenti tilemap durante lo scorrimento; da verificare con indirizzi dei blocchi e stessa mappa. Nessuna nuova release, nessuna modifica firmware. Evidenza selezionata in test-results/2026-09-13-emerald-v0.10.0; log grezzi locali.
