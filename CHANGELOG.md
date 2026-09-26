@@ -1,5 +1,14 @@
 # Storico
 
+## 0.11.1 - Publication sources and notices / Sorgenti e avvisi per la pubblicazione
+
+- English-first README, Italian counterpart, setup guide, architecture and contribution guidance. Credits: hacke & Lain for concept/direction; GBMirroring development entirely with GPT 6 Astra, preserving upstream authorship.
+- GPL-3.0 project license and dependency notices. Supplied legacy Celio UF2 matched byte-for-byte; pinned upstream archive and full supplier patch included with offline reconstruction. All 11 file patches verified. Individual authorship of three pre-existing changes remains unidentified; supplier GPL declaration retained. No claim of a verified identical binary rebuild.
+- Current 27-word Celio PIO reference verified; old test now uses the included reference instead of a private development path. No vendor transport code or streaming binary changed. Runtime/firmware integrity checks pass; no hardware test or new FPS claim.
+- README inglese/italiano, guida, architettura e contributi. Crediti hacke & Lain e sviluppo GBMirroring interamente con GPT 6 Astra, senza attribuirsi codice upstream.
+- Licenza GPL-3.0 e avvisi delle dipendenze. UF2 storico identico a quello ricevuto; base e patch completa incluse, ricostruzione offline verificata su 11 file. Autori individuali di tre modifiche preesistenti non identificati; conservata dichiarazione GPL ricevuta. Nessuna ricompilazione identica certificata.
+- Riferimento PIO verificato e percorso privato rimosso dal test. Moduli vendor e binari streaming invariati. Controlli d'integrità superati; nessuna nuova prova hardware o prestazione dichiarata.
+
 ## 0.11.0 - Patch delle mappe e scenario Ceneride
 
 - Codec batch 9 per gruppi di quattro colonne nelle mappe. Firme compatte calcolate in ARM e controllo delle due firme integrali sul PC; ripiego sui codec completi se nessun gruppo risulta cambiato. Corrette collisioni strutturate trovate con scene reali.
@@ -215,7 +224,7 @@
 - Sender invariato. Nuovo percorso da verificare su hardware.
 
 
-## 0.3.2 � Diagnostica della ricezione
+## 0.3.2 — Diagnostica della ricezione
 
 - Ricevitore Pico: contatori grezzi, primi campioni, pin e stato PIO ogni due secondi anche senza BEGIN valido. Nessuna modifica al pilotaggio delle linee.
 - Il PC registra e mostra la diagnostica; i messaggi periodici non impediscono il timeout.

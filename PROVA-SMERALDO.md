@@ -1,10 +1,12 @@
-# Avvio e collaudo unico 0.11.0
+# Avvio e collaudo unico (residente 0.11.0, pacchetto 0.11.1)
+
+[English quick start](docs/QUICKSTART.en.md). Il pacchetto 0.11.1 aggiorna documentazione e licenze; i binari restano invariati.
 
 Pacchetto pronto, senza compilazione. Corregge il trasporto delle porzioni di mappa che cambiano durante il cammino. Nella prova emulata orizzontale di Ceneride passa da 13,64 a 21,35 catture/s (+57%). Il ciclo principale del gioco mantiene 1198 aggiornamenti in 1200 frame, come senza residente. **Non abbiamo ancora raggiunto o verificato 30 FPS costanti nel browser.**
 
 ## Avvio
 
-1. Estrai tutto lo ZIP 0.11.0 in una nuova cartella scrivibile. Chiudi il vecchio BAT e la vecchia pagina.
+1. Estrai tutto lo ZIP 0.11.1 in una nuova cartella scrivibile. Chiudi il vecchio BAT e la vecchia pagina.
 2. Il Pico unificato **0.7.0 resta compatibile**: per questa versione non occorre riflasharlo. Mantieni cavo e selettore attuali. Se parti da un Pico con firmware diverso, usa `dist/gbmirroring-unified-v0.7.0.uf2` con BOOTSEL.
 3. Spegni il GBA, togli la cartuccia e riaccendilo. Apri **14-AVVIA-SMERALDO.bat** e premi **INVIO**, per caricare il nuovo residente. Non scegliere R al primo avvio della nuova versione.
 4. Quando richiesto sul GBA, inserisci Smeraldo italiano originale e premi START. Entra nella partita.

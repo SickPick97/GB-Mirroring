@@ -1,0 +1,13 @@
+{
+  "upstream_repository": "https://github.com/Celio-Link/Celio-Firmware",
+  "upstream_commit": "f67733c293defc3d77185101cb00d3ce19ef3284",
+  "zephyr_commit_from_binary": "41c0a2e3744cb9b048d2bc3f244f41c9f4726fcc",
+  "binary": "dist/RIPRISTINO-CELIO-PACCHETTO-AMICO.uf2",
+  "binary_sha256": "735bf7334c52411f4fba0f4370404040c890ad00d3a95b2fe8612a29560bff1d",
+  "source_identification": "Supplier identifies this patch and base as firmware 2.0.5. Supplied release binary is identical to the historical binary. Patch application verified; binary rebuild not yet verified.",
+  "files": {
+    "LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+    "modifications.patch": "fb3986fc9f7e50c8a9c829dbcc61b8b3f551c886482e5b93f56919c71c3500b4",
+    "upstream.zip": "dfaa70a038ff18190fcac2915eb02c1d5494203d4f365133b450c2c47e077a7b"
+  }
+}

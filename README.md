@@ -1,52 +1,116 @@
 # GBMirroring
 
-Streaming del video di un GBA/GBA SP attraverso un adattatore Link con Raspberry Pi Pico RP2040, senza modificare internamente la console. Uscita definitiva scelta: pagina web locale; la webcam USB autonoma non e piu un requisito.
+**Stream Pokémon Emerald from an unmodified GBA SP to a local web browser through a Raspberry Pi Pico and the Link port.**
 
-**0.11.0 pronta per il collaudo: patch delle mappe durante il cammino.** Nel confronto emulato a Ceneride il cammino orizzontale passa da 13,64 a 21,35 catture/s; gameplay emulato invariato. Il target di 30 FPS costanti nel browser resta aperto. 120 scene ricostruite esattamente dal codice ARM; Pico 0.7.0 compatibile, nessun nuovo flash necessario. [Istruzioni](PROVA-SMERALDO.md) e [registro](docs/VALIDAZIONE-HARDWARE.md).
+[English](#english) · [Italiano](README.it.md) · [Quick start](docs/QUICKSTART.en.md) · [How it works](docs/ARCHITECTURE.md) · [Test evidence](test-results/software-v0.11.0/summary.json)
 
-## Su un altro PC Windows
+## English
 
-1. Accedi alla repository privata con il tuo account GitHub.
-2. Scarica **Code Ã¢â€ â€™ Download ZIP**, oppure clona la repository con GitHub Desktop.
-3. Estrai tutto in una cartella scrivibile. Non avviare i BAT dentro lo ZIP.
-4. Segui la preparazione in **PROVA-SMERALDO.md** e installa il firmware unificato una sola volta.
-5. Avvia **14-AVVIA-SMERALDO.bat**: controllo dei file, multiboot e anteprima nello stesso programma. Il banco homebrew resta disponibile con gli avvii 10/11.
+GBMirroring is an experimental hardware/software project for displaying gameplay from a real Game Boy Advance cartridge on a PC. The game runs on the handheld; a small resident program exports graphics state through the Link cable, and the PC reconstructs the image for a local browser and OBS.
 
-Il pacchetto contiene Python portatile, librerie USB, firmware UF2 e programmi multiboot compilati. Non serve l'intera cartella PROGETTO AMICO e non occorre installare strumenti di sviluppo per eseguire i test. Target attuale: Windows 10/11 x64, Pico RP2040 e GBA SP.
+**Concept and project direction: hacke & Lain. Development of GBMirroring was carried out entirely with AI, using GPT 6 Astra.** Hardware assembly, testing, feedback and project decisions are human contributions. Third-party code and hardware designs remain credited to their original authors; the AI-development statement does not claim authorship of those projects.
 
-Su questo nuovo PC, se Celio non viene riconosciuto da PyUSB, conserva l'errore e usa CONTROLLA-USB.bat: la configurazione WinUSB del vecchio PC non viene trasferita dalla repository. I firmware UVC e Normal usano invece i driver USB standard di Windows. Non applicare un driver Celio al firmware Normal o UVC.
+This early release shares working code, ready-to-run tools and measured limitations. **It does not yet provide a stable 30 FPS stream in every scene.**
 
-## Stato verificato
+Package **0.11.1** updates publication documentation, licenses and source provenance. Streaming binaries remain resident **0.11.0** and Pico **0.7.0**. Project-owned code is [GPL-3.0](LICENSE); see [third-party notices](THIRD_PARTY.md) for dependencies and source access.
 
-| Versione firmware | Risultato |
+## What works today
+
+- Real-cartridge streaming has been tested on **GBA SP + original Italian Pokémon Emerald, BPEI revision 0**.
+- An **RP2040 Raspberry Pi Pico** adapter handles both multiboot and streaming with one installed firmware. No firmware swap is needed during a session.
+- A portable Windows x64 application opens a local web viewer. OBS can capture the clean browser view.
+- Graphics updates use a cache, deltas, compression, integrity checks and automatic recovery.
+- Gameplay and audio on the handheld remained fluid in recent user hardware tests. This does not imply that the browser has the same frame rate.
+
+The public documentation is English-first, with an Italian counterpart. Some historical development notes and existing command-line prompts are still in Italian; the English quick start explains the prompts used by the current launcher.
+
+## Supported setup
+
+| Component | Current target |
 |---|---|
-| Unificato / Smeraldo 0.6.0 (pacchetto 0.6.1) | Multiboot 7,70 s; 886 frame, 3,56 FPS medi, recupero dopo gap di 26,5 s. GBA super fluido secondo l'utente. |
-| Smeraldo 0.5.1 | 261 frame validi; GBA fluido e transizioni recuperate secondo l utente; streaming 1,537 FPS, target 10 aperto. |
-| Smeraldo 0.5.0 | 517 frame validi nelle due prove; 8,4-8,6 FPS prima dei blocchi. Rallentamento del gioco e nero dopo transizioni. |
-| SD video 0.4.1 | 732 frame senza errori; scene FAST a 4,05 / 3,01 / 1,93 FPS. Target ancora aperto. |
-| SD video 0.4.0 | 332 frame senza errori; RAW 1,33 FPS, fase RLE prolungata 3,55 FPS. Target 5-10 ancora aperto. |
-| UVC 0.1.0 | Immagine sintetica 240x160 a 10 FPS visualizzata in Fotocamera; riapertura verificata dall'utente. |
-| Link 0.2.0 / banco 0.3.4 | Multiplayer a cavo fisso: otto velocita pulite, conferma 60 s a 3451,4 B/s; screenshot completo in 23,45 s. |
-| Normal 0.3.2 / 0.3.3 | Entrambe le prove senza header: 290664 parole, campioni registrati nulli su GP1 e GP3. Percorso del segnale da chiarire. |
+| Handheld | GBA SP; wider GBA compatibility is not certified |
+| Cartridge | Original Italian Pokémon Emerald, BPEI rev. 0 |
+| Adapter | RP2040 Pico on the [agtbaskara Link adapter design](https://github.com/agtbaskara/game-boy-pico-link-board) |
+| Cable | Tested GBA Link cable with hub, smaller plug at adapter, larger plug at GBA; GBA selector position |
+| PC | Windows 10/11 x64, USB data connection, web browser |
+| Software | Emerald resident 0.11.0, unified Pico firmware 0.7.0 |
 
-[Registro hardware](docs/VALIDAZIONE-HARDWARE.md) Ã‚Â· [Storico modifiche](CHANGELOG.md) Ã‚Â· [Piano](PIANO-GBMIRRORING.md).
+No internal console modification is required. The current Italian cartridge profile contains revision-specific addresses and a cartridge check. Other Emerald languages, FireRed/LeafGreen, GB/GBC games and arbitrary cartridges are **not supported by this release**. Do not assume another adapter or cable has the same signal routing.
 
-## Aggiornamenti e risultati
+## Quick start
 
-Ogni modifica viene registrata con un commit; i pacchetti pronti hanno una versione e un tag. I firmware mantengono il loro numero specifico: il pacchetto 0.3.1 contiene gli stessi firmware del precedente test, con percorsi resi portatili.
+1. Download the complete repository ZIP from **Code → Download ZIP**, then extract it into a writable folder. Do not run a BAT from inside the ZIP.
+2. If your adapter does not already use our unified 0.7.0 firmware, hold the Pico's BOOTSEL button while connecting USB and copy `dist/gbmirroring-unified-v0.7.0.uf2` to its drive. This is a one-time step for this release.
+3. Start the GBA without a cartridge. Run **`14-AVVIA-SMERALDO.bat`** and press **Enter** to load the resident via multiboot.
+4. When the handheld requests it, insert your Italian Emerald cartridge, press **START**, and enter your game.
+5. Once the PC says **PRONTO** (ready), press **SELECT + L + R** on the GBA. The viewer opens at **http://127.0.0.1:8765**. Leave the BAT running.
 
-Per aggiornare da un altro PC: usa **Fetch/Pull** in GitHub Desktop oppure scarica la nuova versione in una cartella distinta. Conserva le cartelle dei risultati prima di sostituire un'estrazione ZIP.
+The package contains the portable Python runtime, USB libraries, renderer and compiled homebrew/UF2 files. Users do not need to compile, provide a game ROM to the PC, or install the private development folder.
 
-I nuovi risultati rimangono in dist/link-reports o dist/normal-reports, esclusi dai commit automatici per non caricare percorsi e identificativi locali. Dopo ogni test vengono analizzati, riassunti nel registro hardware e, quando utile, archiviati in forma ripulita in test-results. Non basta una modifica al codice per dichiarare superata una prova fisica.
+For OBS, use a Browser Source at **http://127.0.0.1:8765/?clean=1**, sized 240 × 160 or an integer multiple. The browser buffers approximately 200 ms. The current viewer does not stream game audio.
 
-## Contenuto
+[Full setup, recovery and test instructions →](docs/QUICKSTART.en.md)
 
-- firmware e tools: sorgenti e strumenti del progetto.
-- dist: binari pronti e manifest di verifica.
-- runtime/python: interprete portatile Windows e dipendenze USB preesistenti.
-- vendor/celio_transport: i soli due moduli di trasporto/multiboot del pacchetto amico, invariati.
-- docs e test-results: documentazione e risultati selezionati.
+## How it works
 
-Il motore grafico mGBA e incluso in runtime/mgba con licenza e provenienza. ROM commerciali, salvataggi, materiale completo del progetto amico e dipendenze di compilazione scaricate non fanno parte della repository. Vedi [attribuzioni](THIRD_PARTY.md). La repository e destinata all'uso privato; nessuna nuova licenza viene applicata ai componenti di terzi.
+```mermaid
+flowchart LR
+    A[PC multiboot loader] --> B[Pico: boot mode]
+    B --> C[GBA resident in RAM]
+    C --> D[Real cartridge gameplay]
+    D --> E[Graphics registers, palette, OAM and VRAM updates]
+    E --> F[Link GPIO protocol]
+    F --> G[Pico: receive mode]
+    G --> H[USB CDC to PC]
+    H --> I[Verified graphics cache and mGBA-based renderer]
+    I --> J[Local browser / OBS]
+```
 
-Piano successivo: [streaming e prodotto Smeraldo](PIANO-PRODOTTO-SMERALDO.md).
+The Link port does not expose a raw LCD video signal. Our resident observes graphics activity in the running game and sends changes to the PC. The host renderer uses those graphics resources to draw the image; it does not run a second copy of the game from a commercial ROM.
+
+The 0.11.0 resident adds small column-group patches for map updates during scrolling. The PC validates the reconstructed block before accepting it. The Pico remains compatible because it transports the packet stream without needing to understand every graphics codec.
+
+See [architecture and source map](docs/ARCHITECTURE.md) for the memory budget, protocol and current limitations.
+
+## Performance: measurements, not promises
+
+| Evidence | Result | What it means |
+|---|---|---|
+| 0.10.0 physical session | 20.16 received frames/s average, with severe outdoor walking stalls | Real Link capture; the overall average hides bad intervals |
+| 0.11.0, emulated horizontal walking in Sootopolis | 13.64 → 21.35 captures/s against 0.10.0 | Same controlled scenario; **not a physical browser FPS measurement** |
+| 0.11.0, emulated game Main callback | 1198 updates / 1200 frames, with and without capture | Gameplay progress checked independently of capture rate |
+| 0.11.0, ARM protocol replay | 120 / 120 frozen scenes reconstructed byte-for-byte | Codec correctness; does not prove live temporal coherence |
+
+At the time of this publication preparation, a physical 0.11.0 test has not been recorded. Menus, battles, scene transitions and busy outdoor areas can reduce the streaming rate. Scanline effects are incomplete. No interpolated frames or repeated browser refreshes are counted as newly received game frames.
+
+[Hardware journal (Italian)](docs/VALIDAZIONE-HARDWARE.md) · [Selected software results](test-results/software-v0.11.0/summary.json) · [Current limitations / roadmap](docs/ARCHITECTURE.md#roadmap)
+
+## Project background and credits
+
+The work grew from hacke and Lain's experiments with Link adapters, online connectivity and a separate Emerald cooperative-play project. A future repository integration is planned. **The cooperative-play software is not bundled or advertised as implemented by GBMirroring today.**
+
+We build on community work, including:
+
+- [agtbaskara/game-boy-pico-link-board](https://github.com/agtbaskara/game-boy-pico-link-board): adapter hardware design.
+- [Celio-Link](https://github.com/Celio-Link): Link transport, multiboot background and the source of the adapted multiplayer PIO sequence.
+- The project's supplied `mb_multi.py` and `usb_link.py` modules: preserved with their authorship, used with the contributors' permission.
+- [pret/pokeemerald](https://github.com/pret/pokeemerald): understanding game structures and graphics updates.
+- [mGBA](https://github.com/mgba-emu/mgba): graphics rendering and local development validation.
+- Raspberry Pi Pico SDK, TinyUSB, Python, PyUSB, libusb and their contributors.
+
+See [THIRD_PARTY.md](THIRD_PARTY.md) for attribution and distribution status. No commercial game ROMs or saves are included. Pokémon and Nintendo names identify compatibility; this is an independent project without affiliation or endorsement. Publication documents this project's work and history, not a claim of exclusive invention or priority over other projects.
+
+## Repository guide
+
+| Path | Purpose |
+|---|---|
+| `firmware/emerald-columns/` | Current cartridge resident and multiboot loader sources |
+| `firmware/unified/` | Pico boot + streaming firmware |
+| `tools/` | Launcher, protocol, viewer, builders and tests |
+| `native/renderer/` | Renderer bridge and corresponding mGBA source archive |
+| `runtime/` | Portable Windows dependencies and their notices |
+| `dist/` | Versioned binaries and verification manifests |
+| `test-results/` | Selected, reviewed test evidence |
+| `docs/` | Setup, architecture and development records |
+
+To help: report the version, adapter/cable, cartridge language/revision and the scene that fails. Review reports before uploading: raw logs may contain local paths or device identifiers. Never attach a commercial ROM or save. See [CONTRIBUTING.md](CONTRIBUTING.md).

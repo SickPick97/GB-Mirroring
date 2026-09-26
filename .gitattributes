@@ -16,3 +16,6 @@
 *.zip binary
 runtime/python/** -text
 vendor/celio_transport/*.py -text
+vendor/celio_legacy_source/modifications.patch -text
+vendor/celio_legacy_source/LICENSE -text
+vendor/celio_reference/linkLayer_pio.c -text

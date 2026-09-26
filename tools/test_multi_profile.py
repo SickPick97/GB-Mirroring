@@ -11,7 +11,7 @@ out=ROOT/'build/multi-validator';out.mkdir(exist_ok=True)
 source=(ROOT/'firmware/multi-profile/main.c').read_text()
 # Check exact inherited PIO sequence against the reference used for this port.
 import re
-reference=(ROOT/'analisi/fonti/celio-linkLayer_pio.c').read_text()
+reference=(ROOT/'vendor/celio_reference/linkLayer_pio.c').read_text()
 section=reference.split('RPI_PICO_PIO_DEFINE_PROGRAM(pio_master_gba, 0, 26,',1)[1].split(');',1)[0]
 section=re.sub(r'//[^\n]*','',section)
 for name,value in [('PIO_SC','1'),('PIO_SO','4'),('PIO_SD_GBA','8')]:section=section.replace(name,value)

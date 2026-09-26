@@ -1,31 +1,50 @@
-**Dipendenze della prima consegna**
+# Third-party notices / Componenti di terzi
 
-- Raspberry Pi Pico SDK 2.2.0: BSD-3-Clause, con ulteriori licenze nei componenti. Sorgenti completi locali in third_party/pico-sdk-2.2.0; [repository](https://github.com/raspberrypi/pico-sdk/tree/2.2.0).
-- TinyUSB commit 86ad6e56c1700e85f1c5678607a762cfe3aa2f47: MIT. Sorgenti completi locali in third_party/tinyusb-86ad6e56c1700e85f1c5678607a762cfe3aa2f47; [repository](https://github.com/hathach/tinyusb/tree/86ad6e56c1700e85f1c5678607a762cfe3aa2f47). La struttura dei descrittori di usb_descriptors.c deriva dall'esempio video_capture, con attribuzione e licenza conservate nel file.
-- Ninja 1.12.1: Apache-2.0; usato soltanto per la compilazione. [Release](https://github.com/ninja-build/ninja/releases/tag/v1.12.1).
+## English
 
-Il firmware di test e distinto dal firmware Celio. RIPRISTINO-CELIO-PACCHETTO-AMICO.uf2 e la copia invariata del file fornito dall'utente, inclusa solo per il suo ripristino locale. ROM, salvataggi e asset di PROGETTO AMICO non sono inclusi nel firmware di test.
+Project-owned GBMirroring code is GPL-3.0 (LICENSE). Dependencies retain their licenses. Concept and direction: hacke & Lain; GBMirroring development entirely with GPT 6 Astra, with human assembly, decisions and tests. This does not claim AI authorship of third-party code.
 
-I file e le licenze preesistenti restano attribuiti ai rispettivi autori. Gli hash degli archivi di compilazione sono fissati in tools/prepare_dependencies.py.
+| Component | Origin / authors | License, notices and corresponding source |
+|---|---|---|
+| Master PIO in firmware/multi-profile and firmware/unified | Celio-Link / Celio-Firmware contributors, including [Exormeter](https://github.com/Exormeter) | GPL-3.0. Pinned unmodified reference, license and hash in vendor/celio_reference. All 27 words verified; GBMirroring adds its own Pico SDK control and streaming logic. |
+| vendor/celio_transport Python modules | Supplied gen3-poke-multiplayer project; USB logic based on Celio-Client/Server | GPL-3.0 declared in supplied archive; contributor permission received. Source included unchanged; see directory README. |
+| Historical recovery UF2 | Celio-Firmware contributors, supplied project modifications and pre-existing modifications of unidentified individual authorship | GPL-3.0 declared by supplier. Base source, complete patch and build recipe in vendor/celio_legacy_source. See docs/CELIO-PUBLICATION-AUDIT.md for limits. Not used by current streaming launcher. |
+| Python 3.13.3 | Python Software Foundation and contributors | PSF and incorporated notices: runtime/python/LICENSE.txt. [Source](https://www.python.org/downloads/release/python-3133/). Executables unmodified. |
+| PyUSB 1.3.1 | PyUSB contributors, including Wander Lairson Costa | BSD-3-Clause: licenses/PyUSB-BSD-3-Clause.txt. Python source included; [upstream](https://github.com/pyusb/pyusb/tree/v1.3.1). |
+| libusb-package 1.0.30.0 | PyOCD/libusb-package contributors | Apache-2.0: licenses/libusb-package-Apache-2.0.txt. Wrapper source included; [upstream](https://github.com/pyocd/libusb-package). |
+| libusb 1.0.30 DLL | libusb contributors | LGPL-2.1: licenses/libusb-LGPL-2.1.txt. [Complete source](https://github.com/libusb/libusb/tree/v1.0.30). Separately loaded DLL; users may replace/rebuild it. |
+| importlib_resources | Python importlib_resources contributors, including Jason R. Coombs | Apache-2.0: licenses/importlib-resources-Apache-2.0.txt. Supplied Python sources included; exact release unidentified. Do not claim byte identity with 6.5.2. [Upstream](https://github.com/python/importlib_resources). |
+| mGBA libretro core | mGBA contributors | MPL-2.0: runtime/mgba/LICENSE. Version 0.11-219-e31759b; [source](https://github.com/libretro/mgba/tree/e31759b24e7a4e3899285ff720d7b573ac328ae7). Binary manifest included. |
+| Native mGBA renderer units | mGBA contributors | MPL-2.0: runtime/native/LICENSE-mgba.txt. Unmodified required units/headers in native/renderer/mgba-source.zip, same commit above. Our bridge: native/renderer/renderer.c; build: tools/build_native_renderer.py. |
+| Pico SDK 2.2.0 | Raspberry Pi (Trading) Ltd. and contributors | BSD-3-Clause and component notices: licenses/Pico-SDK-BSD-3-Clause.txt; [complete pinned source](https://github.com/raspberrypi/pico-sdk/tree/2.2.0). |
+| TinyUSB | Ha Thach and contributors | MIT: licenses/TinyUSB-MIT.txt; [pinned source](https://github.com/hathach/tinyusb/tree/86ad6e56c1700e85f1c5678607a762cfe3aa2f47). Derived descriptor files preserve original headers. |
 
-**Banco Link 0.2.0**
+The legacy Celio binary also incorporates Zephyr and HAL components. Pinned sources and build dependencies are documented beside its application source. Original per-file notices remain authoritative; this table does not replace them. Source preparation downloads are pinned by tools/prepare_dependencies.py.
 
-Aggiornamento portatile 0.3.1: i due moduli sono copiati invariati in vendor/celio_transport e il runtime in runtime/python. Gli originali completi sono esclusi dalla repository. Il logo di header necessario alla compilazione e conservato separatamente in vendor/celio_transport/logo.bin. Vedi i README di queste cartelle per provenienza e limiti di distribuzione.
+DLL integrity checks are diagnostics, not restrictions on modifying LGPL/MPL components. For your own compatible rebuilt dependency, update its manifest hash or adapt the included checker source. No additional restriction on modification or debugging is imposed.
 
-Il banco importa localmente i moduli mb_multi.py e usb_link.py del pacchetto dell'utente, conservandoli invariati e senza attribuirsi la loro paternita. Usa il relativo Python embedded e il firmware Celio originale. Il nuovo header multiboot contiene i byte di logo di avvio richiesti dal BIOS, ricavati dal file homebrew mbstub.gba fornito, non codice o asset delle cartucce Pokemon.
+### References and development tools
 
-Unicorn 2.1.4 e usato solo come dipendenza di collaudo del codice ARM, in third_party/test-runtime; non e richiesto per il test fisico e non e incluso nei firmware. Le licenze del pacchetto sono conservate nella sua installazione locale. [Repository Unicorn](https://github.com/unicorn-engine/unicorn).
+- [agtbaskara/game-boy-pico-link-board](https://github.com/agtbaskara/game-boy-pico-link-board): hardware reference; no PCB design files redistributed here.
+- [GBATEK](https://problemkaputt.de/gbatek.htm), Martin Korth: hardware documentation.
+- [pret/pokeemerald](https://github.com/pret/pokeemerald): game-interface research, structures and addresses. Its game material is not treated as GPL assets.
+- Supplied project credits [afska/gba-link-connection](https://github.com/afska/gba-link-connection) and [Lorenzooone/PokemonGB_Online_Trades_and_Battles](https://github.com/Lorenzooone/PokemonGB_Online_Trades_and_Battles) as multiboot references, not copied Python modules.
+- Ninja (Apache-2.0), GNU Arm toolchain and Unicorn are build/test dependencies, not bundled user-runtime components.
 
-**Multi Profile 0.3.6**
+### Game material and import scope
 
-Sequenza PIO master adattata dalla variante GBA del file Celio linkLayer_pio.c, copia di riferimento locale in analisi/fonti, progetto https://github.com/Celio-Link/Celio-Firmware (autori Celio e modifiche preesistenti del pacchetto). Non si dichiara che corrisponda esattamente al binario Celio ricevuto. Le 27 istruzioni conservano direzioni, temporizzazione e ordine dei bit; nuovo controllo Pico SDK e validatore GBMirroring. Uso nella repository privata; nessuna nuova licenza assegnata al codice derivato.
+The 156-byte Nintendo boot logo in vendor/celio_transport/logo.bin and compiled GBA homebrew is required by the BIOS; it is not project-owned GPL artwork. Test screenshots retain the underlying game's rights. Names and images identify compatibility/results, without endorsement. No commercial ROMs, saves or complete game-asset packs are included.
 
-## mGBA libretro graphics engine
+Only necessary transport and corresponding firmware source material are imported from the friend's archive. Its separate firmware implementation, cooperative payload, Lua libraries, web-map icons and other release binaries are not imported. Their presence in the input archive does not make them GBMirroring features or dependencies.
 
-Unmodified Windows x86_64 core 0.11-219-e31759b, copyright mGBA contributors, MPL-2.0. License and provenance in runtime/mgba. Corresponding source: https://github.com/libretro/mgba/tree/e31759b . The receiver uses only our own homebrew and exported graphics; commercial ROMs and saves are not distributed.
+## Italiano
 
-Il firmware unificato 0.6.0 riutilizza la sequenza master PIO attribuita a Celio nel banco 0.3.7. Il protocollo multiboot esistente e richiamato da un nuovo adattatore CDC senza modifiche ai moduli vendor.
+Il codice proprio GBMirroring usa GPL-3.0; le dipendenze mantengono le proprie licenze. Idea e direzione: hacke & Lain. Sviluppo GBMirroring interamente con GPT 6 Astra, con assemblaggio, prove e decisioni umane. Non attribuiamo all'AI il codice di terzi.
 
-## Renderer nativo in sviluppo
+La tabella sopra elenca autori, componenti, licenze e sorgenti. Testi completi nelle cartelle licenses, runtime e negli archivi sorgente. Le 27 parole PIO Celio sono verificate contro una copia fissata. I moduli ricevuti conservano paternità e GPL dichiarata dal progetto fornito.
 
-`runtime/native/gbm_renderer.dll` compila direttamente cinque unita del renderer software mGBA, senza CPU, audio o ROM commerciale. Commit upstream completo `e31759b24e7a4e3899285ff720d7b573ac328ae7`, autori mGBA, MPL-2.0. Le unita originali non sono modificate. Sorgenti e header necessari, con licenza originale, sono inclusi in `native/renderer/mgba-source.zip`; checksum in `upstream.json`. L'adattatore e in `native/renderer/renderer.c`, la build offline in `tools/build_native_renderer.py`. Licenza e manifest del binario sono inclusi in `runtime/native`.
+Per il vecchio UF2 sono inclusi base e patch completa. Il binario ricevuto è identico a quello storico; tutte le patch si applicano. Una ricompilazione identica non è stata verificata. Tre modifiche erano documentate come preesistenti, senza autore identificato: non le attribuiamo a voi. Dettagli in vendor/celio_legacy_source e nel registro di audit.
+
+libusb è una DLL separata sostituibile; sorgente e LGPL sono indicati. Anche i componenti MPL restano modificabili secondo licenza. Chi ricompila una dipendenza può aggiornare manifest e verificatore forniti nei sorgenti: i controlli non vietano la modifica.
+
+Logo BIOS e screenshot del gioco non diventano opere GPL del progetto. Nessuna ROM commerciale, salvataggio, raccolta di asset o icona della mappa del progetto amico è inclusa. Cooperativa e dipendenze non necessarie non sono state importate. Restano autorevoli gli avvisi originali dei singoli file. I riferimenti hardware e di ricerca non implicano redistribuzione dei rispettivi progetti.

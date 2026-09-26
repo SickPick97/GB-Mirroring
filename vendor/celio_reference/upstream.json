@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/Celio-Link/Celio-Firmware",
+  "commit": "4aef46a1aff688cc0a68df666858eccb9b5ae291",
+  "path": "src/layers/linkLayer_pio.c",
+  "license": "GPL-3.0",
+  "sha256": "d2b2f496955735a429ed33d7b7673d9d3df42d170cab4a022b756430b6616702"
+}
