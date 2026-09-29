@@ -15,7 +15,7 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
  folder=ROOT/('dist/emerald-reports' if emerald else 'dist/sd-video-reports')/datetime.datetime.now().strftime('%Y%m%d-%H%M%S');folder.mkdir(parents=True)
  parser=Parser();lock=threading.Lock();stop=threading.Event();latest=[None];arrivals=collections.deque();presentations=collections.deque();changes=collections.deque()
  stats=dict(changed_images=0,resync_requests=0,status='WAITING',valid_frames=0,sequence_gaps=0,duplicates=0,bytes_received=0,codec=None,error=None,scope='Experimental Italian Emerald graphics. Scanline effects incomplete; no UVC.' if emerald else 'Homebrew VRAM over software SD/SC. No cartridge or UVC support.')
- raw_tail=bytearray();render_queue=queue.Queue(8);render_thread=None;hub=FrameHub()
+ raw_tail=bytearray();render_queue=queue.Queue(64);render_thread=None;hub=FrameHub()
  stats.update(presented_frames=0,render_drops=0,render_peak_ms=0,phases=[])
  def present(seq,pixels,game_frame=0):
   nonlocal last_pixels
@@ -63,7 +63,19 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
       raw_tail.extend(data);del raw_tail[:-65536]
      if b'ERROR SD DMA OVERRUN' in data:raise RuntimeError('Pico DMA overrun: interrompi e conserva i risultati')
      with lock:stats['bytes_received']+=len(data)
-     for seq,pixels,wire_bytes,codec,metadata in parser.feed(data):
+     decoded=parser.feed(data)
+     if emerald and not baseline and getattr(parser,'rom_image',None) is not None and not parser.rom_complete:
+      with lock:stats['status']='COPIA CARTUCCIA %d%%'%(parser.rom_received*100//parser.ROM_CHUNKS)
+     if emerald and not baseline and parser.rom_complete:
+      import rom_cache
+      saved=rom_cache.save(bytes(parser.rom_image))
+      print('Cache ROM salvata:',saved,flush=True)
+      print('Chiudi questo programma, riavvia il GBA e ripeti la procedura scegliendo START.',flush=True)
+      with lock:stats['status']='CACHE ROM CREATA: riavvia il GBA e premi START'
+      stop.set();break
+     if emerald and not baseline and getattr(parser,'rom_missing',0):
+      raise RuntimeError('Il GBA trasmette con la cache ROM ma questa e assente sul PC. Riavvia il GBA e al menu premi A per copiare la cartuccia.')
+     for seq,pixels,wire_bytes,codec,metadata in decoded:
       with lock:
        if previous==seq:stats['duplicates']+=1;continue
        if previous is not None and seq!=((previous+1)&0xffffffff):stats['sequence_gaps']+=1
@@ -137,7 +149,14 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
    renderer=Renderer()
    class GraphicsSnapshot:
     def render(self,graphics):return bytes(graphics)
-   parser=GraphicsParser(GraphicsSnapshot())
+   if baseline:parser=GraphicsParser(GraphicsSnapshot())
+   else:
+    import rom_cache
+    from stream_parser import StreamParser
+    try:rom=rom_cache.load()
+    except rom_cache.RomCacheError as exc:raise RuntimeError('Cache ROM non valida: %s. Cancella runtime/cache e ripeti la copia dalla cartuccia.'%exc)
+    parser=StreamParser(GraphicsSnapshot(),rom=rom)
+    if rom is None:print('Cache ROM assente: al menu del GBA premi A (non START) per copiare la cartuccia, circa 3 minuti. Succede una sola volta.',flush=True)
   command="Get-PnpDevice -PresentOnly | Where-Object { $_.InstanceId -match 'VID_CAFE&PID_4023' } | ForEach-Object { $_.FriendlyName }"
   if unified:command=command.replace('PID_4023','PID_4024')
   result=subprocess.run(['powershell.exe','-NoProfile','-Command',command],capture_output=True,text=True,check=True)

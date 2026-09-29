@@ -27,8 +27,10 @@ def edits(bits,length,start=0):
 
 def valid_header(raw):
  h=struct.unpack('<12H',raw)
- return (h[0:2]==(0xb47e,0x5647) and h[2] in (0x500,0x501,0x600)
-         and h[3]<=(9 if h[2]==0x600 else 2) and h[6]<=128
+ if h[2]==0x700:limit_type,limit_words=(12,240)
+ else:limit_type,limit_words=(9 if h[2]==0x600 else 2),128
+ return (h[0:2]==(0xb47e,0x5647) and h[2] in (0x500,0x501,0x600,0x700)
+         and h[3]<=limit_type and h[6]<=limit_words
          and h[11]==0x5aa5 and binascii.crc_hqx(raw[4:20],65535)==h[10])
 
 def repair_payload(bits,length,crc):

@@ -1,0 +1,70 @@
+"""Real ARM resident 0.12 driven by an emulated game: valid packets, complete cache, exact registers/OAM.
+
+Needs the local cartridge image and the motion state (tools/prepare_motion_state.py); skipped otherwise.
+Timing is an approximate cycle model, so only structural properties are asserted here.
+"""
+import os,struct,subprocess,sys,unittest
+from pathlib import Path
+ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT/'build/pylib'))
+ROM=Path(os.environ.get('GBM_ROM') or ROOT/'PROGETTO AMICO/MGBA TEST/Pokemon - Versione Smeraldo (Italy).gba')
+STATE=ROOT/'build/motion/field.state'
+RESIDENT=ROOT/'build/emerald-stream'
+def ready():return ROM.is_file() and STATE.is_file() and (RESIDENT/'resident.elf').is_file()
+@unittest.skipUnless(ready(),'local cartridge, motion state and built resident required')
+class Resident(unittest.TestCase):
+ def run_cosim(self,scenario,frames,warmup):
+  result=subprocess.run([sys.executable,str(ROOT/'tools/cosim_stream.py'),'--resident','build/emerald-stream','--scenario',scenario,'--frames',str(frames),'--warmup',str(warmup),'--stop-on-error'],capture_output=True,text=True,cwd=ROOT)
+  self.assertEqual(result.returncode,0,result.stderr[-800:]+result.stdout[-800:])
+  import json
+  return json.loads(result.stdout.strip().splitlines()[0])
+ def test_static_scene_completes_cache_and_publishes_every_tick(self):
+  r=self.run_cosim('stay',560,380)
+  self.assertEqual(r['parser_bad_frames'],0);self.assertEqual(r['delta_misses'],0)
+  self.assertGreaterEqual(r['published_per_60_ticks'],58)
+  self.assertEqual(r['wrong_hot_blocks'],0)
+  self.assertLess(r['mean_wrong_blocks'],3)
+  self.assertLessEqual(r['words_max'],224+36)
+ def test_walking_publishes_continuously(self):
+  r=self.run_cosim('h',600,400)
+  self.assertEqual(r['parser_bad_frames'],0);self.assertEqual(r['wrong_hot_blocks'],0)
+  self.assertGreaterEqual(r['published_per_60_ticks'],58)
+  self.assertLessEqual(r['max_delay_ticks'],8)
+
+def built():return (RESIDENT/'resident.elf').is_file()
+@unittest.skipUnless(built(),'built resident required')
+class Controls(unittest.TestCase):
+ """Key combinations and tick gating, driven directly on the ARM code (no game needed)."""
+ def machine(self):
+  sys.path.insert(0,str(ROOT/'tools'))
+  os.environ.setdefault('GBM_ARM_TOOLCHAIN','D:/Progettini')
+  import cosim_stream
+  m=cosim_stream.Machine(RESIDENT);m.load_graphics(bytes(100608));return m
+ def packets(self,m,frames,keys=None,entry=205,start=1):
+  emitted=[]
+  for f in range(start,start+frames):
+   if keys:m.u.mem_write(0x04000130,struct.pack('<H',keys.get(f,0x3ff)))
+   wire,words=m.tick(f,entry);emitted.append(words>0)
+  return emitted
+ def test_capture_every_vblank_by_default(self):
+  m=self.machine();self.assertTrue(all(self.packets(m,12)))
+ def test_late_handler_exit_skips_the_tick(self):
+  m=self.machine();self.assertEqual(self.packets(m,4,entry=226),[False]*4)
+ def test_cadence_key_halves_and_thirds_the_rate(self):
+  m=self.machine()
+  select_r_a=0x3ff&~0x105
+  keys={f:select_r_a for f in (3,4)};keys.update({f:0x3ff for f in (5,6)})
+  seen=self.packets(m,30,keys=keys)
+  self.assertTrue(all(seen[:3]))
+  tail=seen[6:];self.assertEqual(sum(tail),len(tail)//2,tail)
+  keys2={f:select_r_a for f in (40,41)};keys2.update({f:0x3ff for f in (42,43)})
+  seen=self.packets(m,42,keys=keys2,start=31)
+  tail=seen[16:];self.assertLessEqual(abs(sum(tail)-len(tail)/3),1,tail)
+ def test_select_l_r_pauses_and_resumes(self):
+  m=self.machine();toggle=0x3ff&~0x304
+  keys={f:toggle for f in (3,4)};keys.update({f:0x3ff for f in (5,6)})
+  seen=self.packets(m,10,keys=keys)
+  self.assertTrue(all(seen[:2]));self.assertFalse(any(seen[2:]))
+  keys2={f:toggle for f in (13,14)};keys2.update({f:0x3ff for f in (15,16)})
+  seen=self.packets(m,12,keys=keys2,start=11);self.assertTrue(seen[-1])
+if __name__=='__main__':unittest.main()

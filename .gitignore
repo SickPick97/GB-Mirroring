@@ -25,3 +25,5 @@ dist/pico-reports/
 dist/sd-video-reports/
 
 dist/emerald-reports/
+runtime/cache/
+*.rom

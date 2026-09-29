@@ -29,12 +29,13 @@ class SerialModel:
    return b''
 class Tests(unittest.TestCase):
  def test_multiboot_over_cdc(self):
-  rom=prepara_rom((ROOT/'dist/gbmirroring-emerald-v0.11.0.gba').read_bytes());serial=SerialModel(rom);link=BootTransport(serial)
-  try:
-   result=Multiboot(link,timing_fast=3700,timing_wait=129630,max_attempts=1,verbose=False).run(rom)
-   self.assertEqual(serial.slave.verifica(),[]);self.assertEqual(result['desync'],0);self.assertIn(129630,serial.timings);self.assertIn(3700,serial.timings)
-  finally:link.finish()
-  self.assertIsNone(link.worker)
+  for version in ('0.12.0','0.11.0'):
+   rom=prepara_rom((ROOT/('dist/gbmirroring-emerald-v'+version+'.gba')).read_bytes());serial=SerialModel(rom);link=BootTransport(serial)
+   try:
+    result=Multiboot(link,timing_fast=3700,timing_wait=129630,max_attempts=1,verbose=False).run(rom)
+    self.assertEqual(serial.slave.verifica(),[],version);self.assertEqual(result['desync'],0);self.assertIn(129630,serial.timings);self.assertIn(3700,serial.timings)
+   finally:link.finish()
+   self.assertIsNone(link.worker)
  def test_pio_program_matches_tested_master(self):
   old=(ROOT/'firmware/multi-profile/main.c').read_text();new=(ROOT/'firmware/unified/pico.c').read_text()
   extract=lambda s,name:re.search(name+r'\[\]=\{([^}]+)',s).group(1)

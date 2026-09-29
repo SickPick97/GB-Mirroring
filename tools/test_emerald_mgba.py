@@ -30,7 +30,7 @@ def main():
   records.append(dict(wire_bytes=len(wire),different_pixels=different,pc_seconds=time.perf_counter()-start));previous=gfx
  renderer.close();assert all(r['different_pixels']==0 for r in records)
  report['graphics']=dict(frames=90,exact_frames=90,mean_delta_wire_bytes=sum(r['wire_bytes'] for r in records[1:])/89,mean_pc_render_seconds=sum(r['pc_seconds'] for r in records)/90,scope='Repeatable movement/menu sequence from local save; not all battles/scanline effects')
- tool=sorted(Path('C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi').glob('*/bin/arm-none-eabi-nm.exe'))[-1]
+ tool=sorted(Path(__import__('os').environ.get('GBM_ARM_TOOLCHAIN','C:/Program Files (x86)/Arm GNU Toolchain arm-none-eabi')).glob('*/bin/arm-none-eabi-nm.exe'))[-1]
  nm=subprocess.check_output([str(tool),'-n',str(out/'resident.elf')],text=True);symbols={n:int(a,16) for a,k,n in (line.split() for line in nm.splitlines() if len(line.split())==3)}
  s=bytearray(field);p=bytearray((out/'resident.bin').read_bytes());struct.pack_into('<I',p,4,struct.unpack_from('<I',s,0x20ffc)[0]);s[0x5df80:0x60c00]=bytes(0x2c80);s[0x5df80:0x5df80+len(p)]=p;struct.pack_into('<I',s,0x20ffc,0x203cf80);c.restore(s);c.run(3,(1<<2)|(1<<10)|(1<<11));c.run(480)
  def counts():

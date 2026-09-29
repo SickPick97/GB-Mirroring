@@ -9,7 +9,8 @@ from verify_firmware import elf_symbols
 ROOT=Path(__file__).resolve().parents[1]
 
 def main():
-    ap=argparse.ArgumentParser();ap.add_argument('--state',type=Path,default=ROOT/'build/motion/field.state');ap.add_argument('--candidate',default='emerald-cache');args=ap.parse_args()
+    ap=argparse.ArgumentParser();ap.add_argument('--state',type=Path,default=ROOT/'build/motion/field.state');ap.add_argument('--candidate',default='emerald-cache')
+    ap.add_argument('--run',action='store_true',help='hold B while moving (running)');ap.add_argument('--frames',type=int,default=1200);args=ap.parse_args()
     rom=(ROOT/'PROGETTO AMICO/MGBA TEST/Pokemon - Versione Smeraldo (Italy).gba').read_bytes()
     assert len(rom)==0x1000000
     # Wrap the field callback1, preserving registers and tail-calling it. Count Main iterations,
@@ -31,10 +32,10 @@ def main():
         try:
             core.run();core.restore(state);core.run(480)
             before=struct.unpack_from('<I',core.state(),0x60d00)[0]
-            for frame in range(1200):core.run(1,1<<(7 if frame%240<120 else 6))
+            for frame in range(args.frames):core.run(1,(1<<(7 if frame%240<120 else 6))|(1 if args.run else 0))
             after=core.state();assert struct.unpack_from('<I',after,0x1b2c0)[0]==0x09000000
             iterations=struct.unpack_from('<I',after,0x60d00)[0]-before
-            results.append(dict(variant=candidate or 'unmodified_game',emulated_frames=1200,main_iterations=iterations,main_fps=iterations*16777216/280896/1200))
+            results.append(dict(variant=candidate or 'unmodified_game',emulated_frames=args.frames,main_iterations=iterations,main_fps=iterations*16777216/280896/args.frames))
         finally:core.close()
     report=dict(scope='Local mGBA directional-input test with Main callback instrumentation; not hardware or audio certification',results=results)
     (args.state.parent/('gameplay-'+args.candidate+'.json')).write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2))
