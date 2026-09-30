@@ -1,4 +1,5 @@
 #include <stdint.h>
+#define U8(a) (*(volatile uint8_t*)(a))
 #define U16(a) (*(volatile uint16_t*)(a))
 #define U32(a) (*(volatile uint32_t*)(a))
 extern uint32_t original_irq;
@@ -11,22 +12,38 @@ extern unsigned pending_count(const uint32_t*,uint32_t*);
 extern unsigned words_equal(const volatile uint32_t*,const volatile uint32_t*,unsigned);
 extern void copy16(uint16_t*,const volatile uint16_t*,unsigned);
 extern void patch_apply(uint16_t*,const uint16_t*,unsigned);
+extern uint32_t crc32_arm(const uint16_t*,unsigned);
+void tick(void);
 #ifndef DEADLINE
-#define DEADLINE 38
+#define DEADLINE 24
 #endif
-/* Stream 0.12: one packet per VBlank. Blocks found changed but not yet sent stay
-   dirty; the PC learns how many are still outstanding and orders its playout. */
+/* Stream 0.13: one tick packet per VBlank (registers, palette, OAM, ROM replays and a small slice of VRAM),
+   plus bulk packets sent while the game waits for the next VBlank. Both run with the game's interrupts enabled:
+   the resident never holds off an HBlank, VCount, timer or VBlank interrupt of the game. */
 #define FIELDS 6
 #define PAY_MAX 224
 #define FEEDBACK_EVERY 30
-#define REQUESTS_PER_VBLANK 20
+/* Bulk work while the game is idle stops at this scanline, well before VBlank (160). */
+#ifndef IDLE_END
+#define IDLE_END 150
+#endif
+/* Timer 1 (unused by the game during play; its slot in the game's interrupt table is a dummy) checks for idle
+   time every ten scanlines: 64-cycle prescaler, 193 counts. */
+#define TIMER_STEP 193
+#ifndef BUSY_SKIPS
+#define BUSY_SKIPS 7
+#endif
+#ifndef HEAVY_SLACK
+#define HEAVY_SLACK 40
+#endif
 static uint32_t hashes[393];
 uint32_t dirty_mask[13];
 static uint32_t strong_mask[13],other_mask[13];
+/* Copies observed before a VBlank are only merged after it, once the game has actually performed them. */
+static uint32_t nx_dirty[13],nx_other[13];
 #define RQ 8
 static uint32_t rq[RQ][3],rp[5][3];static unsigned rq_n,rp_n;
 static unsigned audit_cursor,feedback,vblank_seen,bulk_cursor=9,cadence=1,skip,held2;
-#define U8(a) (*(volatile uint8_t*)(a))
 /* Codecs write straight into the packet; the slack lets a 128-word body be built past the limit and dropped. */
 static uint16_t packet[12+PAY_MAX+127];
 static uint32_t regblock[64];
@@ -42,19 +59,26 @@ static uint32_t sb_known,sb_dim;  /* sb_dim: 2 bits per layer, 0 both signature 
 static inline unsigned pc16(unsigned v){unsigned n=0;while(v){v&=v-1;n++;}return n;}
 static uint32_t hot_known;
 static uint32_t peak_lines,last_words,optimized=2;
-volatile uint32_t visits,entry_line,entry_rcnt,scan_limit=228,scan_stop=393,irq_lr;
-static unsigned busy_run,starved,cool,skipped,mode;
-__attribute__((section(".scheduler"))) static void mark_all(void){for(unsigned i=0;i<13;i++){dirty_mask[i]=~0u;other_mask[i]=~0u;}}
+volatile uint32_t visits,entry_line,entry_rcnt,scan_limit=228,scan_stop=393,irq_lr,in_work,tick_owed;
+static unsigned busy_run,starved,skipped,mode,observed,idle_ran,idle_words,idle_first;
+#ifdef SOFT
+volatile uint32_t dbg_words,dbg_lines,dbg_fill,dbg_end;
+#endif
+/* Scanlines needed to send `pay` words (CRC and bit clocking), measured at about six words per scanline. */
+static inline unsigned send_lines(unsigned pay){return (pay*43)>>8;}
 static inline unsigned elapsed_lines(unsigned line){unsigned d=line+228-entry_line;return d>=228?d-228:d;}
+#define BIT(b) (1u<<((b)&31))
+/* After a scene change every block is unverified: counted as pending so the PC holds its image until checked. */
+__attribute__((section(".scheduler"))) static void mark_all(void){
+ for(unsigned i=0;i<13;i++){dirty_mask[i]=~0u;strong_mask[i]=~0u;other_mask[i]=~0u;}
+ dirty_mask[12]=strong_mask[12]=other_mask[12]=511;
+}
 /* Italian BPEI pointers are checked by the loader. Read only pending copy metadata. */
 __attribute__((section(".scheduler"))) static void mark_range(uint32_t address,unsigned size,unsigned other){
  if(address<0x06000000 || address>=0x06018000 || !size)return;
  unsigned end=address+size;if(end<address || end>0x06018000)end=0x06018000;
  unsigned first=9+((address-0x06000000)>>8),last=9+((end-1-0x06000000)>>8);
- for(unsigned b=first;b<=last;b++){
-  dirty_mask[b>>5]|=1u<<(b&31);strong_mask[b>>5]|=1u<<(b&31);
-  if(other)other_mask[b>>5]|=1u<<(b&31);
- }
+ for(unsigned b=first;b<=last;b++){nx_dirty[b>>5]|=BIT(b);if(other)nx_other[b>>5]|=BIT(b);}
 }
 /* A pending copy whose source is the ROM can be replayed by the PC from its own cartridge
    image once the GBA has confirmed that VRAM really holds those ROM bytes. */
@@ -63,33 +87,26 @@ __attribute__((section(".scheduler"))) static void request(uint32_t src,uint32_t
  if(rom){rq[rq_n][0]=src;rq[rq_n][1]=dest;rq[rq_n][2]=size;rq_n++;}
  mark_range(dest,size,!rom);
 }
+/* Reads the game's copy queues once per frame: when the game starts waiting for VBlank (from the idle timer), or
+   else from inside its VBlank callback (vb_thunk, known scenes only). Never before the game's interrupt handler:
+   a delay there starved the VBlank interrupt during the battle transition and froze the game. */
 __attribute__((section(".scheduler"))) void observe(void){
- if(!enabled)return;
- /* This runs (through vb_thunk) before the game's own VBlank handler, and a scene change queues hundreds of copies: reading them all
-    delayed that handler by tens of scanlines and froze the game at the start of a battle. A small number of
-    requests is followed; when there are more the VRAM is simply audited (mark_all) instead. */
- unsigned left=REQUESTS_PER_VBLANK;
+ if(!enabled || observed)return;
+ observed=1;
  if(!U8(0x03000810)){
   unsigned index=U8(0x03000811);
-  for(unsigned n=0;n<128 && left;n++,index=(index+1)&127){
+  for(unsigned n=0;n<128;n++,index=(index+1)&127){
    uint32_t a=0x03000010+index*16;unsigned size=U16(a+8);if(!size)break;
-   request(U32(a),U32(a+4),size);left--;
+   request(U32(a),U32(a+4),size);
   }
-  if(!left && U16(0x03000010+((U8(0x03000811)+REQUESTS_PER_VBLANK)&127)*16+8)){mark_all();return;}
  }
  /* Tileset animation transfers: 12-byte {src,dest,size} entries, pending count in IWRAM. */
  {unsigned count=U8(0x03000f34);if(count>20)count=20;
-  for(unsigned i=0;i<count && left;i++,left--){uint32_t a=0x02037624+i*12;request(U32(a),U32(a+4),U16(a+8));}
-  if(count && !left){mark_all();return;}}
+  for(unsigned i=0;i<count;i++){uint32_t a=0x02037624+i*12;request(U32(a),U32(a+4),U16(a+8));}}
  if(U8(0x02021834)){
   unsigned count=U8(0x02021835);if(count>64)count=64;
-  for(unsigned i=0;i<count && left;i++,left--){uint32_t a=0x02021838+i*12;request(U32(a),U32(a+4),U16(a+8));}
-  if(count && !left)mark_all();
+  for(unsigned i=0;i<count;i++){uint32_t a=0x02021838+i*12;request(U32(a),U32(a+4),U16(a+8));}
  }
-}
-static const uint32_t crc_table[16] __attribute__((section(".text.crc")))={0,0x1db71064,0x3b6e20c8,0x26d930ac,0x76dc4190,0x6b6b51f4,0x4db26158,0x5005713c,0xedb88320,0xf00f9344,0xd6d6a3e8,0xcb61b38c,0x9b64c2b0,0x86d3d2d4,0xa00ae278,0xbdbdf21c};
-__attribute__((noinline)) static uint32_t crc32(const uint16_t *data,unsigned count){
- uint32_t c=~0u;for(unsigned i=0;i<count;i++){c^=data[i];for(unsigned j=0;j<4;j++)c=crc_table[c&15]^(c>>4);}return ~c;
 }
 __attribute__((section(".scheduler"))) static uint16_t crc16(const uint16_t*d,unsigned n){
  static const uint16_t t[16]={0,0x1021,0x2042,0x3063,0x4084,0x50a5,0x60c6,0x70e7,0x8108,0x9129,0xa14a,0xb16b,0xc18c,0xd1ad,0xe1ce,0xf1ef};
@@ -99,7 +116,7 @@ __attribute__((section(".scheduler"))) static uint16_t crc16(const uint16_t*d,un
 }
 __attribute__((section(".scheduler"))) static void emit(unsigned version,unsigned type,unsigned block,unsigned n){
  packet[0]=0xb47e;packet[1]=0x5647;packet[2]=version;packet[3]=type;packet[4]=sequence;packet[5]=sequence>>16;packet[6]=n;packet[7]=block;
- uint32_t c=crc32(packet+12,n);packet[8]=c;packet[9]=c>>16;packet[10]=crc16(packet+2,8);packet[11]=0x5aa5;
+ uint32_t c=crc32_arm(packet+12,n);packet[8]=c;packet[9]=c>>16;packet[10]=crc16(packet+2,8);packet[11]=0x5aa5;
  ((void(*)(const uint16_t*,unsigned))fast_begin)(packet,n+12);
 }
 __attribute__((noinline)) static unsigned compress(const volatile uint16_t *src,uint16_t*out){
@@ -149,23 +166,23 @@ __attribute__((section(".scheduler"))) static void control_slot(uint32_t now){
 }
 /* Confirm queued ROM copies against VRAM and clear the blocks they fully explain.
    Confirmed copies are emitted at the end of this tick's packet; their space is reserved. */
-__attribute__((section(".scheduler"))) static unsigned confirm_requests(unsigned vonly){
+__attribute__((section(".scheduler"))) static unsigned confirm_requests(void){
  rp_n=0;
  /* Comparing and hashing are capped per tick: a scene load queues thousands of words. */
- unsigned cap=vonly?256:1024;
+ unsigned cap=1024;
  for(unsigned i=0;i<rq_n;i++){
   uint32_t src=rq[i][0],dest=rq[i][1];unsigned size=rq[i][2];
   unsigned first=9+((dest-0x06000000)>>8),last=9+((dest+size-1-0x06000000)>>8),w=size>>2,fits=w<=cap;
   if(fits)cap-=w;
   /* Screen blocks 28..30 (233..256) use signature patches against the last sent copy: keep them literal. */
   if(rp_n>=5 || (first<=256 && last>=233) || !fits || !words_equal((const volatile uint32_t*)dest,(const volatile uint32_t*)src,size)){
-   for(unsigned b=first;b<=last;b++)other_mask[b>>5]|=1u<<(b&31);
+   for(unsigned b=first;b<=last;b++)other_mask[b>>5]|=BIT(b);
    continue;
   }
   rp[rp_n][0]=src;rp[rp_n][1]=dest;rp[rp_n][2]=size;rp_n++;
   for(unsigned b=first;b<=last;b++){
-   if(other_mask[b>>5]&(1u<<(b&31)))continue;
-   dirty_mask[b>>5]&=~(1u<<(b&31));strong_mask[b>>5]&=~(1u<<(b&31));
+   if(other_mask[b>>5]&BIT(b))continue;
+   dirty_mask[b>>5]&=~BIT(b);strong_mask[b>>5]&=~BIT(b);
    uint32_t base=0x06000000+(b-9)*256;
    if(dest<=base && dest+size>=base+256){uint32_t h[2];((void(*)(const void*,uint32_t*))hash_begin)((const void*)base,h);hashes[b]=h[0]^(h[1]*0x9e3779b1u);}
   }
@@ -182,76 +199,32 @@ __attribute__((section(".scheduler"))) static unsigned emit_replays(unsigned pay
  }
  return pay;
 }
-/* Known scenes get the thunk in front of the game's VBlank callback; anything else is left untouched. Returns the
-   game's real callback. */
+/* Known scenes get the thunk in front of the game's VBlank callback (fallback when the game had no idle time
+   before VBlank); anything else is left untouched. Returns the game's real callback. */
 __attribute__((section(".scheduler"))) static unsigned hooked_callback(void){
  uint32_t cb=U32(0x030022cc);
  if(cb==(uint32_t)vb_thunk)return orig_vblank;
  if(cb==0x080863a5 || cb==0x080bb399 || cb==0x081afcd5){orig_vblank=cb;U32(0x030022cc)=(uint32_t)vb_thunk;}
  return cb;
 }
-__attribute__((section(".scheduler"))) void tick(void){
- uint32_t now=U32(0x030022e0);if(now==last_vblank)return;last_vblank=now;visits++;
- unsigned callback=hooked_callback();
- unsigned pressed=(U16(0x04000130)&0x304)==0;
- if(pressed&&!held){enabled^=1;valid=0;}held=pressed;
- /* SELECT + R + A cycles the capture cadence: every VBlank, every 2nd, every 3rd. */
- unsigned pressed2=(U16(0x04000130)&0x105)==0;
- if(pressed2&&!held2){cadence=cadence>=3?1:cadence+1;}
- held2=pressed2;
- if(!enabled)return;
- entry_line=U16(0x04000006);entry_rcnt=U16(0x04000134);
- /* Some rooms poll the link port every frame: only the register is restored, no audit is forced. */
- U16(0x04000134)=0x8030;
- if(entry_line<160 || entry_line>=224)return;
- if(skip){skip--;return;}
- if(cool){cool--;skipped++;return;}
- skip=cadence-1;
- /* The interrupted code is outside the BIOS: the game was still working when VBlank began, so it
-    is already behind. Give it the whole frame back (at most three times in a row). */
- if(irq_lr>=0x4000 && busy_run<3){busy_run++;skipped++;return;}
- busy_run=0;
- unsigned ie=U16(0x04000200);
- unsigned known_cb=callback==0x080863a5 || callback==0x080bb399 || callback==0x081afcd5;
- /* Outside the known field/menu scenes, or whenever the game listens to HBlank or VCount interrupts (battle
-    intros and effects), the tick must finish inside VBlank: an interrupt held off during the visible lines
-    ruins the scanline effect (black bars, wrong scroll) and delays the game's own next frame. */
- unsigned vonly=!known_cb || (ie&2),room=0;
- if(vonly){
-  if(entry_line>=208){skipped++;return;}
-  room=220-entry_line;
- }
- mode=vonly;
- tick_frame=now;
- unsigned pending_key=!valid || since_key>=(feedback?36000u:1800u);
- key=pending_key;
- if(key){
-  since_key=0;known[0]=known[1]=0;hot_known=0;sb_known=0;sb_dim=0;
-  for(unsigned i=0;i<393;i++)hashes[i]=0;
-  for(unsigned i=0;i<13;i++){dirty_mask[i]=~0u;strong_mask[i]=~0u;other_mask[i]=~0u;}strong_mask[12]=511;
- }else if(callback!=vblank_seen){
-  mark_all();
- }else{
-  /* The three known callbacks are followed through the game's copy queues; any other scene is only audited,
-     a slice of the VRAM per tick, so an unknown scene never costs more than a few scanlines. */
-  unsigned n=known_cb?3:32;
-  dirty_mask[0]|=511;
-  for(unsigned i=0;i<n;i++){unsigned b=9+audit_cursor;dirty_mask[b>>5]|=1u<<(b&31);other_mask[b>>5]|=1u<<(b&31);audit_cursor++;if(audit_cursor==384)audit_cursor=0;}
- }
- vblank_seen=callback;since_key++;
- if(vonly)sb_known=0;  /* layer patches stay off while the tick must stay short; signatures are learned again afterwards */
- for(unsigned i=0;i<24;i++)regblock[i]=U32(0x03000818+i*4);
- unsigned pay=FIELDS,records=0,cursor=0,stage=0,bulk=0;
- unsigned reserve=confirm_requests(vonly),limit=PAY_MAX-reserve;
- if(vonly){unsigned cap=room*8;if(cap<140)cap=140;if(limit>cap)limit=cap;}
+__attribute__((section(".scheduler"))) static void timer_off(void){
+ U16(0x04000106)=0;U16(0x04000200)&=~0x10;U16(0x04000202)=0x10;
+}
+__attribute__((section(".scheduler"))) static void timer_arm(void){
+ U16(0x04000106)=0;U16(0x04000104)=65536-TIMER_STEP;U16(0x04000202)=0x10;U16(0x04000106)=0xc1;U16(0x04000200)|=0x10;
+}
+/* Sends changed VRAM blocks into the packet from `pay` on, until `limit` words or `deadline` scanlines after
+   entry_line. Stage 0 starts with registers, palette and OAM (never held back by the time budget); stage 1 and 2
+   walk the bulk blocks round robin from bulk_cursor. `strict` (idle time) also reserves the cost of the next block
+   (up to 24 scanlines), so the packet is finished by the deadline instead of starting there. */
+#define ITEM_LINES 24
+__attribute__((section(".scheduler"))) static unsigned fill(unsigned pay,unsigned limit,unsigned deadline,unsigned stage,unsigned strict,unsigned gate_hot,unsigned*records,unsigned*bulk){
+ unsigned cursor=stage?bulk_cursor:0,margin=strict?ITEM_LINES:0;
  for(;;){
   unsigned line=U16(0x04000006);
-  /* Registers, palette and OAM are never held back by the time budget (the scan stops at block 9 in that
-     stage); bulk blocks are, except that a scene starved for eight ticks in a row gets twice the time. */
-  unsigned budget=pay>>3,deadline=vonly?room:(starved>=8 && !bulk)?2*DEADLINE:DEADLINE;
-  unsigned gated=stage!=0;
-  if(pay+3>limit || (gated && elapsed_lines(line)+budget>=deadline))break;
-  scan_limit=gated?(deadline>budget?deadline-budget:1):228;
+  unsigned budget=send_lines(pay),gated=stage!=0 || gate_hot;
+  if(pay+3>limit || (gated && elapsed_lines(line)+budget+margin>=deadline))break;
+  scan_limit=gated?(deadline>budget+margin?deadline-budget-margin:1):228;
   scan_stop=stage==0?9:(stage==2?bulk_cursor:393);
   uint32_t h[3];unsigned next=scan_next(cursor,regblock,hashes,h);
   if(next&0x80000000)break;
@@ -262,7 +235,7 @@ __attribute__((section(".scheduler"))) void tick(void){
    break;
   }
   if(stage==2 && block>=bulk_cursor)break;
-  if(block>=233 && block<257 && !vonly && (sb_known&(1u<<((block-233)>>3)))){
+  if(block>=233 && block<257 && (sb_known&(1u<<((block-233)>>3)))){
    unsigned k=(block-233)>>3,first=233+(k<<3);
    const volatile uint8_t*base=(const volatile uint8_t*)(0x06000000+(first-9)*256);
    uint16_t sig[32];sb_sig(base,sig);
@@ -275,7 +248,8 @@ __attribute__((section(".scheduler"))) void tick(void){
    unsigned groups=pc16(colmask)+pc16(rowmask);
    /* Whatever does not fit in this packet is sent by the next ones; only the sent groups update the signatures. */
    unsigned fit=pay+7<=limit?(limit-pay-7)/64:0,partial=0;
-   if(!fit && groups){strong_mask[block>>5]|=1u<<(block&31);break;}
+   if(strict){unsigned used=elapsed_lines(U16(0x04000006))+send_lines(pay)+8,room=deadline>used?(deadline-used)*6/64:0;if(fit>room)fit=room;}
+   if(!fit && groups){strong_mask[block>>5]|=BIT(block);break;}
    if(groups>fit){
     unsigned keep_c=0,keep_r=0,left=fit;
     for(unsigned i=0;i<16 && left;i++)if(colmask&(1u<<i)){keep_c|=1u<<i;left--;}
@@ -291,13 +265,13 @@ __attribute__((section(".scheduler"))) void tick(void){
    for(unsigned g=0;g<16;g++)if(colmask&(1u<<g))for(unsigned r=0;r<32;r++){uint32_t w=*(const volatile uint32_t*)(base+r*64+g*4);ubody[pos++]=w;ubody[pos++]=w>>16;}
    for(unsigned q=0;q<16;q++)if(rowmask&(1u<<q)){copy16(ubody+pos,(const volatile uint16_t*)(base+q*128),64);pos+=64;}
    urec[0]=first;urec[1]=(12<<8)|un;
-   pay+=un+2;records++;bulk++;
+   pay+=un+2;(*records)++;(*bulk)++;
    if(partial){
     for(unsigned i=0;i<16;i++){if(colmask&(1u<<i))sb_sigs[k][i]=sig[i];if(rowmask&(1u<<i))sb_sigs[k][16+i]=sig[16+i];}
     sb_dim=(sb_dim&~(3u<<(2*k)))|((colmask?1u:2u)<<(2*k));
    }else{for(unsigned i=0;i<32;i++)sb_sigs[k][i]=sig[i];sb_dim&=~(3u<<(2*k));}
-   if(partial){for(unsigned i=0;i<8;i++){unsigned b=first+i;strong_mask[b>>5]|=1u<<(b&31);}break;}
-   for(unsigned i=0;i<8;i++){unsigned b=first+i;hashes[b]=bf[i];dirty_mask[b>>5]&=~(1u<<(b&31));strong_mask[b>>5]&=~(1u<<(b&31));}
+   if(partial){for(unsigned i=0;i<8;i++){unsigned b=first+i;strong_mask[b>>5]|=BIT(b);}break;}
+   for(unsigned i=0;i<8;i++){unsigned b=first+i;hashes[b]=bf[i];dirty_mask[b>>5]&=~BIT(b);strong_mask[b>>5]&=~BIT(b);}
    cursor=first+8;if(stage)bulk_cursor=cursor>=393?9:cursor;
    continue;
   }
@@ -306,7 +280,7 @@ __attribute__((section(".scheduler"))) void tick(void){
   uint32_t fold32=h[0]^(h[1]*0x9e3779b1u);
   unsigned slot=(fold32*2654435761u)>>26,type=1,n=128;
   uint16_t*rec=packet+12+pay,*body=rec+2;
-  if((known[slot>>5]&(1u<<(slot&31))) && fold32==dict_fold[slot]){type=3;n=1;body[0]=slot;}
+  if((known[slot>>5]&BIT(slot)) && fold32==dict_fold[slot]){type=3;n=1;body[0]=slot;}
   if(type==1){
    if(hot<5 && (hot_known&(1u<<hot))){n=compress_patch((const volatile uint16_t*)src,(previous_hot+(hot?48+(hot-1)*128:0)),hot?128:48,body);if(n<128)type=5;}
    if(n==128){n=compress((const volatile uint16_t*)src,body);if(n<128)type=4;}
@@ -314,40 +288,143 @@ __attribute__((section(".scheduler"))) void tick(void){
   if(n>=128){type=1;n=128;}
   if(pay+2+n>limit){
    /* Known changed but no room: keep it pending and report it. */
-   strong_mask[block>>5]|=1u<<(block&31);
+   strong_mask[block>>5]|=BIT(block);
    break;
   }
   if(type==1)copy16(body,(const volatile uint16_t*)src,128);
   rec[0]=type==3?block:(slot<<9)|block;rec[1]=(type<<8)|n;
-  pay+=n+2;records++;if(block>=9)bulk++;
-  hashes[block]=fold32;dict_fold[slot]=fold32;known[slot>>5]|=1u<<(slot&31);
+  pay+=n+2;(*records)++;if(block>=9)(*bulk)++;
+  hashes[block]=fold32;dict_fold[slot]=fold32;known[slot>>5]|=BIT(slot);
   if(hot<5){
    uint16_t*previous=previous_hot+(hot?48+(hot-1)*128:0);unsigned count=hot?128u:48u;
    if(type==5)patch_apply(previous,body,count);
    else copy16(previous,(const volatile uint16_t*)src,count);
    hot_known|=1u<<hot;
   }
-  dirty_mask[block>>5]&=~(1u<<(block&31));strong_mask[block>>5]&=~(1u<<(block&31));
+  dirty_mask[block>>5]&=~BIT(block);strong_mask[block>>5]&=~BIT(block);
   cursor=block+1;if(stage)bulk_cursor=cursor>=393?9:cursor;
  }
  /* A layer whose eight blocks are all clean holds exactly what the PC holds: learn its signatures. */
- for(unsigned k=0;k<3 && !vonly;k++)if(!(sb_known&(1u<<k))){
+ for(unsigned k=0;k<3;k++)if(!(sb_known&(1u<<k))){
   unsigned first=233+(k<<3),clean=1;
-  for(unsigned i=0;i<8;i++){unsigned b=first+i;if(dirty_mask[b>>5]&(1u<<(b&31)))clean=0;}
+  for(unsigned i=0;i<8;i++){unsigned b=first+i;if(dirty_mask[b>>5]&BIT(b))clean=0;}
   if(clean){sb_sig((const volatile void*)(0x06000000+(first-9)*256),sb_sigs[k]);sb_known|=1u<<k;}
  }
+ return pay;
+}
+__attribute__((section(".scheduler"))) static unsigned fields(unsigned idle,unsigned pending,unsigned records,unsigned ie,unsigned callback){
+ uint16_t*f=packet+12;
+ f[0]=(idle?0:key)|((U16(0x040000ba)&0x8000)?2:0)|((skipped>7?7:skipped)<<4)|(mode<<11)|(feedback<<8)|(cadence<<9)|0x2000;
+ f[1]=tick_frame;f[2]=tick_frame>>16;f[3]=pending|((ie&0x6f)<<9);f[4]=records|(((callback^(callback>>8)^(callback>>16))&255)<<8);
+ f[5]=idle?(idle_words>65535?65535:idle_words):((peak_lines>255?255:peak_lines)|((last_words>255?255:last_words)<<8));
+ return pending;
+}
+/* Entered from the timer 1 interrupt when the game waits for VBlank (interrupted inside its WaitForVBlank loop with
+   the VBlank flag clear), in system mode with interrupts enabled. Reads the copy queues, then sends pending blocks
+   and audits the rest of VRAM until IDLE_END. Runs only between ticks, so it never overlaps one. */
+__attribute__((section(".scheduler"))) void idle(void){
+ if(!enabled || !valid){timer_off();return;}
+ unsigned line=U16(0x04000006);
+ if(line>=IDLE_END){timer_off();return;}
+ observe();
+ idle_ran=1;if(!idle_first)idle_first=line+1;
+ unsigned audited=0,callback=vblank_seen,ie=U16(0x04000200);
+ for(;;){
+  /* Stop as soon as VBlank has come (the game wants to run its frame) or too little time is left for a block. */
+  line=U16(0x04000006);
+  if((U16(0x030022dc)&1) || line+ITEM_LINES+2>=IDLE_END)break;
+  entry_line=line;
+  unsigned pay=FIELDS,records=0,bulk=0;
+  /* Registers (the tick's snapshot), palette and OAM only change at VBlank: those a heavy tick left pending go first. */
+  pay=fill(pay,PAY_MAX,IDLE_END-line,0,1,1,&records,&bulk);
+  if(records){
+   unsigned pending=pending_count(dirty_mask,strong_mask);
+   for(unsigned i=0;i<13;i++)other_mask[i]&=dirty_mask[i];
+   fields(1,pending,records,ie,callback);
+#ifdef SOFT
+   {unsigned a=U16(0x04000006);
+#endif
+   emit(0x700,13,0,pay);
+#ifdef SOFT
+   unsigned b=U16(0x04000006);if(b<160 && b>=a){dbg_words+=pay+12;dbg_lines+=b-a;dbg_fill+=a-line;}else if(a>dbg_end)dbg_end=a;}
+#endif
+   idle_words+=pay+12;sequence++;
+   continue;
+  }
+  /* Nothing known to be pending: verify more of VRAM, one full sweep per frame at most. */
+  if(audited>=384 || U16(0x04000006)+ITEM_LINES+2>=IDLE_END)break;
+  for(unsigned i=0;i<24;i++){unsigned b=9+audit_cursor;dirty_mask[b>>5]|=BIT(b);other_mask[b>>5]|=BIT(b);if(++audit_cursor==384)audit_cursor=0;}
+  audited+=24;
+ }
+ timer_off();
+ /* VBlank came while this was sending: the wrapper could not start the tick then, so run it now. */
+ if(tick_owed){tick_owed=0;irq_lr=0x080008ca;tick();}
+}
+__attribute__((section(".scheduler"))) void tick(void){
+ uint32_t now=U32(0x030022e0);if(now==last_vblank)return;last_vblank=now;visits++;
+ /* The copies observed before this VBlank have been performed by the game's handler now. */
+ for(unsigned i=0;i<13;i++){dirty_mask[i]|=nx_dirty[i];strong_mask[i]|=nx_dirty[i];other_mask[i]|=nx_other[i];nx_dirty[i]=nx_other[i]=0;}
+ observed=0;
+ unsigned callback=hooked_callback();
+ unsigned pressed=(U16(0x04000130)&0x304)==0;
+ if(pressed&&!held){enabled^=1;valid=0;}held=pressed;
+ /* SELECT + R + A cycles the capture cadence: every VBlank, every 2nd, every 3rd. */
+ unsigned pressed2=(U16(0x04000130)&0x105)==0;
+ if(pressed2&&!held2){cadence=cadence>=3?1:cadence+1;}
+ held2=pressed2;
+ unsigned idle_before=idle_ran,first=idle_first;idle_ran=0;idle_first=0;
+ /* Scanlines the game left free before this VBlank: with little or none its frames are heavy (menus opening,
+    saving, scene setup), and the tick sends only registers, palette, OAM and ROM replays so it adds no lag. */
+ unsigned slack=first?(first-1<IDLE_END?IDLE_END-(first-1):0):0;
+ if(!enabled){timer_off();rq_n=0;return;}
+ entry_line=U16(0x04000006);entry_rcnt=U16(0x04000134);
+ /* Some rooms poll the link port every frame: only the register is restored, no audit is forced. */
+ U16(0x04000134)=0x8030;
+ if(entry_line<160 || entry_line>=224){timer_arm();return;}
+ if(skip){skip--;timer_arm();return;}
+ skip=cadence-1;
+ /* The interrupted code is not the game's WaitForVBlank loop: the game was still working when VBlank began, so it
+    is already behind. Give it the whole frame back (at most seven times in a row). */
+ /* A busy game (saving, loading a scene) gets no idle checks either: they would only cost it interrupts. */
+ if(irq_lr-0x080008cau>8 && busy_run<BUSY_SKIPS){busy_run++;skipped++;timer_off();return;}
+ unsigned busy=irq_lr-0x080008cau>8,heavy=busy || slack<HEAVY_SLACK;
+ busy_run=0;
+ unsigned ie=U16(0x04000200);
+ unsigned known_cb=callback==0x080863a5 || callback==0x080bb399 || callback==0x081afcd5;
+ mode=!known_cb;
+ tick_frame=now;
+ key=!valid || since_key>=(feedback?36000u:1800u);
+ if(key){
+  since_key=0;known[0]=known[1]=0;hot_known=0;sb_known=0;sb_dim=0;
+  for(unsigned i=0;i<393;i++)hashes[i]=0;
+  mark_all();
+ }else if(callback!=vblank_seen){
+  mark_all();
+ }else{
+  /* Known scenes are followed through the game's copy queues and idle time audits the rest; without idle time an
+     unknown scene is audited here, a slice per tick. */
+  unsigned n=(known_cb || idle_before)?3:32;
+  dirty_mask[0]|=511;
+  for(unsigned i=0;i<n;i++){unsigned b=9+audit_cursor;dirty_mask[b>>5]|=BIT(b);other_mask[b>>5]|=BIT(b);if(++audit_cursor==384)audit_cursor=0;}
+ }
+ dirty_mask[0]|=511;
+ vblank_seen=callback;since_key++;
+ for(unsigned i=0;i<24;i++)regblock[i]=U32(0x03000818+i*4);
+ unsigned pay=FIELDS,records=0,bulk=0;
+ unsigned reserve=confirm_requests(),limit=PAY_MAX-reserve;
+ /* In a heavy frame even registers, palette and OAM are bounded by the time the game left free last frame. */
+ unsigned deadline=starved>=8?2*DEADLINE:DEADLINE;
+ if(heavy)deadline=(!busy && slack>12)?slack-8:4;
+ pay=fill(pay,limit,deadline,0,0,heavy,&records,&bulk);
  unsigned pending=pending_count(dirty_mask,strong_mask);
  if(pending && !bulk){if(starved<255)starved++;}else starved=0;
  for(unsigned i=0;i<13;i++)other_mask[i]&=dirty_mask[i];
  pay=emit_replays(pay,&records);
- uint16_t*f=packet+12;
- f[0]=key|((U16(0x040000ba)&0x8000)?2:0)|((skipped>7?7:skipped)<<4)|(mode<<11)|(feedback<<8)|(cadence<<9)|0x2000;skipped=0;f[1]=now;f[2]=now>>16;f[3]=pending|((ie&0x7f)<<9);f[4]=records|(((callback^(callback>>8)^(callback>>16))&255)<<8);
- f[5]=(peak_lines>255?255:peak_lines)|((last_words>255?255:last_words)<<8);
+ fields(0,pending,records,ie,callback);skipped=0;
  emit(0x700,10,0,pay);
- last_words=pay+12;changed_total+=records;
+ last_words=pay+12;changed_total+=records;idle_words=0;
  peak_lines=elapsed_lines(U16(0x04000006));
- /* A tick that ran far past its budget delays the game's next VBlank: back off for a few frames. */
- if(peak_lines>110)cool=6;
  valid=1;sequence++;
- if(++since_feedback>=FEEDBACK_EVERY && !vonly){since_feedback=0;control_slot(now);}
+ if(++since_feedback>=FEEDBACK_EVERY && !heavy){since_feedback=0;control_slot(now);}
+ if(irq_lr-0x080008cau>8)timer_off();else timer_arm();
 }

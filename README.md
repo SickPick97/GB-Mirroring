@@ -2,7 +2,7 @@
 
 **Stream Pokémon Emerald from an unmodified GBA SP to a local web browser through a Raspberry Pi Pico and the Link port.**
 
-[English](#english) · [Italiano](README.it.md) · [Quick start](docs/QUICKSTART.en.md) · [How it works](docs/ARCHITECTURE.md) · [Test evidence](test-results/software-v0.12.0/summary.json)
+[English](#english) · [Italiano](README.it.md) · [Quick start](docs/QUICKSTART.en.md) · [How it works](docs/ARCHITECTURE.md) · [Test evidence](test-results/software-v0.13.0/summary.json)
 
 ## English
 
@@ -10,9 +10,9 @@ GBMirroring is an experimental hardware/software project for displaying gameplay
 
 **Concept and project direction: hacke & Lain. Development of GBMirroring was carried out entirely with AI, using GPT 6 Astra.** Hardware assembly, testing, feedback and project decisions are human contributions. Third-party code and hardware designs remain credited to their original authors; the AI-development statement does not claim authorship of those projects.
 
-This early release shares working code, ready-to-run tools and measured limitations. **Version 0.12.0 changes the stream to one packet per game frame; it has been verified only with an emulated game and the real resident code, not yet on a physical console.**
+This early release shares working code, ready-to-run tools and measured limitations. **Version 0.13.0 streams queued graphics in the time the game spends waiting for VBlank, never holds off the game's interrupts and fixes a block-hash weakness that left stale tiles in menus; it has been verified only with an emulated game and the real resident code, not yet on a physical console.** A 0.12.x hardware test showed smooth walking but glitches in menus and a frozen image during battles.
 
-Package **0.12.3** carries resident **0.12.3** and the unchanged Pico firmware **0.7.0**. Project-owned code is [GPL-3.0](LICENSE); see [third-party notices](THIRD_PARTY.md) for dependencies and source access.
+Package **0.13.0** carries resident **0.13.0** and the unchanged Pico firmware **0.7.0**. Project-owned code is [GPL-3.0](LICENSE); see [third-party notices](THIRD_PARTY.md) for dependencies and source access.
 
 ## What works today
 
@@ -33,7 +33,7 @@ The public documentation is English-first, with an Italian counterpart. Some his
 | Adapter | RP2040 Pico on the [agtbaskara Link adapter design](https://github.com/agtbaskara/game-boy-pico-link-board) |
 | Cable | Tested GBA Link cable with hub, smaller plug at adapter, larger plug at GBA; GBA selector position |
 | PC | Windows 10/11 x64, USB data connection, web browser |
-| Software | Emerald resident 0.12.3, unified Pico firmware 0.7.0 |
+| Software | Emerald resident 0.13.0, unified Pico firmware 0.7.0 |
 
 No internal console modification is required. The current Italian cartridge profile contains revision-specific addresses and a cartridge check. Other Emerald languages, FireRed/LeafGreen, GB/GBC games and arbitrary cartridges are **not supported by this release**. Do not assume another adapter or cable has the same signal routing.
 
@@ -69,25 +69,26 @@ flowchart LR
 
 The Link port does not expose a raw LCD video signal. Our resident observes graphics activity in the running game and sends changes to the PC. The host renderer uses those graphics resources to draw the image; it does not run a second copy of the game from a commercial ROM.
 
-The 0.12.0 resident sends one packet per game frame: registers, palette and OAM every time, plus as many changed VRAM blocks as fit in a small time budget; the rest is reported as pending and follows. The PC keeps frames in order until the pending blocks arrive, and the browser's 200 ms buffer absorbs the difference. Map scrolling is sent as a single column pair (or row pair) per layer, and ROM-sourced copies as five-word references confirmed word by word on the GBA. The resident yields to the game: it skips a frame when the game is still busy at VBlank. `SELECT + R + A` lowers the capture cadence if the console ever slows down. The Pico remains compatible because it transports the packet stream without needing to understand it.
+The resident sends one packet per game frame (registers, palette, OAM, ROM replays and a small slice of VRAM) and, while Emerald spins in its WaitForVBlank loop, bulk packets with the remaining changed blocks. It works with the game's interrupts enabled, so audio sync, scanline effects and battle transitions are never delayed, and it steps back when the game is busy (saving, loading). After a scene change the PC keeps the last complete image until every block is verified, instead of mixing old and new tiles. Map scrolling is sent as a single column pair (or row pair) per layer, and ROM-sourced copies as five-word references confirmed word by word on the GBA. The Pico remains compatible because it transports the packet stream without needing to understand it.
 
 See [architecture and source map](docs/ARCHITECTURE.md) for the memory budget, protocol and current limitations.
 
 ## Performance: measurements, not promises
 
-All 0.12.0 numbers below come from the real resident code running with an **emulated** game and a cycle model, decoded by the PC receiver; they are not physical measurements.
+All 0.13.0 numbers below come from the real resident code: the stream co-simulation (emulated game, resident in an ARM emulator with a cycle model, PC receiver) and the resident injected into the emulated game (mGBA timing). They are not physical measurements.
 
 | Evidence | Result | What it means |
 |---|---|---|
 | 0.10.0 physical session | 20.16 received frames/s average, with severe outdoor walking stalls | Real Link capture; the average hides bad intervals |
-| 0.12.0, emulated standing / walking / vertical walking / running | 60 stream frames per 60 game frames; 96-100% of frames pixel-identical to the emulated frame (standing 100%, walking 99%, vertical 97.5%, running 96%), worst second 56-60 frames | The stream keeps pace in the model; small differences are tiles that arrive a few frames late |
-| 0.12.0, emulated game main loop with the resident (mGBA timing) | 1197 / 1198 iterations walking and 1197 / 1198 running (unmodified game 1198) | The game's own pace is preserved in emulation; audio is not measured |
-| 0.12.0, emulated menu open/close | seconds of held image while about 170 blocks of tile data reload | Scene loads are still slow: known limit |
-| 0.12.0, physical | **not recorded yet** | Link timing, audio and browser presentation must be verified on a console |
+| 0.13.0, co-simulated standing / running / vertical walking | 60 stream frames per 60 game frames; 250 / 250, 299 / 299 and 298 / 299 frames pixel-identical to the emulated frame | Walking scenes are exact in the model |
+| 0.13.0, co-simulated menus (start menu, Pokedex) | 497 / 497 published frames identical (0.12: 315 / 533); held image during scene changes up to about 0.9 s | The stale-tile glitches are gone in the model |
+| 0.13.0, co-simulated wild battle / Pokemon Center | battle 59.1 frames per 60, 672 / 690 identical (0.12.0: 104 / 644); Center 741 / 769 identical | Battles stream instead of freezing |
+| 0.13.0 injected into the emulated game | walking: 598 / 600 main-loop iterations as without the resident, 600 ticks per 600 VBlanks; battle transition reaches the battle; save identical except the play-time clock | Game pace and save preserved in emulation; audio not measured |
+| 0.13.0, physical | **not recorded yet** | Link timing, audio and browser presentation must be verified on a console |
 
 Physical results from 0.11.0 or earlier do not apply. Refresh rate of the browser, stream frames and GBA gameplay are separate measurements; interpolated or repeated frames are never counted as new stream frames.
 
-[Hardware journal (Italian)](docs/VALIDAZIONE-HARDWARE.md) · [Selected software results](test-results/software-v0.12.0/summary.json) · [Current limitations / roadmap](docs/ARCHITECTURE.md#roadmap)
+[Hardware journal (Italian)](docs/VALIDAZIONE-HARDWARE.md) · [Selected software results](test-results/software-v0.13.0/summary.json) · [Current limitations / roadmap](docs/ARCHITECTURE.md#roadmap)
 
 ## Project background and credits
 

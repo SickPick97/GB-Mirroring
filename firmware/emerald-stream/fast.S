@@ -38,6 +38,32 @@ sd_send_fast:
  bx lr
  .ltorg
 
+/* r0=halfwords, r1=count: CRC-32 (reflected, poly 0xedb88320) of the little-endian halfwords, four bits a step. */
+.global crc32_arm
+.type crc32_arm, %function
+crc32_arm:
+ push {r4,lr}
+ mvn r2,#0
+ adr r3,crc_nibbles
+ subs r1,r1,#0
+ beq 2f
+1:
+ ldrh r4,[r0],#2
+ eor r2,r2,r4
+ .rept 4
+ and r4,r2,#15
+ ldr r4,[r3,r4,lsl #2]
+ eor r2,r4,r2,lsr #4
+ .endr
+ subs r1,r1,#1
+ bne 1b
+2:
+ mvn r0,r2
+ pop {r4,lr}
+ bx lr
+crc_nibbles:
+ .word 0,0x1db71064,0x3b6e20c8,0x26d930ac,0x76dc4190,0x6b6b51f4,0x4db26158,0x5005713c
+ .word 0xedb88320,0xf00f9344,0xd6d6a3e8,0xcb61b38c,0x9b64c2b0,0x86d3d2d4,0xa00ae278,0xbdbdf21c
 fast_end:
 .global hash_begin,hash_end
 .type hash_begin, %function
@@ -46,18 +72,25 @@ hash_begin:
  mov r2,#0
  mov r3,#0
  mov r4,#8
+ ldr lr,=0x9e3779b1
 1:
  ldmia r0!,{r5-r12}
+ /* h0: multiply chain (word-wise FNV-1a), order and position dependent; h1: add-rotate. An xor-rotate h0 used
+    before 0.13 ignored solid-colour words (0x11111111 rotated cancels itself) and swapped block halves. */
  .irp reg,r5,r6,r7,r8,r9,r10,r11,r12
- eor r2,\reg,r2,ror #27
+ eor r2,r2,\reg
+ mul r2,lr,r2
  add r3,\reg,r3,ror #25
  .endr
+ eor r2,r2,r2,lsr #15
+ add r3,r3,r3,lsl #7
  subs r4,r4,#1
  bne 1b
  str r2,[r1]
  str r3,[r1,#4]
  pop {r4-r12,lr}
  bx lr
+.ltorg
 hash_end:
 
 /* Skip unchanged blocks entirely in IWRAM. r2=NULL forces a keyframe. */

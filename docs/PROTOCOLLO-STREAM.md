@@ -1,4 +1,4 @@
-# Flusso 0.12: un pacchetto per VBlank
+# Flusso 0.12/0.13: un pacchetto per VBlank piu il tempo libero
 
 Versione esterna 0x700. Il Pico unificato 0.7.0 non cambia: continua a trasportare parole e a riconoscere il solo END 0x600 usato per lo slot di risposta. Nessun cambiamento elettrico.
 
@@ -56,3 +56,14 @@ Al menu del GBA, A invece di START avvia una lettura sequenziale della ROM (6553
 ## Telemetria aggiunta in 0.12.1-0.12.3
 
 Nella parola di flag: bit 4-6 tick saltati prima di questo pacchetto (0-7), bit 11 modalita corta (scena sconosciuta o HBlank abilitato). La parola 3 porta nei nove bit bassi i blocchi in attesa e nei sette alti IE (VBlank, HBlank, VCount, timer 0-3); la parola 4 porta nei bit bassi il numero di record e nei bit alti un identificativo a 8 bit del callback VBlank del gioco (xor dei tre byte bassi dell indirizzo). Il ricevitore li espone come `skipped_ticks`, `unknown_scene`, `interrupt_enable`, `callback_id` e il pulsante dei log li riassume.
+
+## 0.13: tempo libero del gioco e interrupt mai bloccati
+
+Smeraldo non ferma la CPU in attesa del VBlank: gira in un ciclo (`WaitForVBlank`, 0x080008c6-0x080008ce) finche `gMain.intrCheck` non segnala il VBlank. Quel tempo, di solito decine di righe per frame, era inutilizzato.
+
+- Il residente programma il timer 1 (fermo durante il gioco; nella tabella interrupt del gioco il suo posto e una funzione vuota) per un controllo ogni dieci righe. Se l interrupt ha fermato il gioco dentro quel ciclo con il flag VBlank ancora spento, il frame del gioco e finito: il residente legge le code di copia per il prossimo VBlank e invia i blocchi in attesa, poi verifica il resto della VRAM, fino alla riga 150. Ogni blocco parte solo se c e il tempo per finirlo (circa sei parole per riga, misurato in mGBA); se il VBlank arriva comunque, il tick viene eseguito subito dopo.
+- Pacchetto tipo 13 (stessa intestazione e stessi sei campi del tipo 10): blocchi inviati nel tempo libero. Non genera un immagine: completa la cache del tick precedente e aggiorna i blocchi in attesa. Parola 5: parole inviate nel tempo libero in questo frame.
+- Tick e lavoro nel tempo libero girano in modalita di sistema con gli interrupt abilitati: HBlank, VCount (sincronizzazione audio alla riga 150), timer e seriale del gioco vengono serviti subito. Prima del gestore del gioco il residente esegue solo un confronto. Il controllo "gioco occupato" usa l indirizzo interrotto salvato dal BIOS confrontato con il ciclo di attesa (prima leggeva un indirizzo del BIOS e non scattava mai).
+- Le copie osservate prima del VBlank vengono applicate alle maschere solo dopo il VBlank, quando il gioco le ha eseguite: il residente non invia un blocco prima che cambi.
+- Dopo un cambio di scena tutti i blocchi non verificati contano come in attesa: il PC tiene l ultima immagine completa invece di mostrare tile vecchi e nuovi mescolati. Il PC trattiene fino a 30 tick (240 con piu di 40 blocchi in attesa) e al rilascio mostra al massimo gli ultimi 12.
+- CRC-32 calcolato in ARM nella IWRAM (quattro bit per passo).

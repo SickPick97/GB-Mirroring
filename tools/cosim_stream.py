@@ -106,16 +106,28 @@ class Machine:
         u.mem_write(0x030022cc,bytes(state[0x19000+0x22cc:0x19000+0x22d0]))
         u.mem_write(0x04000200,struct.pack('<HH',1,1))
     def observe(self):
-        self.u.reg_write(UC_ARM_REG_SP,0x0203fc00);self.u.reg_write(UC_ARM_REG_LR,0x03007000)
+        self.u.reg_write(UC_ARM_REG_SP,0x03007f00);self.u.reg_write(UC_ARM_REG_LR,0x03007000)
         self.u.emu_start(self.symbol('observe'),0x03007000,count=2000000)
     def load_graphics(self,gfx):
         u=self.u
         u.mem_write(0x03000818,gfx[:96]);u.mem_write(0x05000000,gfx[256:1280]);u.mem_write(0x07000000,gfx[1280:2304]);u.mem_write(0x06000000,gfx[2304:])
     def tick(self,now,entry_line):
         self.word(0x030022e0,now);self.entry=entry_line;self.cycles=0
-        self.u.reg_write(UC_ARM_REG_SP,0x0203fc00);self.u.reg_write(UC_ARM_REG_LR,0x03007000)
+        # the game was waiting in WaitForVBlank (0x080008c6) when VBlank came
+        if 'irq_lr' in self.sy:self.word(self.symbol('irq_lr'),0x080008ca)
+        self.u.reg_write(UC_ARM_REG_SP,0x03007f00);self.u.reg_write(UC_ARM_REG_LR,0x03007000)
         self.u.mem_write(0x04000006,struct.pack('<H',entry_line))
         self.u.emu_start(self.symbol('tick'),0x03007000,count=20000000)
+        words=self.bus['words'];self.bus['words']=[]
+        return struct.pack('<'+'H'*len(words),*words),len(words)
+    def idle(self,entry_line):
+        """The resident's idle-time work (timer 1 while the game waits for VBlank), from entry_line."""
+        if 'idle' not in self.sy:return b'',0
+        self.entry=entry_line;self.cycles=0
+        # waiting in WaitForVBlank: gMain.intrCheck VBlank flag clear
+        self.u.mem_write(0x030022dc,struct.pack('<H',struct.unpack('<H',self.u.mem_read(0x030022dc,2))[0]&~1))
+        self.u.reg_write(UC_ARM_REG_SP,0x03007f00);self.u.reg_write(UC_ARM_REG_LR,0x03007000)
+        self.u.emu_start(self.symbol('idle'),0x03007000,count=40000000)
         words=self.bus['words'];self.bus['words']=[]
         return struct.pack('<'+'H'*len(words),*words),len(words)
 
@@ -147,21 +159,34 @@ def run(args):
             m.load_graphics(gfx);truth[f+1]=gfx;truth.pop(f-200,None)
             entry=args.entry if args.entry else rng.choice((198,200,202,204,206,208,210))
             wire,words=m.tick(f+1,entry)
-            lines=m.cycles/LINE
+            lines=m.cycles/LINE;tick_cycles=m.cycles
             if args.trace and args.trace[0]<=f<args.trace[1]:
                 pend=struct.unpack_from('<H',wire,30)[0] if len(wire)>=32 else -1
                 print('  f%4d entry %3d lines %5.1f words %3d pending %3d cb %08x'%(f,entry,lines,words,pend,m.read32(0x030022cc)))
             out=parser.feed(wire)
+            idle_words=0
+            if args.idle_start is not None:
+                # the game finished its frame and waits for the next VBlank: queues for that VBlank are final
+                m.load_environment(state)
+                idle_wire,idle_words=m.idle(args.idle_start);out+=parser.feed(idle_wire)
             for seq,img,wire_bytes,codec,meta in out:
                 frames.append((f,seq,meta));ref=truth.get(meta.get('end_game_frame',meta.get('game_frame')))
                 if ref is not None:
                     bad=[b for b in range(393) if img[b*256:(b+1)*256]!=ref[b*256:(b+1)*256]]
                     fidelity.append((len(bad),sum(1 for b in bad if b<9),f-(meta.get('end_game_frame',f+1)-1)))
+                    if args.show_wrong and bad and f>=args.warmup:
+                        from stream_parser import block_fold
+                        hs=m.u.mem_read(m.symbol('hashes'),393*4)
+                        for b in bad[:4]:
+                            tw=struct.unpack('<64I',ref[b*256:(b+1)*256]);pw=struct.unpack('<64I',img[b*256:(b+1)*256])
+                            print('    diff words',[(i,hex(tw[i]),hex(pw[i])) for i in range(64) if tw[i]!=pw[i]][:10])
+                            print('    block %d gba-hash %08x truth %08x pc %08x'%(b,struct.unpack_from('<I',hs,b*4)[0],block_fold(ref[b*256:(b+1)*256]),block_fold(img[b*256:(b+1)*256])))
+                    if args.show_wrong and bad and f>=args.warmup:print('  wrong f%d tick %d held %s idle %s blocks %s'%(f,meta.get('end_game_frame'),meta.get('held_frames'),meta.get('idle_packets'),bad[:10]))
                     if renderer is not None and f>=args.warmup:
                         a=renderer.render(img);b=renderer.render(ref)
                         visual.append(sum(1 for i in range(0,76800,2) if a[i:i+2]!=b[i:i+2]))
-            ticks.append(dict(frame=f,cycles=m.cycles,words=words,frames_out=len(out)))
-            if args.profile and m.cycles>args.slow*LINE:slow.append((f,round(m.cycles/LINE),words,sorted(m.by_function.items(),key=lambda x:-x[1])[:3]))
+            ticks.append(dict(frame=f,cycles=tick_cycles,words=words,idle_words=idle_words,frames_out=len(out)))
+            if args.profile and tick_cycles>args.slow*LINE:slow.append((f,round(m.cycles/LINE),words,sorted(m.by_function.items(),key=lambda x:-x[1])[:3]))
             if f<args.warmup:fidelity.clear();frames.clear();fn_total.clear()
             if f>=args.warmup:
                 for k,v in m.by_function.items():fn_total[k]=fn_total.get(k,0)+v
@@ -204,7 +229,7 @@ if __name__=='__main__':
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--resident',default='build/emerald-columns');ap.add_argument('--state',type=Path,default=ROOT/'build/motion/field.state')
     ap.add_argument('--scenario',choices=sorted(KEYS),default='h');ap.add_argument('--frames',type=int,default=600)
-    ap.add_argument('--entry',type=int,default=0,help='fixed VBlank handler exit line; default random 198..210');ap.add_argument('--seed',type=int,default=1)
+    ap.add_argument('--entry',type=int,default=0,help='fixed VBlank handler exit line; default random 198..210');ap.add_argument('--seed',type=int,default=1);ap.add_argument('--idle-start',type=int,default=None,help='model idle time from this scanline to the resident IDLE_END each frame')
     ap.add_argument('--parser',choices=('auto','stream','graphics'),default='auto')
-    ap.add_argument('--warmup',type=int,default=0,help='ticks excluded from statistics');ap.add_argument('--render',action='store_true',help='compare rendered pixels of published frames with the true frame');ap.add_argument('--profile',action='store_true');ap.add_argument('--slow',type=int,default=70,help='profile: list ticks longer than this many lines');ap.add_argument('--stop-on-error',action='store_true');ap.add_argument('--trace',type=int,nargs=2,help='print every tick between two frames')
+    ap.add_argument('--warmup',type=int,default=0,help='ticks excluded from statistics');ap.add_argument('--render',action='store_true',help='compare rendered pixels of published frames with the true frame');ap.add_argument('--profile',action='store_true');ap.add_argument('--slow',type=int,default=70,help='profile: list ticks longer than this many lines');ap.add_argument('--stop-on-error',action='store_true');ap.add_argument('--show-wrong',action='store_true');ap.add_argument('--trace',type=int,nargs=2,help='print every tick between two frames')
     run(ap.parse_args())

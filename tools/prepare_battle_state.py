@@ -8,7 +8,7 @@ import random,struct,sys
 from mgba_headless import Core
 ROOT=Path(__file__).resolve().parents[1]
 FIELD_CALLBACKS=(0,0x080863a5,0x8136dfd)
-def main(seeds=(9,5,6,7,8)):
+def main(seeds=range(1,40)):
     source=ROOT/'PROGETTO AMICO/MGBA TEST/Pokemon - Versione Smeraldo (Italy).gba'
     field=ROOT/'build/motion/field.state'
     if not field.is_file():raise SystemExit('Run tools/prepare_motion_state.py first')
@@ -17,7 +17,7 @@ def main(seeds=(9,5,6,7,8)):
     try:
         for seed in seeds:
             core.run();core.restore(bytearray(field.read_bytes()));rng=random.Random(seed);core.run(160,keys_of[1]);history=[]
-            for step in range(3000):
+            for step in range(6000):
                 key=rng.choice(keys_of);state=core.state();core.run(16,key)
                 history=(history+[(state,key)])[-4:]
                 if struct.unpack_from('<I',core.state(),0x1b2cc)[0] not in FIELD_CALLBACKS:

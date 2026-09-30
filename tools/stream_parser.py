@@ -64,8 +64,19 @@ def decode_record(kind,tag,body,base,dictionary):
         return bytes(out)
     raise StreamError('kind')
 
+def stream_hash(block):
+    """The resident's block hash (fast.S hash_begin): multiply chain and add-rotate over the 64 words, mixed after every
+    8 words so that words 32 apart are not interchangeable."""
+    a=b=0;words=struct.unpack('<64I',block)
+    for g in range(0,64,8):
+        for value in words[g:g+8]:
+            a=((a^value)*0x9e3779b1)&0xffffffff
+            b=((((b<<7)|(b>>25))&0xffffffff)+value)&0xffffffff
+        a^=a>>15;b=(b+(b<<7))&0xffffffff
+    return a,b
+
 def block_fold(block):
-    a,b=block_hash(block);return a^((b*0x9e3779b1)&0xffffffff)
+    a,b=stream_hash(block);return a^((b*0x9e3779b1)&0xffffffff)
 
 def decode_unit(first,data,base):
     """Apply a layer patch (kind 12) to the 2 KB of the eight blocks starting at `first`.
@@ -93,8 +104,8 @@ def region(block):
     return 'registers' if block==0 else 'palette' if block<5 else 'objects' if block<9 else 'field_maps' if 233<=block<257 else 'vram_other'
 
 class StreamParser(GraphicsParser):
-    def __init__(self,renderer=None,max_hold=8,rom=None,long_hold=180,big_backlog=40):
-        super().__init__(renderer);self.rom=rom
+    def __init__(self,renderer=None,max_hold=30,rom=None,long_hold=240,big_backlog=40,keep=12):
+        super().__init__(renderer);self.rom=rom;self.keep=keep;self.bulk_packets=0
         self.max_hold=max_hold;self.long_hold=long_hold;self.big_backlog=big_backlog;self.held=[];self.complete=False;self.feedback_available=False
         self.dropped_incomplete=0;self.forced_releases=0;self.ticks=0;self.frames_published=0
         self.rom_image=None;self.rom_seen=None;self.rom_total=None;self.rom_bad=0;self.rom_missing=0
@@ -124,7 +135,7 @@ class StreamParser(GraphicsParser):
             if i:self.discarded+=i;del self.buffer[:i]
             if len(self.buffer)<24:break
             h=struct.unpack_from('<12H',self.buffer)
-            if h[2]==0x700:ok=h[3] in (10,11,12) and h[6]<=240
+            if h[2]==0x700:ok=h[3] in (10,11,12,13) and h[6]<=240
             elif h[2]==0x600:ok=h[3]==2 and h[6]==12
             else:ok=False
             if not ok or h[11]!=0x5aa5 or binascii.crc_hqx(self.buffer[4:20],65535)!=h[10]:
@@ -137,6 +148,10 @@ class StreamParser(GraphicsParser):
                 mode=struct.unpack_from('<H',body,20)[0];self.feedback_available=bool(mode&256);continue
             if h[3]==11:self.rom_chunk(h[4]|h[5]<<16,body);continue
             if h[3]==12:self.rom_end(body);continue
+            if h[3]==13:
+                frame=self.apply_bulk(h[4]|h[5]<<16,body,n)
+                if frame:frames.extend(frame)
+                continue
             frame=self.apply_tick(h[4]|h[5]<<16,body,n)
             if frame:frames.extend(frame)
         return frames
@@ -147,6 +162,38 @@ class StreamParser(GraphicsParser):
         if not(0x08000000<=src and src-0x08000000+size<=len(self.rom) and 0x06000000<=dest and dest+size<=0x06018000 and size%4==0 and size>0):raise StreamError('rom_copy_bounds')
         offset=HOT_BYTES+dest-0x06000000
         self.cache[offset:offset+size]=self.rom[src-0x08000000:src-0x08000000+size]
+    def apply_records(self,body,records):
+        """Applies the records of a tick or bulk packet to the running cache; returns (regions, codecs)."""
+        pos=12;seen=set();regions={};codecs={}
+        for _ in range(records):
+            if pos+4>len(body):raise StreamError('record_bounds')
+            tag,descriptor=struct.unpack_from('<HH',body,pos);pos+=4
+            kind=descriptor>>8;size=(descriptor&255)*2;block=tag&511;slot=tag>>9
+            if kind not in (1,3,4,5,6,10,12) or size>(510 if kind==12 else 256) or pos+size>len(body):raise StreamError('record_kind')
+            if kind==12:
+                first=tag&511
+                if first>=393-7 or any(b in seen for b in range(first,first+8)):raise StreamError('record_block')
+                unit=decode_unit(first,body[pos:pos+size],bytes(self.cache[first*256:(first+8)*256]));pos+=size
+                self.cache[first*256:(first+8)*256]=unit;seen.update(range(first,first+8))
+                r=regions.setdefault('field_maps',dict(blocks=0,payload_bytes=0));r['blocks']+=8;r['payload_bytes']+=size
+                codecs['12']=codecs.get('12',0)+1;continue
+            if kind==10:
+                self.apply_rom_copy(body[pos:pos+size]);pos+=size
+                r=regions.setdefault('rom_copies',dict(blocks=0,payload_bytes=0));r['blocks']+=1;r['payload_bytes']+=size
+                codecs['10']=codecs.get('10',0)+1;continue
+            if block>=393 or block in seen or slot>=128:raise StreamError('record_block')
+            base=bytes(self.cache[block*256:(block+1)*256])
+            decoded=decode_record(kind,tag,body[pos:pos+size],base,self.dictionary);pos+=size
+            if kind!=3:self.dictionary[slot]=decoded
+            self.cache[block*256:(block+1)*256]=decoded;seen.add(block)
+            r=regions.setdefault(region(block),dict(blocks=0,payload_bytes=0));r['blocks']+=1;r['payload_bytes']+=size
+            codecs[str(kind)]=codecs.get(str(kind),0)+1
+        if pos!=len(body):raise StreamError('record_trailing')
+        return regions,codecs
+    def continues(self,seq):
+        """True when seq follows the last packet and the cache is usable; otherwise the cache waits for a keyframe."""
+        if self.cache is not None and self.previous is not None and seq==((self.previous+1)&0xffffffff):return True
+        self.delta_misses+=1;self.cache=None;self.held=[];self.complete=False;self.previous=seq;return False
     def apply_tick(self,seq,body,wire):
         if len(body)<2*6:self.fail();return []
         flags,lo,hi,pending,records,telemetry=struct.unpack_from('<6H',body)
@@ -155,56 +202,58 @@ class StreamParser(GraphicsParser):
         if self.previous is not None and seq==self.previous:return []
         if key:
             self.cache=bytearray(SIZE);self.dictionary={};self.held=[];self.complete=False
-        elif self.cache is None or self.previous is None or seq!=((self.previous+1)&0xffffffff):
-            self.delta_misses+=1;self.cache=None;self.held=[];self.complete=False;self.previous=seq;return []
-        pos=12;seen=set();regions={};codecs={}
-        try:
-            for _ in range(records):
-                if pos+4>len(body):raise StreamError('record_bounds')
-                tag,descriptor=struct.unpack_from('<HH',body,pos);pos+=4
-                kind=descriptor>>8;size=(descriptor&255)*2;block=tag&511;slot=tag>>9
-                if kind not in (1,3,4,5,6,10,12) or size>(510 if kind==12 else 256) or pos+size>len(body):raise StreamError('record_kind')
-                if kind==12:
-                    first=tag&511
-                    if first>=393-7 or any(b in seen for b in range(first,first+8)):raise StreamError('record_block')
-                    unit=decode_unit(first,body[pos:pos+size],bytes(self.cache[first*256:(first+8)*256]));pos+=size
-                    self.cache[first*256:(first+8)*256]=unit;seen.update(range(first,first+8))
-                    r=regions.setdefault('field_maps',dict(blocks=0,payload_bytes=0));r['blocks']+=8;r['payload_bytes']+=size
-                    codecs['12']=codecs.get('12',0)+1;continue
-                if kind==10:
-                    self.apply_rom_copy(body[pos:pos+size]);pos+=size
-                    r=regions.setdefault('rom_copies',dict(blocks=0,payload_bytes=0));r['blocks']+=1;r['payload_bytes']+=size
-                    codecs['10']=codecs.get('10',0)+1;continue
-                if block>=393 or block in seen or slot>=128:raise StreamError('record_block')
-                base=bytes(self.cache[block*256:(block+1)*256])
-                decoded=decode_record(kind,tag,body[pos:pos+size],base,self.dictionary);pos+=size
-                if kind!=3:self.dictionary[slot]=decoded
-                self.cache[block*256:(block+1)*256]=decoded;seen.add(block)
-                r=regions.setdefault(region(block),dict(blocks=0,payload_bytes=0));r['blocks']+=1;r['payload_bytes']+=size
-                codecs[str(kind)]=codecs.get(str(kind),0)+1
-            if pos!=len(body):raise StreamError('record_trailing')
+        elif not self.continues(seq):return []
+        try:regions,codecs=self.apply_records(body,records)
         except StreamError as exc:
             self.fail(str(exc));self.previous=seq;return []
         self.previous=seq;self.ticks+=1
-        meta=dict(version='emerald-stream-0.12.3',end_game_frame=lo|hi<<16,game_frame=lo|hi<<16,changed_blocks=records,pending_blocks=pending,
+        meta=dict(version='emerald-stream-0.13.0',end_game_frame=lo|hi<<16,game_frame=lo|hi<<16,changed_blocks=records,pending_blocks=pending,
             keyframe=key,raster_dma_active=bool(flags&2),feedback_available=bool(flags&256),cadence=(flags>>9)&3,skipped_ticks=(flags>>4)&7,interrupt_enable=interrupts,callback_id=callback_id,unknown_scene=bool(flags&2048),peak_work_scanlines=telemetry&255,previous_words=telemetry>>8,
-            resource_regions=regions,block_codecs=codecs,scope='Graphics stream; scanline effects and per-tick temporal coherence not fully verified')
+            resource_regions=regions,block_codecs=codecs,idle_packets=0,idle_words=0,scope='Graphics stream; scanline effects and per-tick temporal coherence not fully verified')
         self.held.append((seq,bytes(self.cache[:HOT_BYTES]),wire,meta))
         if key:self.complete=False
+        return self.settle(pending)
+    def apply_bulk(self,seq,body,wire):
+        """Blocks sent while the game waited for VBlank: they complete the cache of the last tick, no new image."""
+        if len(body)<2*6:self.fail();return []
+        flags,lo,hi,pending,records,telemetry=struct.unpack_from('<6H',body)
+        pending&=511;records&=255
+        if self.previous is not None and seq==self.previous:return []
+        if not self.continues(seq):return []
+        try:regions,codecs=self.apply_records(body,records)
+        except StreamError as exc:
+            self.fail(str(exc));self.previous=seq;return []
+        self.previous=seq;self.bulk_packets+=1
+        if self.held:
+            # registers, palette and OAM left over by a heavy tick belong to that tick
+            if any(k in regions for k in ('registers','palette','objects')):
+                last=self.held[-1];self.held[-1]=(last[0],bytes(self.cache[:HOT_BYTES]),last[2],last[3])
+            m=self.held[-1][3];m['idle_packets']+=1;m['idle_words']=telemetry;m['pending_blocks']=pending
+            for k,v in codecs.items():m['block_codecs'][k]=m['block_codecs'].get(k,0)+v
+            for k,v in regions.items():
+                r=m['resource_regions'].setdefault(k,dict(blocks=0,payload_bytes=0));r['blocks']+=v['blocks'];r['payload_bytes']+=v['payload_bytes']
+        return self.settle(pending)
+    def settle(self,pending):
+        """Publishes the held ticks once no known-changed block is outstanding; never mixes old and new tiles unless
+        a backlog outlasts the hold limit (then the release is marked incomplete)."""
         if pending==0:self.complete=True
+        if not self.held:return []
         if not self.complete:
             # Cache still being rebuilt after a keyframe: nothing meaningful to show yet.
-            if len(self.held)>self.max_hold+4:del self.held[0];self.dropped_incomplete+=1
+            if len(self.held)>self.keep:self.dropped_incomplete+=len(self.held)-self.keep;del self.held[:len(self.held)-self.keep]
             return []
         # A scene load leaves a long backlog: keep the last complete image and swap in the finished one.
         limit=self.long_hold if pending>self.big_backlog else self.max_hold
         if pending>0 and len(self.held)<=limit:return []
         forced=pending>0
-        if len(self.held)>self.max_hold+4:
-            self.dropped_incomplete+=len(self.held)-(self.max_hold+4);del self.held[:len(self.held)-(self.max_hold+4)]
-        vram=bytes(self.cache[HOT_BYTES:]);out=[]
+        # After a long hold (a scene load) the held ticks carry registers and sprites of the loading screens: shown with
+        # the new tiles they would flash a mix of both scenes. Only the newest one is shown.
+        keep=1 if len(self.held)>self.max_hold else self.keep
+        if len(self.held)>keep:
+            self.dropped_incomplete+=len(self.held)-keep;del self.held[:len(self.held)-keep]
+        vram=bytes(self.cache[HOT_BYTES:]);out=[];last=self.held[-1][0]
         for held_seq,hot,held_wire,held_meta in self.held:
-            m=dict(held_meta,held_frames=len(self.held),incomplete=forced and held_seq==seq)
+            m=dict(held_meta,held_frames=len(self.held),incomplete=forced and held_seq==last)
             out.append((held_seq,hot+vram,held_wire,4,m))
         if forced:self.forced_releases+=1
         self.frames_published+=len(out);self.held=[]

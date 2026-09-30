@@ -27,7 +27,7 @@ def edits(bits,length,start=0):
 
 def valid_header(raw):
  h=struct.unpack('<12H',raw)
- if h[2]==0x700:limit_type,limit_words=(12,240)
+ if h[2]==0x700:limit_type,limit_words=(13,240)
  else:limit_type,limit_words=(9 if h[2]==0x600 else 2),128
  return (h[0:2]==(0xb47e,0x5647) and h[2] in (0x500,0x501,0x600,0x700)
          and h[3]<=limit_type and h[6]<=limit_words

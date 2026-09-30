@@ -1,6 +1,6 @@
 OUTPUT_ARCH(arm)
 ENTRY(resident_entry)
-MEMORY { ram (rwx) : ORIGIN = 0x0203cf80, LENGTH = 0x2980
+MEMORY { ram (rwx) : ORIGIN = 0x0203cf80, LENGTH = 0x2e80
  hot (rwx) : ORIGIN = 0x03002950, LENGTH = 0x600 }
 SECTIONS {
  .entry : { *(.entry) } > ram
@@ -11,5 +11,5 @@ SECTIONS {
  .data : { *(.data*) } > ram
  .bss (NOLOAD) : { . = ALIGN(4); *(.bss*) *(COMMON) . = ALIGN(4); __end__ = .; } > ram
  /DISCARD/ : { *(.ARM.exidx*) *(.ARM.extab*) *(.comment) *(.ARM.attributes) }
- ASSERT(__end__ <= 0x0203f900,"Resident overlaps stack")
+ ASSERT(__end__ <= 0x0203fe00,"Resident overlaps the loader stage area")
 }

@@ -38,15 +38,14 @@ class Tests(unittest.TestCase):
   p=StreamParser(Echo(),max_hold=3);parse(p,key_all())
   out=[]
   for i in range(1,6):out.extend(parse(p,tick(i,i+1,[raw(0,i)],pending=5)))
-  self.assertEqual(len(out),4);self.assertEqual(p.forced_releases,1);self.assertTrue(out[-1][4]['incomplete'])
-  self.assertFalse(out[0][4]['incomplete'])
+  self.assertEqual(len(out),1);self.assertEqual(p.forced_releases,1);self.assertTrue(out[-1][4]['incomplete'])
  def test_long_backlog_keeps_last_image_then_swaps_in_finished_scene(self):
-  p=StreamParser(Echo(),max_hold=3);parse(p,key_all());out=[]
+  p=StreamParser(Echo(),max_hold=3,keep=7);parse(p,key_all());out=[]
   for i in range(1,40):out.extend(parse(p,tick(i,i+1,[raw(0,i)],pending=100)))
   self.assertEqual(out,[]);self.assertEqual(p.forced_releases,0)
   out=parse(p,tick(40,41,[raw(0,99),raw(9,7,1)],pending=0))
-  self.assertEqual(len(out),3+4);self.assertEqual(out[-1][4]['end_game_frame'],41)
-  self.assertEqual(out[-1][1][HOT_BYTES:HOT_BYTES+2],struct.pack('<H',7));self.assertEqual(p.dropped_incomplete,40-7)
+  self.assertEqual(len(out),1);self.assertEqual(out[-1][4]['end_game_frame'],41)
+  self.assertEqual(out[-1][1][HOT_BYTES:HOT_BYTES+2],struct.pack('<H',7));self.assertEqual(p.dropped_incomplete,40-1)
  def test_layer_patch_applies_columns_and_rows_and_checks_the_reference(self):
   from stream_parser import block_fold
   p=StreamParser(Echo());parse(p,key_all())
@@ -100,6 +99,21 @@ class Tests(unittest.TestCase):
   out=parse(p,packet(1,10,0,body,version=0x700))
   self.assertEqual(len(out),1);m=out[0][4]
   self.assertEqual((m['pending_blocks'],m['changed_blocks'],m['interrupt_enable'],m['callback_id'],m['skipped_ticks'],m['unknown_scene']),(0,1,6,0x5a,3,True))
+ def test_bulk_packet_completes_the_held_tick_without_a_new_image(self):
+  p=StreamParser(Echo());parse(p,key_all())
+  a=parse(p,tick(1,2,[raw(0,0xaaaa)],pending=2))
+  body=struct.pack('<6H',0x2000,2,0,1,1,40)+raw(9,0x5555,3)
+  b=parse(p,packet(2,13,0,body,version=0x700))
+  body=struct.pack('<6H',0x2000,2,0,0,1,80)+raw(10,0x6666,4)
+  c=parse(p,packet(3,13,0,body,version=0x700))
+  self.assertEqual((a,b),([],[]));self.assertEqual(len(c),1)
+  m=c[0][4];self.assertEqual((m['end_game_frame'],m['idle_packets'],m['pending_blocks'],m['incomplete']),(2,2,0,False))
+  g=c[0][1];self.assertEqual(g[:2],struct.pack('<H',0xaaaa));self.assertEqual(g[10*256:10*256+2],struct.pack('<H',0x6666))
+  self.assertEqual(p.bulk_packets,2)
+ def test_bulk_packet_out_of_sequence_waits_for_a_keyframe(self):
+  p=StreamParser(Echo());parse(p,key_all())
+  body=struct.pack('<6H',0x2000,1,0,0,1,0)+raw(9,1)
+  self.assertEqual(parse(p,packet(5,13,0,body,version=0x700)),[]);self.assertIsNone(p.cache);self.assertEqual(p.delta_misses,1)
  def test_missing_tick_needs_keyframe(self):
   p=StreamParser(Echo());parse(p,key_all())
   self.assertEqual(parse(p,tick(2,3,[raw(0,7)])),[])

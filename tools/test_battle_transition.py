@@ -30,4 +30,14 @@ class BattleTransition(unittest.TestCase):
   self.assertIn(BATTLE_VBLANK,callbacks,'the battle never started')
   self.assertGreaterEqual(counters[-1]-counters[0],390,'the game stopped counting VBlanks')
   self.assertGreater(counters[-1],counters[-60])
+FIELD=ROOT/'build/motion/field.state'
+@unittest.skipUnless(ROM.is_file() and FIELD.is_file() and (RESIDENT/'resident.elf').is_file(),'cartridge, field fixture and built resident required')
+class GamePace(unittest.TestCase):
+ def test_walking_keeps_the_game_pace_and_ticks_every_vblank(self):
+  import measure_injected
+  with_resident=measure_injected.run(str(RESIDENT.relative_to(ROOT)),FIELD,600,'h')
+  alone=measure_injected.run(None,FIELD,600,'h')
+  self.assertGreaterEqual(with_resident['main_iterations'],alone['main_iterations']-1,(with_resident,alone))
+  self.assertEqual(with_resident['vblanks'],600);self.assertGreaterEqual(with_resident['ticks'],598)
+  self.assertGreater(with_resident['packets'],with_resident['ticks'],'no idle-time packets')
 if __name__=='__main__':unittest.main()
