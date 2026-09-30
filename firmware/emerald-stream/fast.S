@@ -186,6 +186,8 @@ pending_count:
 .type words_equal, %function
 words_equal:
  push {r4,lr}
+ cmp r2,#0
+ beq 2f
 1:
  ldr r3,[r0],#4
  ldr r4,[r1],#4

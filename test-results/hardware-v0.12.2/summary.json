@@ -1,0 +1,73 @@
+{
+ "ticks": 847,
+ "seconds": 37.6,
+ "version": "emerald-stream-0.12.2",
+ "tick_lines": {
+  "p50": 30,
+  "p95": 55,
+  "p99": 60,
+  "max": 63,
+  "over_100": 0,
+  "over_150": 0
+ },
+ "words": {
+  "mean": 70.1,
+  "max": 195
+ },
+ "pending": {
+  "max": 52,
+  "ticks_over_40": 60
+ },
+ "forced_releases": 48,
+ "keyframes": 0,
+ "raster_dma_ticks": 0,
+ "unknown_scene_ticks": 847,
+ "ticks_with_hblank_or_vcount_irq": 847,
+ "interrupt_enable_seen": [
+  5
+ ],
+ "callback_ids_seen": [
+  206
+ ],
+ "ticks_after_skips": 88,
+ "cadence_changes": 0,
+ "game_frame_gaps": {
+  "of_2": 63,
+  "of_3_to_5": 15,
+  "of_6_or_more": 14,
+  "largest": 301
+ },
+ "sequence_jumps": 5,
+ "record_types": {
+  "4": 39,
+  "10": 2530,
+  "1": 132,
+  "5": 441,
+  "3": 218
+ },
+ "longest_run_of_ticks_over_150_lines": 0,
+ "pc": {
+  "valid_frames": 847,
+  "sequence_gaps": 5,
+  "bit_resyncs": 1,
+  "crc_errors": 0,
+  "discarded_bytes": 3136,
+  "usb_queue_peak_lag_ms": 0.26,
+  "browser": {
+   "presented": 846,
+   "dropped": 1,
+   "resets": 5,
+   "queued": 0,
+   "fps": 0,
+   "late_ms": 8.27,
+   "hidden": false,
+   "received_seconds": 679.479
+  },
+  "render_peak_ms": 1.11,
+  "status": "Nessun dato da 30 s: controlla GBA e collegamento",
+  "error": null,
+  "elapsed_seconds": 2004.0
+ },
+ "session": "20260930-120952",
+ "note": "Hardware 0.12.2: IE=5 nel campo attivava la modalita corta ovunque (0 fps); stream interrotto all incontro. Riepilogo ripulito; log grezzi restano locali."
+}

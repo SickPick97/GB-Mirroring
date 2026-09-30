@@ -1,5 +1,14 @@
 # Storico
 
+## 0.12.3 - Il crash della battaglia: lettura delle code dentro il callback VBlank
+
+- Causa del crash all inizio delle battaglie selvatiche, presente da 0.12.0 e riprodotta ora nell emulatore iniettando il residente vero nel gioco (`tools/test_battle_transition.py`): la transizione di battaglia genera un interrupt per riga; il residente eseguiva `observe()` prima del gestore IRQ del gioco e un ritardo di poche centinaia di cicli in quel punto (misurato: 1-5 cicli di attesa passano, 10 no) faceva perdere la sincronia degli interrupt di riga; il contatore VBlank del gioco si fermava (112 interrupt per frame invece di 228) e la console si bloccava. Ritardi dopo il gestore (fino a 25 righe) non danno problemi.
+- Correzione: il wrapper IRQ non fa piu nulla prima del gestore (gli interrupt diversi dal VBlank saltano direttamente al gioco). Le code di copia (DMA3, animazioni tileset, sprite) sono lette da un piccolo thunk installato in `gMain.vblankCallback` solo nei tre callback noti (campo, Pokedex, squadra) e leggono al massimo 20 richieste per VBlank; se ce ne sono di piu si passa alla verifica della VRAM (`mark_all`). In ogni altra scena il callback del gioco non viene toccato.
+- Corretto anche un ciclo infinito latente: una richiesta di copia con dimensione zero finiva in `words_equal`, che con 0 byte non termina.
+- 0.12.2 (mai da usare): la regola "tick corto se IE contiene VCount" era sbagliata, IE vale 5 (VBlank e VCount) anche nel campo, e portava tutto lo stream a 0 fps. Ora la modalita corta (tick che finisce prima della riga 220, niente patch di layer, niente slot di risposta) vale solo fuori dai callback noti o con HBlank abilitato. Nelle battaglie misurate IE vale 5, poi 69 (VBlank, VCount, timer 3), mai HBlank.
+- Il residente occupa 5968 byte; lo stack utile e circa 980 byte.
+- Verifica: nel banco di prova con l emulatore due transizioni di battaglia diverse (0x81482c9 e 0x81472b5) arrivano al callback della battaglia con 899 VBlank su 900 frame; la 0.12.0 si ferma al frame 58. Fermo/cammino/corsa emulati invariati. Non ancora provata su console.
+
 ## 0.12.2 - Tick solo dentro il VBlank quando il gioco usa gli interrupt di riga
 
 - Risultato hardware 0.12.1 (log-20260930-114237): tick limitati (massimo 99 righe, nessuno oltre 100) ma le battaglie facevano ancora crashare il gioco e restavano glitch in movimento. Causa probabile: nelle battaglie il gioco ascolta gli interrupt HBlank/VCount; il tick del residente girava in modalita IRQ fino a 50-60 righe nel frame successivo, quindi gli interrupt di riga restavano bloccati sulle prime righe visibili e l effetto per scanline si rompeva.

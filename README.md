@@ -12,7 +12,7 @@ GBMirroring is an experimental hardware/software project for displaying gameplay
 
 This early release shares working code, ready-to-run tools and measured limitations. **Version 0.12.0 changes the stream to one packet per game frame; it has been verified only with an emulated game and the real resident code, not yet on a physical console.**
 
-Package **0.12.2** carries resident **0.12.2** and the unchanged Pico firmware **0.7.0**. Project-owned code is [GPL-3.0](LICENSE); see [third-party notices](THIRD_PARTY.md) for dependencies and source access.
+Package **0.12.3** carries resident **0.12.3** and the unchanged Pico firmware **0.7.0**. Project-owned code is [GPL-3.0](LICENSE); see [third-party notices](THIRD_PARTY.md) for dependencies and source access.
 
 ## What works today
 
@@ -33,7 +33,7 @@ The public documentation is English-first, with an Italian counterpart. Some his
 | Adapter | RP2040 Pico on the [agtbaskara Link adapter design](https://github.com/agtbaskara/game-boy-pico-link-board) |
 | Cable | Tested GBA Link cable with hub, smaller plug at adapter, larger plug at GBA; GBA selector position |
 | PC | Windows 10/11 x64, USB data connection, web browser |
-| Software | Emerald resident 0.12.2, unified Pico firmware 0.7.0 |
+| Software | Emerald resident 0.12.3, unified Pico firmware 0.7.0 |
 
 No internal console modification is required. The current Italian cartridge profile contains revision-specific addresses and a cartridge check. Other Emerald languages, FireRed/LeafGreen, GB/GBC games and arbitrary cartridges are **not supported by this release**. Do not assume another adapter or cable has the same signal routing.
 

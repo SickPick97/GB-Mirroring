@@ -51,3 +51,8 @@ Al menu del GBA, A invece di START avvia una lettura sequenziale della ROM (6553
 ## Verifiche software
 
 `test_stream_parser.py` (ordine, attesa, rilascio forzato, salti di sequenza, copia ROM, fault), `test_rom_dump.py` (loader ARM in emulazione contro l immagine locale) e `cosim_stream.py` (gioco in mGBA, residente ARM in Unicorn con modello dei cicli, decodifica del PC). La co-simulazione stima tempi CPU e completezza del flusso; non misura tempi elettrici, audio o frame del browser.
+
+
+## Telemetria aggiunta in 0.12.1-0.12.3
+
+Nella parola di flag: bit 4-6 tick saltati prima di questo pacchetto (0-7), bit 11 modalita corta (scena sconosciuta o HBlank abilitato). La parola 3 porta nei nove bit bassi i blocchi in attesa e nei sette alti IE (VBlank, HBlank, VCount, timer 0-3); la parola 4 porta nei bit bassi il numero di record e nei bit alti un identificativo a 8 bit del callback VBlank del gioco (xor dei tre byte bassi dell indirizzo). Il ricevitore li espone come `skipped_ticks`, `unknown_scene`, `interrupt_enable`, `callback_id` e il pulsante dei log li riassume.

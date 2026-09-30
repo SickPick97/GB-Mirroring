@@ -2,6 +2,8 @@
 #define U16(a) (*(volatile uint16_t*)(a))
 #define U32(a) (*(volatile uint32_t*)(a))
 extern uint32_t original_irq;
+extern void vb_thunk(void);
+volatile uint32_t orig_vblank;
 extern unsigned scan_next(unsigned,const void*,const void*,uint32_t*);
 extern void sb_sig(const volatile void*,uint16_t*);
 extern uint8_t fast_begin[],fast_end[],hash_begin[],hash_end[];
@@ -17,6 +19,7 @@ extern void patch_apply(uint16_t*,const uint16_t*,unsigned);
 #define FIELDS 6
 #define PAY_MAX 224
 #define FEEDBACK_EVERY 30
+#define REQUESTS_PER_VBLANK 20
 static uint32_t hashes[393];
 uint32_t dirty_mask[13];
 static uint32_t strong_mask[13],other_mask[13];
@@ -56,25 +59,32 @@ __attribute__((section(".scheduler"))) static void mark_range(uint32_t address,u
 /* A pending copy whose source is the ROM can be replayed by the PC from its own cartridge
    image once the GBA has confirmed that VRAM really holds those ROM bytes. */
 __attribute__((section(".scheduler"))) static void request(uint32_t src,uint32_t dest,unsigned size){
- unsigned rom=src>=0x08000000 && src<0x09000000 && !((src|dest|size)&3) && size<=0x2000 && dest>=0x06000000 && dest+size<=0x06018000 && rq_n<RQ;
+ unsigned rom=size && src>=0x08000000 && src<0x09000000 && !((src|dest|size)&3) && size<=0x2000 && dest>=0x06000000 && dest+size<=0x06018000 && rq_n<RQ;
  if(rom){rq[rq_n][0]=src;rq[rq_n][1]=dest;rq[rq_n][2]=size;rq_n++;}
  mark_range(dest,size,!rom);
 }
 __attribute__((section(".scheduler"))) void observe(void){
- if(!enabled || !(U16(0x04000200)&U16(0x04000202)&1))return;
+ if(!enabled)return;
+ /* This runs (through vb_thunk) before the game's own VBlank handler, and a scene change queues hundreds of copies: reading them all
+    delayed that handler by tens of scanlines and froze the game at the start of a battle. A small number of
+    requests is followed; when there are more the VRAM is simply audited (mark_all) instead. */
+ unsigned left=REQUESTS_PER_VBLANK;
  if(!U8(0x03000810)){
   unsigned index=U8(0x03000811);
-  for(unsigned n=0;n<128;n++,index=(index+1)&127){
+  for(unsigned n=0;n<128 && left;n++,index=(index+1)&127){
    uint32_t a=0x03000010+index*16;unsigned size=U16(a+8);if(!size)break;
-   request(U32(a),U32(a+4),size);
+   request(U32(a),U32(a+4),size);left--;
   }
+  if(!left && U16(0x03000010+((U8(0x03000811)+REQUESTS_PER_VBLANK)&127)*16+8)){mark_all();return;}
  }
  /* Tileset animation transfers: 12-byte {src,dest,size} entries, pending count in IWRAM. */
  {unsigned count=U8(0x03000f34);if(count>20)count=20;
-  for(unsigned i=0;i<count;i++){uint32_t a=0x02037624+i*12;request(U32(a),U32(a+4),U16(a+8));}}
+  for(unsigned i=0;i<count && left;i++,left--){uint32_t a=0x02037624+i*12;request(U32(a),U32(a+4),U16(a+8));}
+  if(count && !left){mark_all();return;}}
  if(U8(0x02021834)){
   unsigned count=U8(0x02021835);if(count>64)count=64;
-  for(unsigned i=0;i<count;i++){uint32_t a=0x02021838+i*12;request(U32(a),U32(a+4),U16(a+8));}
+  for(unsigned i=0;i<count && left;i++,left--){uint32_t a=0x02021838+i*12;request(U32(a),U32(a+4),U16(a+8));}
+  if(count && !left)mark_all();
  }
 }
 static const uint32_t crc_table[16] __attribute__((section(".text.crc")))={0,0x1db71064,0x3b6e20c8,0x26d930ac,0x76dc4190,0x6b6b51f4,0x4db26158,0x5005713c,0xedb88320,0xf00f9344,0xd6d6a3e8,0xcb61b38c,0x9b64c2b0,0x86d3d2d4,0xa00ae278,0xbdbdf21c};
@@ -172,8 +182,17 @@ __attribute__((section(".scheduler"))) static unsigned emit_replays(unsigned pay
  }
  return pay;
 }
+/* Known scenes get the thunk in front of the game's VBlank callback; anything else is left untouched. Returns the
+   game's real callback. */
+__attribute__((section(".scheduler"))) static unsigned hooked_callback(void){
+ uint32_t cb=U32(0x030022cc);
+ if(cb==(uint32_t)vb_thunk)return orig_vblank;
+ if(cb==0x080863a5 || cb==0x080bb399 || cb==0x081afcd5){orig_vblank=cb;U32(0x030022cc)=(uint32_t)vb_thunk;}
+ return cb;
+}
 __attribute__((section(".scheduler"))) void tick(void){
  uint32_t now=U32(0x030022e0);if(now==last_vblank)return;last_vblank=now;visits++;
+ unsigned callback=hooked_callback();
  unsigned pressed=(U16(0x04000130)&0x304)==0;
  if(pressed&&!held){enabled^=1;valid=0;}held=pressed;
  /* SELECT + R + A cycles the capture cadence: every VBlank, every 2nd, every 3rd. */
@@ -192,12 +211,12 @@ __attribute__((section(".scheduler"))) void tick(void){
     is already behind. Give it the whole frame back (at most three times in a row). */
  if(irq_lr>=0x4000 && busy_run<3){busy_run++;skipped++;return;}
  busy_run=0;
- unsigned callback=U32(0x030022cc),ie=U16(0x04000200);
+ unsigned ie=U16(0x04000200);
  unsigned known_cb=callback==0x080863a5 || callback==0x080bb399 || callback==0x081afcd5;
  /* Outside the known field/menu scenes, or whenever the game listens to HBlank or VCount interrupts (battle
     intros and effects), the tick must finish inside VBlank: an interrupt held off during the visible lines
     ruins the scanline effect (black bars, wrong scroll) and delays the game's own next frame. */
- unsigned vonly=!known_cb || (ie&6),room=0;
+ unsigned vonly=!known_cb || (ie&2),room=0;
  if(vonly){
   if(entry_line>=208){skipped++;return;}
   room=220-entry_line;
