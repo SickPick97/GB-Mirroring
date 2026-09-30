@@ -44,6 +44,22 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
     while times and now-times[0]>5:times.popleft()
    stats.update(stream_fps_last_5s=round(len(arrivals)/5,2),presented_fps_last_5s=round(len(presentations)/5,2),changed_fps_last_5s=round(len(changes)/5,2))
    return dict(stats,usb_queue_peak_lag_ms=round(getattr(serial,"peak_lag_ms",0),2),unique_fps_last_5s=round(len(arrivals)/5,2),bit_resyncs=getattr(parser,"bit_resyncs",0),delta_reference_misses=parser.delta_misses,crc_errors=parser.bad_frames,repaired_payloads=getattr(parser,"repaired_payloads",0),repaired_headers=getattr(parser,"repaired_headers",0),payload_crc_errors=getattr(parser,"payload_crc_errors",0),transaction_errors=getattr(parser,"transaction_errors",0),last_validation_error=getattr(parser,"last_error",None),header_errors=parser.bad_headers,discarded_bytes=parser.discarded,elapsed_seconds=round(now-started,1))
+ def make_bundle(notes=''):
+  """One zip with every log of the session, written next to the reports and ready to send."""
+  import log_summary,tempfile,os
+  with lock:
+   try:events.flush()
+   except (ValueError,OSError):pass
+   pixels=latest[0][1] if latest[0] else None;tail=bytes(raw_tail)
+  bmp_bytes=None
+  if pixels:
+   try:
+    fd,tmp=tempfile.mkstemp(suffix='.bmp',dir=folder);os.close(fd)
+    bmp(tmp,struct.unpack('<38400H',pixels));bmp_bytes=Path(tmp).read_bytes();Path(tmp).unlink()
+   except Exception:bmp_bytes=None
+  data,summary=log_summary.bundle(folder,folder/'frames.jsonl',snapshot(),log_path,tail,bmp_bytes,resident='0.12.1',notes=notes)
+  target=folder/('log-'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')+'.zip');target.write_bytes(data)
+  return target,data,summary
  def reader():
   nonlocal previous,last_pixels
   try:
@@ -111,6 +127,10 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
    if self.path=='/playout.js':body=(ROOT/'tools/playout.js').read_bytes();mime='text/javascript; charset=utf-8'
    elif self.path.split('?')[0]=='/':body=(ROOT/('tools/emerald_viewer.html' if emerald else 'tools/sd_video_viewer.html')).read_bytes();mime='text/html; charset=utf-8'
    elif self.path=='/stats':body=json.dumps(snapshot()).encode();mime='application/json'
+   elif self.path.split('?')[0]=='/logs.zip':
+    try:target,body,summary=make_bundle()
+    except Exception as exc:self.send_error(500,str(exc)[:80]);return
+    self.send_response(200);self.send_header('Content-Type','application/zip');self.send_header('Content-Disposition','attachment; filename="'+target.name+'"');self.send_header('X-Log-Path',target.name);self.send_header('Cache-Control','no-store');self.send_header('Content-Length',str(len(body)));self.end_headers();self.wfile.write(body);return
    elif urlsplit(self.path).path=='/frame':
     with lock:frame=latest[0]
     if frame is None:self.send_response(204);self.end_headers();return
@@ -198,5 +218,9 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
   if latest[0]:bmp(folder/'ultimo-frame.bmp',struct.unpack('<38400H',latest[0][1]))
   print('Risultati salvati:',folder,flush=True)
   if log_path:(folder/'console.txt').write_bytes(Path(log_path).read_bytes())
+  if emerald:
+   try:
+    target,_,_=make_bundle('Generato alla chiusura della sessione');print('File log pronto da inviare:',target,flush=True)
+   except Exception as exc:print('Log non creato:',exc,flush=True)
  return 1 if stats['error'] else 0
 if __name__=='__main__':sys.exit(main('--emerald' in sys.argv))

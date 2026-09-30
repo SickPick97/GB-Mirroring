@@ -19,6 +19,10 @@ LINE=1232
 KEYS={'h':lambda f:1<<(7 if f%96<48 else 6),'v':lambda f:1<<(5 if f%96<48 else 4),
       'run':lambda f:(1<<(7 if f%160<80 else 6))|1,'stay':lambda f:0,
       # Start menu (Pokedex/Pokemon), select, back: same key pattern as measure_motion --menus / --team.
+      # Enter the Pokemon Center standing below its door (field.state), walk to the counter, come back out.
+      'center':lambda f:1<<4 if 60<=f<230 else 1<<5 if 500<=f<640 else 0,
+      # Wild battle: start from build/motion/battle.state (transition already running), press A now and then.
+      'battle':lambda f:1<<8 if f>=300 and f%40<3 else 0,
       'menus':lambda f:(1<<3 if 120<=f<123 else 1<<8 if 240<=f<243 else 1 if 480<=f<483 or 660<=f<663 else 0),
       'team':lambda f:(1<<3 if 120<=f<123 else 1<<5 if 180<=f<183 else 1<<8 if 240<=f<243 else 1 if 480<=f<483 or 660<=f<663 else 0)}
 
@@ -132,7 +136,7 @@ def run(args):
         renderer=Renderer();visual=[]
     truth={};fidelity=[]
     core=Core(ROOT/'runtime/mgba/mgba_libretro.dll',(ROOT/'PROGETTO AMICO/MGBA TEST/Pokemon - Versione Smeraldo (Italy).gba').read_bytes())
-    ticks=[];frames=[];last_gfx=None;mismatch=0;checked=0;fn_total={}
+    slow=[];ticks=[];frames=[];last_gfx=None;mismatch=0;checked=0;fn_total={}
     try:
         core.run();core.restore(bytearray(Path(args.state).read_bytes()));core.run(60)
         pending_state=core.state()
@@ -144,6 +148,9 @@ def run(args):
             entry=args.entry if args.entry else rng.choice((198,200,202,204,206,208,210))
             wire,words=m.tick(f+1,entry)
             lines=m.cycles/LINE
+            if args.trace and args.trace[0]<=f<args.trace[1]:
+                pend=struct.unpack_from('<H',wire,30)[0] if len(wire)>=32 else -1
+                print('  f%4d entry %3d lines %5.1f words %3d pending %3d cb %08x'%(f,entry,lines,words,pend,m.read32(0x030022cc)))
             out=parser.feed(wire)
             for seq,img,wire_bytes,codec,meta in out:
                 frames.append((f,seq,meta));ref=truth.get(meta.get('end_game_frame',meta.get('game_frame')))
@@ -154,6 +161,7 @@ def run(args):
                         a=renderer.render(img);b=renderer.render(ref)
                         visual.append(sum(1 for i in range(0,76800,2) if a[i:i+2]!=b[i:i+2]))
             ticks.append(dict(frame=f,cycles=m.cycles,words=words,frames_out=len(out)))
+            if args.profile and m.cycles>args.slow*LINE:slow.append((f,round(m.cycles/LINE),words,sorted(m.by_function.items(),key=lambda x:-x[1])[:3]))
             if f<args.warmup:fidelity.clear();frames.clear();fn_total.clear()
             if f>=args.warmup:
                 for k,v in m.by_function.items():fn_total[k]=fn_total.get(k,0)+v
@@ -185,6 +193,7 @@ def run(args):
         scope='mGBA game + Unicorn ARM resident + cycle model; not hardware')
     print(json.dumps(result))
     if args.profile:
+        for row in slow[:25]:print('  slow tick',row)
         tot=sum(fn_total.values())
         for k,v in sorted(fn_total.items(),key=lambda x:-x[1])[:14]:print('  %-26s %5.1f%%  %6.0f cycles/tick'%(k,100*v/tot,v/n))
         print('tick() hottest 16-byte blocks (address: cycles per tick incl. warmup):')
@@ -197,5 +206,5 @@ if __name__=='__main__':
     ap.add_argument('--scenario',choices=sorted(KEYS),default='h');ap.add_argument('--frames',type=int,default=600)
     ap.add_argument('--entry',type=int,default=0,help='fixed VBlank handler exit line; default random 198..210');ap.add_argument('--seed',type=int,default=1)
     ap.add_argument('--parser',choices=('auto','stream','graphics'),default='auto')
-    ap.add_argument('--warmup',type=int,default=0,help='ticks excluded from statistics');ap.add_argument('--render',action='store_true',help='compare rendered pixels of published frames with the true frame');ap.add_argument('--profile',action='store_true');ap.add_argument('--stop-on-error',action='store_true')
+    ap.add_argument('--warmup',type=int,default=0,help='ticks excluded from statistics');ap.add_argument('--render',action='store_true',help='compare rendered pixels of published frames with the true frame');ap.add_argument('--profile',action='store_true');ap.add_argument('--slow',type=int,default=70,help='profile: list ticks longer than this many lines');ap.add_argument('--stop-on-error',action='store_true');ap.add_argument('--trace',type=int,nargs=2,help='print every tick between two frames')
     run(ap.parse_args())

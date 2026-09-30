@@ -9,7 +9,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'build/pylib'))
 ROM=Path(os.environ.get('GBM_ROM') or ROOT/'PROGETTO AMICO/MGBA TEST/Pokemon - Versione Smeraldo (Italy).gba')
 STATE=ROOT/'build/motion/field.state'
-RESIDENT=ROOT/'build/emerald-stream'
+RESIDENT=ROOT/os.environ.get("GBM_RESIDENT","build/emerald-stream")
 def ready():return ROM.is_file() and STATE.is_file() and (RESIDENT/'resident.elf').is_file()
 @unittest.skipUnless(ready(),'local cartridge, motion state and built resident required')
 class Resident(unittest.TestCase):
@@ -46,6 +46,18 @@ class Controls(unittest.TestCase):
    if keys:m.u.mem_write(0x04000130,struct.pack('<H',keys.get(f,0x3ff)))
    wire,words=m.tick(f,entry);emitted.append(words>0)
   return emitted
+ def longest_tick(self,m,frames,before=None):
+  import cosim_stream
+  longest=0
+  for f in range(1,frames+1):
+   if before:before(m,f)
+   m.tick(f,205);longest=max(longest,m.cycles/cosim_stream.LINE)
+  return longest
+ def test_unknown_scene_never_runs_a_tick_past_the_budget(self):
+  """Battle and other unknown callbacks: sweeping a static screen must stay bounded (0.12.0 spent whole frames here)."""
+  m=self.machine();self.assertLess(self.longest_tick(m,60,lambda mm,f:mm.word(0x030022cc,0x08123457)),90)
+ def test_link_register_poked_every_frame_does_not_force_full_sweeps(self):
+  m=self.machine();self.assertLess(self.longest_tick(m,60,lambda mm,f:mm.u.mem_write(0x04000134,struct.pack('<H',0))),90)
  def test_capture_every_vblank_by_default(self):
   m=self.machine();self.assertTrue(all(self.packets(m,12)))
  def test_late_handler_exit_skips_the_tick(self):

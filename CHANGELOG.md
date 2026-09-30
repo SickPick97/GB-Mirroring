@@ -1,5 +1,13 @@
 # Storico
 
+## 0.12.1 - Tick limitati nelle scene sconosciute e pulsante dei log
+
+- Correzione dal risultato hardware 0.12.0 (glitch neri e musica distorta all inizio di una battaglia in erba alta): 915 tick su 19371 duravano oltre 150 righe, fino a 217, con quasi nessun dato da inviare. Lo stadio dei registri scansionava tutta la VRAM senza limite e, dopo otto tick affamati, anche i blocchi perdevano il limite di tempo; il VBlank successivo del gioco partiva in ritardo. Ora la scansione dei blocchi caldi si ferma al blocco 9 e il raddoppio del tempo vale al massimo 2 volte il budget.
+- Scene con callback sconosciuta (battaglia): audit a fette di 32 blocchi per tick invece di scansioni continue. Il polling della porta link da parte del gioco (Centro Pokemon) non forza piu la rilettura di tutta la VRAM. Confronti ROM limitati a 1024 parole per tick. Dopo un tick oltre 110 righe il residente salta 6 tick. Flag di telemetria: tick saltati prima del pacchetto e scena sconosciuta.
+- Pagina web: pulsante "Scarica log" che crea un solo zip (riepilogo.json, rapporto, frames.jsonl, console, ultimi byte USB, ultimo frame). Lo stesso file viene salvato in dist/emerald-reports a ogni pressione e alla chiusura della sessione. Nuovo `tools/log_summary.py`.
+- Verifica software: tick massimo emulato da 153 a 82 righe nel Centro Pokemon; test con callback sconosciuta e con registro link modificato a ogni frame falliscono sulla 0.12.0 (198 righe) e passano sulla 0.12.1. Fermo/cammino/corsa emulati invariati (60/60, 100/99/90%). Riepilogo hardware 0.12.0 in test-results/hardware-v0.12.0. Non ancora provata su console. I caricamenti di scena restano lenti (circa un blocco per VBlank): limite noto.
+- English: 0.12.1 fixes ticks that ran whole frames on hardware (unbounded VRAM sweeps after a scene change or link-port polling), which delayed the game's own VBlank; adds a "Scarica log" button that produces one zip with all session logs. Software-verified only; scene loads remain slow.
+
 ## 0.12.0 - Un pacchetto per VBlank, copie dalla ROM e patch di layer
 
 - Nuovo flusso 0x700: il residente invia un pacchetto per ogni VBlank con registri, palette e OAM aggiornati e con quanti blocchi VRAM entrano in un piccolo budget di righe; i blocchi rimasti restano in coda e il pacchetto dichiara quanti sono. Il PC (`stream_parser.py`) applica i record a una cache in esecuzione, tiene i frame in ordine finche restano blocchi in coda e li rilascia con il proprio stato; dopo un caricamento lungo mantiene l'ultima immagine completa. Protocollo in docs/PROTOCOLLO-STREAM.md. Pico 0.7.0 invariato: lo slot di risposta resta un END 0x600 ogni 30 VBlank.

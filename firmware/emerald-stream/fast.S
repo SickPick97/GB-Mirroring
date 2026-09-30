@@ -75,6 +75,10 @@ scan_next:
  movhi r4,#392
  addhi r4,r4,#1
  bhi 4f
+ ldr r0,=scan_stop
+ ldr r0,[r0]
+ cmp r4,r0
+ bhs 4f
  ldrh r0,[r9]
  ldr r1,=entry_line
  ldr r1,[r1]

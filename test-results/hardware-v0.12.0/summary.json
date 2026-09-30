@@ -1,0 +1,68 @@
+{
+ "ticks": 19371,
+ "seconds": 365.3,
+ "version": "emerald-stream-0.12.0",
+ "tick_lines": {
+  "p50": 30,
+  "p95": 89,
+  "p99": 206,
+  "max": 217,
+  "over_100": 921,
+  "over_150": 915
+ },
+ "words": {
+  "mean": 62.7,
+  "max": 236
+ },
+ "pending": {
+  "max": 84,
+  "ticks_over_40": 307
+ },
+ "forced_releases": 113,
+ "keyframes": 0,
+ "raster_dma_ticks": 0,
+ "unknown_scene_ticks": 0,
+ "ticks_after_skips": 0,
+ "cadence_changes": 0,
+ "game_frame_gaps": {
+  "of_2": 700,
+  "of_3_to_5": 3,
+  "of_6_or_more": 24,
+  "largest": 170
+ },
+ "sequence_jumps": 24,
+ "record_types": {
+  "5": 9795,
+  "10": 49000,
+  "1": 1518,
+  "4": 1180,
+  "3": 5001,
+  "12": 1134
+ },
+ "longest_run_of_ticks_over_150_lines": 67,
+ "pc": {
+  "valid_frames": 19371,
+  "sequence_gaps": 24,
+  "bit_resyncs": 720,
+  "crc_errors": 0,
+  "discarded_bytes": 6129,
+  "usb_queue_peak_lag_ms": 48.15,
+  "browser": {
+   "presented": 17731,
+   "dropped": 517,
+   "resets": 13,
+   "queued": 0,
+   "fps": 0,
+   "late_ms": 16.64,
+   "hidden": false,
+   "received_seconds": 445.892
+  },
+  "render_peak_ms": 9.47,
+  "status": "STOPPED",
+  "error": null,
+  "elapsed_seconds": 446.8
+ },
+ "session": "20260930-004442",
+ "note": "Hardware 0.12.0 con Pico 0.7.0. Riepilogo ripulito; log grezzi restano locali.",
+ "observed_by_user": "Funziona a meraviglia; glitch grafici in movimento (animazioni, testi, tile mancanti), caricamenti piu lunghi del GBA, battaglia in erba alta: glitch neri e musica distorta."
+}

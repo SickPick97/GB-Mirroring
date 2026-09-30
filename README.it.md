@@ -1,6 +1,6 @@
 # GBMirroring
 
-Pacchetto **0.12.0**: residente **0.12.0** e firmware Pico **0.7.0** invariato. Codice proprio [GPL-3.0](LICENSE); dipendenze e sorgenti in [THIRD_PARTY.md](THIRD_PARTY.md).
+Pacchetto **0.12.1**: residente **0.12.1** e firmware Pico **0.7.0** invariato. Codice proprio [GPL-3.0](LICENSE); dipendenze e sorgenti in [THIRD_PARTY.md](THIRD_PARTY.md).
 
 **Streaming di Pokémon Smeraldo da un GBA SP senza modifiche interne al browser del PC, attraverso Raspberry Pi Pico e porta Link.**
 
@@ -31,7 +31,7 @@ La documentazione pubblica dà priorità all'inglese e affianca l'italiano. Alcu
 | Adattatore | Pico RP2040 sulla [scheda di agtbaskara](https://github.com/agtbaskara/game-boy-pico-link-board) |
 | Cavo | Cavo GBA con nodo centrale provato; spinotto piccolo all'adattatore, grande al GBA; selettore GBA |
 | PC | Windows 10/11 x64, collegamento USB dati e browser |
-| Software | Residente Smeraldo 0.12.0, firmware Pico unificato 0.7.0 |
+| Software | Residente Smeraldo 0.12.1, firmware Pico unificato 0.7.0 |
 
 Non servono modifiche interne alla console. Il profilo attuale usa indirizzi specifici e controlla la revisione della cartuccia. Altre lingue di Smeraldo, Rosso Fuoco/Verde Foglia, giochi GB/GBC e cartucce arbitrarie **non sono supportati da questa release**. Un adattatore o cavo diverso può avere collegamenti differenti.
 

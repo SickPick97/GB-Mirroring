@@ -39,8 +39,8 @@ static uint32_t sb_known,sb_dim;  /* sb_dim: 2 bits per layer, 0 both signature 
 static inline unsigned pc16(unsigned v){unsigned n=0;while(v){v&=v-1;n++;}return n;}
 static uint32_t hot_known;
 static uint32_t peak_lines,last_words,optimized=2;
-volatile uint32_t visits,entry_line,entry_rcnt,scan_limit=228,irq_lr;
-static unsigned busy_run,starved;
+volatile uint32_t visits,entry_line,entry_rcnt,scan_limit=228,scan_stop=393,irq_lr;
+static unsigned busy_run,starved,cool,skipped,mode;
 __attribute__((section(".scheduler"))) static void mark_all(void){for(unsigned i=0;i<13;i++){dirty_mask[i]=~0u;other_mask[i]=~0u;}}
 static inline unsigned elapsed_lines(unsigned line){unsigned d=line+228-entry_line;return d>=228?d-228:d;}
 /* Italian BPEI pointers are checked by the loader. Read only pending copy metadata. */
@@ -141,11 +141,14 @@ __attribute__((section(".scheduler"))) static void control_slot(uint32_t now){
    Confirmed copies are emitted at the end of this tick's packet; their space is reserved. */
 __attribute__((section(".scheduler"))) static unsigned confirm_requests(void){
  rp_n=0;
+ /* Comparing and hashing are capped per tick: a scene load queues thousands of words. */
+ unsigned cap=1024;
  for(unsigned i=0;i<rq_n;i++){
   uint32_t src=rq[i][0],dest=rq[i][1];unsigned size=rq[i][2];
-  unsigned first=9+((dest-0x06000000)>>8),last=9+((dest+size-1-0x06000000)>>8);
+  unsigned first=9+((dest-0x06000000)>>8),last=9+((dest+size-1-0x06000000)>>8),w=size>>2,fits=w<=cap;
+  if(fits)cap-=w;
   /* Screen blocks 28..30 (233..256) use signature patches against the last sent copy: keep them literal. */
-  if(rp_n>=5 || (first<=256 && last>=233) || !words_equal((const volatile uint32_t*)dest,(const volatile uint32_t*)src,size)){
+  if(rp_n>=5 || (first<=256 && last>=233) || !fits || !words_equal((const volatile uint32_t*)dest,(const volatile uint32_t*)src,size)){
    for(unsigned b=first;b<=last;b++)other_mask[b>>5]|=1u<<(b&31);
    continue;
   }
@@ -179,17 +182,15 @@ __attribute__((section(".scheduler"))) void tick(void){
  held2=pressed2;
  if(!enabled)return;
  entry_line=U16(0x04000006);entry_rcnt=U16(0x04000134);
- if((entry_rcnt&0xfff3)!=0x8030){
-  /* Link reinitialization only re-audits: references to completed ticks stay valid. */
-  mark_all();
- }
+ /* Some rooms poll the link port every frame: only the register is restored, no audit is forced. */
  U16(0x04000134)=0x8030;
  if(entry_line<160 || entry_line>=224)return;
  if(skip){skip--;return;}
+ if(cool){cool--;skipped++;return;}
  skip=cadence-1;
  /* The interrupted code is outside the BIOS: the game was still working when VBlank began, so it
     is already behind. Give it the whole frame back (at most three times in a row). */
- if(irq_lr>=0x4000 && busy_run<3){busy_run++;return;}
+ if(irq_lr>=0x4000 && busy_run<3){busy_run++;skipped++;return;}
  busy_run=0;
  tick_frame=now;
  unsigned pending_key=!valid || since_key>=(feedback?36000u:1800u);
@@ -201,14 +202,13 @@ __attribute__((section(".scheduler"))) void tick(void){
   for(unsigned i=0;i<13;i++){dirty_mask[i]=~0u;strong_mask[i]=~0u;other_mask[i]=~0u;}strong_mask[12]=511;
  }else if(callback!=vblank_seen){
   mark_all();
- }else if(callback!=0x080863a5 && callback!=0x080bb399 && callback!=0x081afcd5){
-  /* Unknown callback: blind sweeps; restart one when the previous is exhausted. */
-  uint32_t any=dirty_mask[12]&511u;for(unsigned i=0;i<12;i++)any|=dirty_mask[i];
-  if(!any)mark_all();
-  dirty_mask[0]|=511;
  }else{
+  /* The three known callbacks are followed through the game's copy queues; any other scene is only audited,
+     a slice of the VRAM per tick, so an unknown scene never costs more than a few scanlines. */
+  unsigned known_cb=callback==0x080863a5 || callback==0x080bb399 || callback==0x081afcd5,n=known_cb?3:32;
+  mode=!known_cb;
   dirty_mask[0]|=511;
-  for(unsigned i=0;i<3;i++){unsigned b=9+audit_cursor;dirty_mask[b>>5]|=1u<<(b&31);other_mask[b>>5]|=1u<<(b&31);audit_cursor++;if(audit_cursor==384)audit_cursor=0;}
+  for(unsigned i=0;i<n;i++){unsigned b=9+audit_cursor;dirty_mask[b>>5]|=1u<<(b&31);other_mask[b>>5]|=1u<<(b&31);audit_cursor++;if(audit_cursor==384)audit_cursor=0;}
  }
  vblank_seen=callback;since_key++;
  for(unsigned i=0;i<24;i++)regblock[i]=U32(0x03000818+i*4);
@@ -216,12 +216,13 @@ __attribute__((section(".scheduler"))) void tick(void){
  unsigned reserve=confirm_requests(),limit=PAY_MAX-reserve;
  for(;;){
   unsigned line=U16(0x04000006);
-  /* Registers, palette and OAM are never held back by the time budget; bulk blocks are, except that a scene
-     starved for eight ticks in a row gets one block regardless. */
-  unsigned budget=pay>>3;
-  unsigned gated=stage && !(starved>=8 && !bulk);
-  if(pay+3>limit || (gated && elapsed_lines(line)+budget>=DEADLINE))break;
-  scan_limit=gated?(DEADLINE>budget?DEADLINE-budget:1):228;
+  /* Registers, palette and OAM are never held back by the time budget (the scan stops at block 9 in that
+     stage); bulk blocks are, except that a scene starved for eight ticks in a row gets twice the time. */
+  unsigned budget=pay>>3,deadline=(starved>=8 && !bulk)?2*DEADLINE:DEADLINE;
+  unsigned gated=stage!=0;
+  if(pay+3>limit || (gated && elapsed_lines(line)+budget>=deadline))break;
+  scan_limit=gated?(deadline>budget?deadline-budget:1):228;
+  scan_stop=stage==0?9:(stage==2?bulk_cursor:393);
   uint32_t h[3];unsigned next=scan_next(cursor,regblock,hashes,h);
   if(next&0x80000000)break;
   unsigned block=next;
@@ -310,11 +311,13 @@ __attribute__((section(".scheduler"))) void tick(void){
  for(unsigned i=0;i<13;i++)other_mask[i]&=dirty_mask[i];
  pay=emit_replays(pay,&records);
  uint16_t*f=packet+12;
- f[0]=key|((U16(0x040000ba)&0x8000)?2:0)|(feedback<<8)|(cadence<<9)|0x2000;f[1]=now;f[2]=now>>16;f[3]=pending;f[4]=records;
+ f[0]=key|((U16(0x040000ba)&0x8000)?2:0)|((skipped>7?7:skipped)<<4)|(mode<<11)|(feedback<<8)|(cadence<<9)|0x2000;skipped=0;f[1]=now;f[2]=now>>16;f[3]=pending;f[4]=records;
  f[5]=(peak_lines>255?255:peak_lines)|((last_words>255?255:last_words)<<8);
  emit(0x700,10,0,pay);
  last_words=pay+12;changed_total+=records;
  peak_lines=elapsed_lines(U16(0x04000006));
+ /* A tick that ran far past its budget delays the game's next VBlank: back off for a few frames. */
+ if(peak_lines>110)cool=6;
  valid=1;sequence++;
  if(++since_feedback>=FEEDBACK_EVERY){since_feedback=0;control_slot(now);}
 }

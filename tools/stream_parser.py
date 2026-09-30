@@ -185,8 +185,8 @@ class StreamParser(GraphicsParser):
         except StreamError as exc:
             self.fail(str(exc));self.previous=seq;return []
         self.previous=seq;self.ticks+=1
-        meta=dict(version='emerald-stream-0.12.0',end_game_frame=lo|hi<<16,game_frame=lo|hi<<16,changed_blocks=records,pending_blocks=pending,
-            keyframe=key,raster_dma_active=bool(flags&2),feedback_available=bool(flags&256),cadence=(flags>>9)&3,peak_work_scanlines=telemetry&255,previous_words=telemetry>>8,
+        meta=dict(version='emerald-stream-0.12.1',end_game_frame=lo|hi<<16,game_frame=lo|hi<<16,changed_blocks=records,pending_blocks=pending,
+            keyframe=key,raster_dma_active=bool(flags&2),feedback_available=bool(flags&256),cadence=(flags>>9)&3,skipped_ticks=(flags>>4)&7,unknown_scene=bool(flags&2048),peak_work_scanlines=telemetry&255,previous_words=telemetry>>8,
             resource_regions=regions,block_codecs=codecs,scope='Graphics stream; scanline effects and per-tick temporal coherence not fully verified')
         self.held.append((seq,bytes(self.cache[:HOT_BYTES]),wire,meta))
         if key:self.complete=False
