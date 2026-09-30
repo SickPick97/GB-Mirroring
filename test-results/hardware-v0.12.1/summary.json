@@ -1,0 +1,67 @@
+{
+ "ticks": 3165,
+ "seconds": 61.2,
+ "version": "emerald-stream-0.12.1",
+ "tick_lines": {
+  "p50": 41,
+  "p95": 80,
+  "p99": 87,
+  "max": 99,
+  "over_100": 0,
+  "over_150": 0
+ },
+ "words": {
+  "mean": 80.0,
+  "max": 236
+ },
+ "pending": {
+  "max": 81,
+  "ticks_over_40": 104
+ },
+ "forced_releases": 49,
+ "keyframes": 0,
+ "raster_dma_ticks": 0,
+ "unknown_scene_ticks": 912,
+ "ticks_after_skips": 0,
+ "cadence_changes": 0,
+ "game_frame_gaps": {
+  "of_2": 34,
+  "of_3_to_5": 4,
+  "of_6_or_more": 7,
+  "largest": 153
+ },
+ "sequence_jumps": 10,
+ "record_types": {
+  "10": 6314,
+  "1": 451,
+  "5": 2756,
+  "3": 692,
+  "4": 264,
+  "12": 332
+ },
+ "longest_run_of_ticks_over_150_lines": 0,
+ "pc": {
+  "valid_frames": 3165,
+  "sequence_gaps": 10,
+  "bit_resyncs": 126,
+  "crc_errors": 0,
+  "discarded_bytes": 3636,
+  "usb_queue_peak_lag_ms": 1.15,
+  "browser": {
+   "presented": 0,
+   "dropped": 0,
+   "resets": 0,
+   "queued": 0,
+   "fps": 0,
+   "late_ms": 0,
+   "hidden": false,
+   "received_seconds": 107.865
+  },
+  "render_peak_ms": 1.31,
+  "status": "STREAMING",
+  "error": null,
+  "elapsed_seconds": 108.0
+ },
+ "session": "20260930-114049",
+ "note": "Hardware 0.12.1: tick limitati (max 99 righe) ma battaglie ancora in crash e glitch in movimento. Riepilogo ripulito; log grezzi restano locali."
+}

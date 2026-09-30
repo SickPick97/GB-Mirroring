@@ -20,12 +20,12 @@ extern void patch_apply(uint16_t*,const uint16_t*,unsigned);
 static uint32_t hashes[393];
 uint32_t dirty_mask[13];
 static uint32_t strong_mask[13],other_mask[13];
-#define RQ 12
-static uint32_t rq[RQ][3],rp[6][3];static unsigned rq_n,rp_n;
+#define RQ 8
+static uint32_t rq[RQ][3],rp[5][3];static unsigned rq_n,rp_n;
 static unsigned audit_cursor,feedback,vblank_seen,bulk_cursor=9,cadence=1,skip,held2;
 #define U8(a) (*(volatile uint8_t*)(a))
 /* Codecs write straight into the packet; the slack lets a 128-word body be built past the limit and dropped. */
-static uint16_t packet[12+PAY_MAX+132];
+static uint16_t packet[12+PAY_MAX+127];
 static uint32_t regblock[64];
 static uint32_t sequence,last_vblank,valid,enabled,held;
 static uint32_t since_key,since_feedback,changed_total,tick_frame,key;
@@ -139,10 +139,10 @@ __attribute__((section(".scheduler"))) static void control_slot(uint32_t now){
 }
 /* Confirm queued ROM copies against VRAM and clear the blocks they fully explain.
    Confirmed copies are emitted at the end of this tick's packet; their space is reserved. */
-__attribute__((section(".scheduler"))) static unsigned confirm_requests(void){
+__attribute__((section(".scheduler"))) static unsigned confirm_requests(unsigned vonly){
  rp_n=0;
  /* Comparing and hashing are capped per tick: a scene load queues thousands of words. */
- unsigned cap=1024;
+ unsigned cap=vonly?256:1024;
  for(unsigned i=0;i<rq_n;i++){
   uint32_t src=rq[i][0],dest=rq[i][1];unsigned size=rq[i][2];
   unsigned first=9+((dest-0x06000000)>>8),last=9+((dest+size-1-0x06000000)>>8),w=size>>2,fits=w<=cap;
@@ -192,9 +192,19 @@ __attribute__((section(".scheduler"))) void tick(void){
     is already behind. Give it the whole frame back (at most three times in a row). */
  if(irq_lr>=0x4000 && busy_run<3){busy_run++;skipped++;return;}
  busy_run=0;
+ unsigned callback=U32(0x030022cc),ie=U16(0x04000200);
+ unsigned known_cb=callback==0x080863a5 || callback==0x080bb399 || callback==0x081afcd5;
+ /* Outside the known field/menu scenes, or whenever the game listens to HBlank or VCount interrupts (battle
+    intros and effects), the tick must finish inside VBlank: an interrupt held off during the visible lines
+    ruins the scanline effect (black bars, wrong scroll) and delays the game's own next frame. */
+ unsigned vonly=!known_cb || (ie&6),room=0;
+ if(vonly){
+  if(entry_line>=208){skipped++;return;}
+  room=220-entry_line;
+ }
+ mode=vonly;
  tick_frame=now;
  unsigned pending_key=!valid || since_key>=(feedback?36000u:1800u);
- unsigned callback=U32(0x030022cc);
  key=pending_key;
  if(key){
   since_key=0;known[0]=known[1]=0;hot_known=0;sb_known=0;sb_dim=0;
@@ -205,20 +215,21 @@ __attribute__((section(".scheduler"))) void tick(void){
  }else{
   /* The three known callbacks are followed through the game's copy queues; any other scene is only audited,
      a slice of the VRAM per tick, so an unknown scene never costs more than a few scanlines. */
-  unsigned known_cb=callback==0x080863a5 || callback==0x080bb399 || callback==0x081afcd5,n=known_cb?3:32;
-  mode=!known_cb;
+  unsigned n=known_cb?3:32;
   dirty_mask[0]|=511;
   for(unsigned i=0;i<n;i++){unsigned b=9+audit_cursor;dirty_mask[b>>5]|=1u<<(b&31);other_mask[b>>5]|=1u<<(b&31);audit_cursor++;if(audit_cursor==384)audit_cursor=0;}
  }
  vblank_seen=callback;since_key++;
+ if(vonly)sb_known=0;  /* layer patches stay off while the tick must stay short; signatures are learned again afterwards */
  for(unsigned i=0;i<24;i++)regblock[i]=U32(0x03000818+i*4);
  unsigned pay=FIELDS,records=0,cursor=0,stage=0,bulk=0;
- unsigned reserve=confirm_requests(),limit=PAY_MAX-reserve;
+ unsigned reserve=confirm_requests(vonly),limit=PAY_MAX-reserve;
+ if(vonly){unsigned cap=room*8;if(cap<140)cap=140;if(limit>cap)limit=cap;}
  for(;;){
   unsigned line=U16(0x04000006);
   /* Registers, palette and OAM are never held back by the time budget (the scan stops at block 9 in that
      stage); bulk blocks are, except that a scene starved for eight ticks in a row gets twice the time. */
-  unsigned budget=pay>>3,deadline=(starved>=8 && !bulk)?2*DEADLINE:DEADLINE;
+  unsigned budget=pay>>3,deadline=vonly?room:(starved>=8 && !bulk)?2*DEADLINE:DEADLINE;
   unsigned gated=stage!=0;
   if(pay+3>limit || (gated && elapsed_lines(line)+budget>=deadline))break;
   scan_limit=gated?(deadline>budget?deadline-budget:1):228;
@@ -232,7 +243,7 @@ __attribute__((section(".scheduler"))) void tick(void){
    break;
   }
   if(stage==2 && block>=bulk_cursor)break;
-  if(block>=233 && block<257 && (sb_known&(1u<<((block-233)>>3)))){
+  if(block>=233 && block<257 && !vonly && (sb_known&(1u<<((block-233)>>3)))){
    unsigned k=(block-233)>>3,first=233+(k<<3);
    const volatile uint8_t*base=(const volatile uint8_t*)(0x06000000+(first-9)*256);
    uint16_t sig[32];sb_sig(base,sig);
@@ -301,7 +312,7 @@ __attribute__((section(".scheduler"))) void tick(void){
   cursor=block+1;if(stage)bulk_cursor=cursor>=393?9:cursor;
  }
  /* A layer whose eight blocks are all clean holds exactly what the PC holds: learn its signatures. */
- for(unsigned k=0;k<3;k++)if(!(sb_known&(1u<<k))){
+ for(unsigned k=0;k<3 && !vonly;k++)if(!(sb_known&(1u<<k))){
   unsigned first=233+(k<<3),clean=1;
   for(unsigned i=0;i<8;i++){unsigned b=first+i;if(dirty_mask[b>>5]&(1u<<(b&31)))clean=0;}
   if(clean){sb_sig((const volatile void*)(0x06000000+(first-9)*256),sb_sigs[k]);sb_known|=1u<<k;}
@@ -311,7 +322,7 @@ __attribute__((section(".scheduler"))) void tick(void){
  for(unsigned i=0;i<13;i++)other_mask[i]&=dirty_mask[i];
  pay=emit_replays(pay,&records);
  uint16_t*f=packet+12;
- f[0]=key|((U16(0x040000ba)&0x8000)?2:0)|((skipped>7?7:skipped)<<4)|(mode<<11)|(feedback<<8)|(cadence<<9)|0x2000;skipped=0;f[1]=now;f[2]=now>>16;f[3]=pending;f[4]=records;
+ f[0]=key|((U16(0x040000ba)&0x8000)?2:0)|((skipped>7?7:skipped)<<4)|(mode<<11)|(feedback<<8)|(cadence<<9)|0x2000;skipped=0;f[1]=now;f[2]=now>>16;f[3]=pending|((ie&0x7f)<<9);f[4]=records|(((callback^(callback>>8)^(callback>>16))&255)<<8);
  f[5]=(peak_lines>255?255:peak_lines)|((last_words>255?255:last_words)<<8);
  emit(0x700,10,0,pay);
  last_words=pay+12;changed_total+=records;
@@ -319,5 +330,5 @@ __attribute__((section(".scheduler"))) void tick(void){
  /* A tick that ran far past its budget delays the game's next VBlank: back off for a few frames. */
  if(peak_lines>110)cool=6;
  valid=1;sequence++;
- if(++since_feedback>=FEEDBACK_EVERY){since_feedback=0;control_slot(now);}
+ if(++since_feedback>=FEEDBACK_EVERY && !vonly){since_feedback=0;control_slot(now);}
 }

@@ -1,14 +1,14 @@
-# Avvio e collaudo unico (residente 0.12.1, pacchetto 0.12.1)
+# Avvio e collaudo unico (residente 0.12.2, pacchetto 0.12.2)
 
 [English quick start](docs/QUICKSTART.en.md). Pacchetto pronto, senza compilazione. Il Pico unificato **0.7.0 resta compatibile**: non occorre riflasharlo.
 
-La 0.12.1 corregge i tick troppo lunghi visti sull'hardware con la 0.12.0 (glitch neri e musica distorta all'inizio di una battaglia in erba alta) e aggiunge il pulsante **Scarica log**. Se hai gia la cache ROM in `runtime/cache/` non serve rifare la copia: copia la cartella `runtime/cache` nel nuovo pacchetto. La 0.12.0 cambia il modo di trasmettere: un pacchetto per ogni VBlank del gioco, con lo stato piccolo (registri, palette, OAM) sempre aggiornato e i blocchi di VRAM inviati in coda, e la pagina web che riordina i frame. Le copie grafiche che il gioco prende dalla propria ROM (animazioni dei tile, frame degli sprite) non viaggiano piu sul cavo: il PC le ripete da un'immagine locale della **tua** cartuccia. Per questo la prima volta serve copiarla (circa tre minuti, una sola volta).
+La 0.12.2 corregge i tick troppo lunghi visti sull'hardware con la 0.12.0 (glitch neri e musica distorta all'inizio di una battaglia in erba alta) e aggiunge il pulsante **Scarica log**. Se hai gia la cache ROM in `runtime/cache/` non serve rifare la copia: copia la cartella `runtime/cache` nel nuovo pacchetto. La 0.12.0 cambia il modo di trasmettere: un pacchetto per ogni VBlank del gioco, con lo stato piccolo (registri, palette, OAM) sempre aggiornato e i blocchi di VRAM inviati in coda, e la pagina web che riordina i frame. Le copie grafiche che il gioco prende dalla propria ROM (animazioni dei tile, frame degli sprite) non viaggiano piu sul cavo: il PC le ripete da un'immagine locale della **tua** cartuccia. Per questo la prima volta serve copiarla (circa tre minuti, una sola volta).
 
 **Non c'e ancora una prova fisica di questa versione.** I numeri disponibili vengono da un gioco emulato, con il vero codice ARM del residente e un modello approssimato dei cicli: non misurano audio, tempi elettrici o presentazione del browser.
 
 ## Prima volta: copia della cartuccia
 
-1. Estrai tutto lo ZIP 0.12.1 in una nuova cartella scrivibile. Chiudi il vecchio BAT e la vecchia pagina.
+1. Estrai tutto lo ZIP 0.12.2 in una nuova cartella scrivibile. Chiudi il vecchio BAT e la vecchia pagina.
 2. Spegni il GBA, togli la cartuccia e riaccendilo. Apri **14-AVVIA-SMERALDO.bat** e premi **INVIO**. Non scegliere R.
 3. Sul GBA inserisci Smeraldo italiano originale e premi **A** (non START). Compare una barra di avanzamento; il PC scrive la percentuale.
 4. Quando il PC scrive `Cache ROM salvata`, chiudi il BAT. Il file e in `runtime/cache/` e non viene mai inserito nella repository. Spegni e riaccendi il GBA senza cartuccia.
@@ -17,7 +17,7 @@ Se la copia si interrompe o la ROM non viene riconosciuta, cancella `runtime/cac
 
 ## Avvio normale
 
-1. Con il GBA acceso senza cartuccia, apri **14-AVVIA-SMERALDO.bat** e premi **INVIO** per caricare il residente 0.12.1. Mantieni cavo e selettore attuali.
+1. Con il GBA acceso senza cartuccia, apri **14-AVVIA-SMERALDO.bat** e premi **INVIO** per caricare il residente 0.12.2. Mantieni cavo e selettore attuali.
 2. Quando richiesto sul GBA, inserisci la cartuccia e premi **START**. Entra nella partita.
 3. Quando il PC indica PRONTO, premi **SELECT + L + R** sul GBA. Il visualizzatore si apre su http://127.0.0.1:8765. La prima immagine arriva dopo alcuni secondi: il PC riceve prima la grafica iniziale.
 

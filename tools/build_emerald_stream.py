@@ -26,14 +26,14 @@ def main():
  subprocess.run([str(tool.parent/'arm-none-eabi-objcopy.exe'),'-O','binary',str(out/'loader.elf'),str(out/'loader.bin')],check=True)
  data=bytearray((out/'loader.bin').read_bytes());data[4:0xa0]=(ROOT/'vendor/celio_transport/logo.bin').read_bytes();data[0xa0:0xac]=b'GBMEMERALD  ';data[0xac:0xb0]=b'GBME';data[0xb0:0xbc]=b'00\x96\0\0'+bytes(7);data[0xbc:0xc0]=bytes(4);data[0xbd]=(-sum(data[0xa0:0xbd])-0x19)&255;data.extend(bytes((-len(data))%16))
  (out/'loader.gba').write_bytes(data)
- report=dict(status='Experimental; hardware untested',sha256=hashlib.sha256(data).hexdigest(),bytes=len(data),resident_bytes=(out/'resident.bin').stat().st_size,scope='Italian BPEI; stream 0.12.1 (one packet per VBlank, ROM replay, cartridge copy mode, bounded scene sweeps); no scanline effects or UVC; hardware performance unverified')
+ report=dict(status='Experimental; hardware untested',sha256=hashlib.sha256(data).hexdigest(),bytes=len(data),resident_bytes=(out/'resident.bin').stat().st_size,scope='Italian BPEI; stream 0.12.2 (one packet per VBlank, ROM replay, cartridge copy mode, bounded scene sweeps); no scanline effects or UVC; hardware performance unverified')
  (out/'build-report.json').write_text(json.dumps(report,indent=2)+'\n')
  if '--release' in sys.argv:
   if variant!='emerald-stream' or os.environ.get('GBM_PROFILE') or any(os.environ.get(k) for k in ('GBM_DEADLINE','GBM_SOFT','GBM_BUILD_SUFFIX','GBM_DUMP_CHUNKS')):raise RuntimeError('Release must use the default, uninstrumented build')
-  target=ROOT/'dist/gbmirroring-emerald-v0.12.1.gba'
-  published=subprocess.run(['git','-c','safe.directory='+ROOT.as_posix(),'rev-parse','--verify','refs/tags/v0.12.1'],capture_output=True).returncode==0
+  target=ROOT/'dist/gbmirroring-emerald-v0.12.2.gba'
+  published=subprocess.run(['git','-c','safe.directory='+ROOT.as_posix(),'rev-parse','--verify','refs/tags/v0.12.2'],capture_output=True).returncode==0
   if published and (not target.exists() or target.read_bytes()!=data):raise RuntimeError('Published release cannot be replaced')
   target.write_bytes(data)
-  (ROOT/'dist/verifica-emerald-v0.12.1.json').write_text(json.dumps(report,indent=2)+'\n')
+  (ROOT/'dist/verifica-emerald-v0.12.2.json').write_text(json.dumps(report,indent=2)+'\n')
  print('Loader bytes',len(data))
 if __name__=='__main__':main()

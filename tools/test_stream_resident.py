@@ -58,6 +58,17 @@ class Controls(unittest.TestCase):
   m=self.machine();self.assertLess(self.longest_tick(m,60,lambda mm,f:mm.word(0x030022cc,0x08123457)),90)
  def test_link_register_poked_every_frame_does_not_force_full_sweeps(self):
   m=self.machine();self.assertLess(self.longest_tick(m,60,lambda mm,f:mm.u.mem_write(0x04000134,struct.pack('<H',0))),90)
+ def test_hblank_interrupts_keep_the_tick_inside_vblank(self):
+  """A game that listens to HBlank/VCount (battle effects) must not have interrupts held off in the visible lines."""
+  m=self.machine();ends=[]
+  import cosim_stream
+  for f in range(1,40):
+   m.u.mem_write(0x04000200,struct.pack('<H',0x0003));m.word(0x030022cc,0x080863a5)
+   m.tick(f,205);ends.append(205+m.cycles/cosim_stream.LINE)
+  self.assertLess(max(ends),227,max(ends))
+ def test_unknown_scene_with_hblank_still_sends_registers(self):
+  m=self.machine();m.u.mem_write(0x04000200,struct.pack('<H',0x0003));m.word(0x030022cc,0x08123457)
+  wire,words=m.tick(1,205);self.assertGreater(words,12)
  def test_capture_every_vblank_by_default(self):
   m=self.machine();self.assertTrue(all(self.packets(m,12)))
  def test_late_handler_exit_skips_the_tick(self):

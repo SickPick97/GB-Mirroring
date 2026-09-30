@@ -1,5 +1,12 @@
 # Storico
 
+## 0.12.2 - Tick solo dentro il VBlank quando il gioco usa gli interrupt di riga
+
+- Risultato hardware 0.12.1 (log-20260930-114237): tick limitati (massimo 99 righe, nessuno oltre 100) ma le battaglie facevano ancora crashare il gioco e restavano glitch in movimento. Causa probabile: nelle battaglie il gioco ascolta gli interrupt HBlank/VCount; il tick del residente girava in modalita IRQ fino a 50-60 righe nel frame successivo, quindi gli interrupt di riga restavano bloccati sulle prime righe visibili e l effetto per scanline si rompeva.
+- Ora, fuori dai tre callback noti (campo, Pokedex, squadra) o quando IE contiene HBlank o VCount, il tick deve finire prima della riga 220: budget dalla riga di ingresso (`220 - entry_line`, il tick viene saltato se il gestore del gioco esce dopo la riga 208), niente patch di layer, niente firme da imparare, confronti ROM limitati a 256 parole, niente slot di risposta. Registri, palette e OAM continuano a viaggiare.
+- Telemetria per il prossimo log: IE (7 bit) nei bit alti del campo blocchi in attesa, e un identificativo a 8 bit del callback VBlank nei bit alti del numero di record; il riepilogo dei log mostra i valori visti. Il residente riserva 0x100 byte in meno di stack (stack utile circa 980 byte, dimensione massima dei buffer invariata; RQ 8 richieste ROM per tick).
+- Non ancora provata su console. I caricamenti di scena restano lenti e i tile arrivano con ritardo mentre si cammina (backlog di 10-18 blocchi con circa 45 righe per tick): limite di larghezza di banda del cavo software, non risolto.
+
 ## 0.12.1 - Tick limitati nelle scene sconosciute e pulsante dei log
 
 - Correzione dal risultato hardware 0.12.0 (glitch neri e musica distorta all inizio di una battaglia in erba alta): 915 tick su 19371 duravano oltre 150 righe, fino a 217, con quasi nessun dato da inviare. Lo stadio dei registri scansionava tutta la VRAM senza limite e, dopo otto tick affamati, anche i blocchi perdevano il limite di tempo; il VBlank successivo del gioco partiva in ritardo. Ora la scansione dei blocchi caldi si ferma al blocco 9 e il raddoppio del tempo vale al massimo 2 volte il budget.

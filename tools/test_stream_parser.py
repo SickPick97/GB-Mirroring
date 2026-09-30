@@ -94,6 +94,12 @@ class Tests(unittest.TestCase):
   self.assertEqual(parse(p,tick(1,2,[piece([2],True)],pending=1)),[])
   out=parse(p,tick(2,3,[piece([4],False)]))
   self.assertEqual(len(out),2);self.assertEqual(out[-1][1][HOT_BYTES+(first-9)*256:HOT_BYTES+(first-9)*256+2048],bytes(new))
+ def test_interrupt_enable_and_callback_id_ride_in_the_high_bits(self):
+  p=StreamParser(Echo());parse(p,key_all())
+  body=struct.pack('<6H',0x2000|(3<<4)|2048,2,0,(6<<9)|0,(0x5a<<8)|1,0)+raw(0,0x7777)
+  out=parse(p,packet(1,10,0,body,version=0x700))
+  self.assertEqual(len(out),1);m=out[0][4]
+  self.assertEqual((m['pending_blocks'],m['changed_blocks'],m['interrupt_enable'],m['callback_id'],m['skipped_ticks'],m['unknown_scene']),(0,1,6,0x5a,3,True))
  def test_missing_tick_needs_keyframe(self):
   p=StreamParser(Echo());parse(p,key_all())
   self.assertEqual(parse(p,tick(2,3,[raw(0,7)])),[])

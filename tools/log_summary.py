@@ -26,6 +26,9 @@ def summarize(rows,report=None):
   forced_releases=sum(1 for g in gba if g.get('incomplete')),keyframes=sum(1 for g in gba if g.get('keyframe')),
   raster_dma_ticks=sum(1 for g in gba if g.get('raster_dma_active')),
   unknown_scene_ticks=sum(1 for g in gba if g.get('unknown_scene')),
+  ticks_with_hblank_or_vcount_irq=sum(1 for g in gba if g.get('interrupt_enable',0)&6),
+  interrupt_enable_seen=sorted({g.get('interrupt_enable',0) for g in gba}),
+  callback_ids_seen=sorted({g.get('callback_id',0) for g in gba}),
   ticks_after_skips=sum(1 for g in gba if g.get('skipped_ticks')),
   cadence_changes=sum(1 for a,b in zip(gba,gba[1:]) if a.get('cadence')!=b.get('cadence')))
  frames=[g.get('game_frame',0) for g in gba]
