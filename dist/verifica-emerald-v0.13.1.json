@@ -1,0 +1,7 @@
+{
+  "status": "Experimental; hardware untested",
+  "sha256": "fed340791a494436c091dd421de4844c6647ab7a0c071ec3303cc46e4f70c9fe",
+  "bytes": 11296,
+  "resident_bytes": 7596,
+  "scope": "Italian BPEI; stream 0.13.1 (tick per VBlank plus idle-time bulk packets, interrupts never held, ROM replay, cartridge copy mode); no scanline effects or UVC; hardware performance unverified"
+}

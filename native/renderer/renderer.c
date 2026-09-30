@@ -26,8 +26,9 @@ API void* gbm_create(void){
  c->video.outputBuffer=c->pixels;c->video.outputBufferStride=240;
  c->video.d.init(&c->video.d);return c;
 }
-API int gbm_render(void*ptr,const uint8_t*gfx,size_t size,uint16_t*out){
+static int render(void*ptr,const uint8_t*gfx,size_t size,unsigned line_reg,const uint16_t*lines,uint16_t*out){
  if(!ptr||!gfx||!out||size!=100608)return 0;
+ if(lines&&(line_reg<8||line_reg>=0x60||(line_reg&1)))return 0;
  struct Context*c=ptr;struct GBAVideoRenderer*r=&c->video.d;
  const uint16_t*pal=(const uint16_t*)(gfx+256);const uint16_t*oam=(const uint16_t*)(gfx+1280);
  const uint16_t*vram=(const uint16_t*)(gfx+2304);const uint16_t*regs=(const uint16_t*)gfx;
@@ -38,11 +39,17 @@ API int gbm_render(void*ptr,const uint8_t*gfx,size_t size,uint16_t*out){
     supplied snapshot origin; never advance emulator CPU/audio. */
  for(unsigned i=0;i<48;i++)if(i!=2&&i!=3&&i!=39&&i<43){r->writeVideoRegister(r,i*2,regs[i]);c->regs[i]=regs[i];}
  r->finishFrame(r);
- for(unsigned y=0;y<160;y++)r->drawScanline(r,y);
+ /* Scanline effects: the game's HBlank DMA writes one register before each line; the value for line 0 is set
+    before the frame. */
+ for(unsigned y=0;y<160;y++){if(lines)r->writeVideoRegister(r,line_reg,lines[y]);r->drawScanline(r,y);}
  for(unsigned i=0;i<38400;i++){
   unsigned v=c->pixels[i];
   out[i]=((v>>11)&31)|((v>>1)&992)|((v&31)<<10);
  }
  r->finishFrame(r);c->initialized=1;return 1;
+}
+API int gbm_render(void*ptr,const uint8_t*gfx,size_t size,uint16_t*out){return render(ptr,gfx,size,0,NULL,out);}
+API int gbm_render_lines(void*ptr,const uint8_t*gfx,size_t size,unsigned line_reg,const uint16_t*lines,uint16_t*out){
+ return lines?render(ptr,gfx,size,line_reg,lines,out):0;
 }
 API void gbm_destroy(void*ptr){if(ptr){struct Context*c=ptr;c->video.d.deinit(&c->video.d);free(c);}}

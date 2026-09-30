@@ -14,7 +14,7 @@ def ready():return ROM.is_file() and STATE.is_file() and (RESIDENT/'resident.elf
 @unittest.skipUnless(ready(),'local cartridge, motion state and built resident required')
 class Resident(unittest.TestCase):
  def run_cosim(self,scenario,frames,warmup):
-  result=subprocess.run([sys.executable,str(ROOT/'tools/cosim_stream.py'),'--resident','build/emerald-stream','--scenario',scenario,'--frames',str(frames),'--warmup',str(warmup),'--stop-on-error'],capture_output=True,text=True,cwd=ROOT)
+  result=subprocess.run([sys.executable,str(ROOT/'tools/cosim_stream.py'),'--resident','build/emerald-stream','--scenario',scenario,'--frames',str(frames),'--warmup',str(warmup),'--idle-start','70','--stop-on-error'],capture_output=True,text=True,cwd=ROOT)
   self.assertEqual(result.returncode,0,result.stderr[-800:]+result.stdout[-800:])
   import json
   return json.loads(result.stdout.strip().splitlines()[0])
@@ -71,8 +71,13 @@ class Controls(unittest.TestCase):
   wire,words=m.tick(1,205);self.assertGreater(words,12)
  def test_capture_every_vblank_by_default(self):
   m=self.machine();self.assertTrue(all(self.packets(m,12)))
- def test_late_handler_exit_skips_the_tick(self):
-  m=self.machine();self.assertEqual(self.packets(m,4,entry=226),[False]*4)
+ def test_late_handler_exit_only_sends_a_small_tick(self):
+  """A handler that ended after scanline 223 leaves no time: the tick still goes out but stays within a few scanlines."""
+  import cosim_stream
+  m=self.machine();longest=0
+  for f in range(1,5):
+   wire,words=m.tick(f,226);self.assertGreater(words,0);longest=max(longest,m.cycles/cosim_stream.LINE)
+  self.assertLess(longest,30,longest)
  def test_cadence_key_halves_and_thirds_the_rate(self):
   m=self.machine()
   select_r_a=0x3ff&~0x105

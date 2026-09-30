@@ -48,6 +48,7 @@ def run(resident,state_path,frames,scenario,enabled=True,key_file=None):
         out=dict(frames=frames,main_iterations=m1-m0,vblanks=v1-v0)
         if sy:
             out.update(ticks=rd(s,sy['visits'][0])-start['visits'],packets=rd(s,sy['sequence'][0])-start['sequence'])
+            if 'ticks_sent' in sy:out.update(ticks_sent=rd(s,sy['ticks_sent'][0]),busy_skips=rd(s,sy['busy_skips'][0]),last_busy_pc=hex(rd(s,sy['last_busy_pc'][0])))
             if idle:out.update(idle_words_mean=round(sum(idle)/len(idle),1),idle_words_max=max(idle))
         out['callbacks']=sorted(hex(c) for c in callbacks)
         return out

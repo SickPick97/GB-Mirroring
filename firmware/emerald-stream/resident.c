@@ -25,13 +25,13 @@ void tick(void);
 #define FEEDBACK_EVERY 30
 /* Bulk work while the game is idle stops at this scanline, well before VBlank (160). */
 #ifndef IDLE_END
-#define IDLE_END 150
+#define IDLE_END 156
 #endif
 /* Timer 1 (unused by the game during play; its slot in the game's interrupt table is a dummy) checks for idle
    time every ten scanlines: 64-cycle prescaler, 193 counts. */
 #define TIMER_STEP 193
-#ifndef BUSY_SKIPS
-#define BUSY_SKIPS 7
+#ifndef LONG_BUSY
+#define LONG_BUSY 30
 #endif
 #ifndef HEAVY_SLACK
 #define HEAVY_SLACK 40
@@ -41,14 +41,14 @@ uint32_t dirty_mask[13];
 static uint32_t strong_mask[13],other_mask[13];
 /* Copies observed before a VBlank are only merged after it, once the game has actually performed them. */
 static uint32_t nx_dirty[13],nx_other[13];
-#define RQ 8
-static uint32_t rq[RQ][3],rp[5][3];static unsigned rq_n,rp_n;
+#define RQ 6
+static uint32_t rq[RQ][3],rp[4][3];static unsigned rq_n,rp_n;
 static unsigned audit_cursor,feedback,vblank_seen,bulk_cursor=9,cadence=1,skip,held2;
 /* Codecs write straight into the packet; the slack lets a 128-word body be built past the limit and dropped. */
 static uint16_t packet[12+PAY_MAX+127];
 static uint32_t regblock[64];
 static uint32_t sequence,last_vblank,valid,enabled,held;
-static uint32_t since_key,since_feedback,changed_total,tick_frame,key;
+static uint32_t since_key,since_feedback,tick_frame,key;
 /* 64 remembered block contents, keyed by the folded hash (h0 ^ h1*C); the PC keeps the content. */
 static uint32_t dict_fold[64],known[2];
 static uint16_t previous_hot[560];
@@ -59,7 +59,13 @@ static uint32_t sb_known,sb_dim;  /* sb_dim: 2 bits per layer, 0 both signature 
 static inline unsigned pc16(unsigned v){unsigned n=0;while(v){v&=v-1;n++;}return n;}
 static uint32_t hot_known;
 static uint32_t peak_lines,last_words,optimized=2;
-volatile uint32_t visits,entry_line,entry_rcnt,scan_limit=228,scan_stop=393,irq_lr,in_work,tick_owed;
+#ifdef SOFT
+volatile uint32_t ticks_sent,busy_skips,last_busy_pc;
+#define DEBUG_COUNT(x) x
+#else
+#define DEBUG_COUNT(x)
+#endif
+volatile uint32_t visits,entry_line,scan_limit=228,scan_stop=393,irq_lr,in_work,tick_owed;
 static unsigned busy_run,starved,skipped,mode,observed,idle_ran,idle_words,idle_first;
 #ifdef SOFT
 volatile uint32_t dbg_words,dbg_lines,dbg_fill,dbg_end;
@@ -175,7 +181,7 @@ __attribute__((section(".scheduler"))) static unsigned confirm_requests(void){
   unsigned first=9+((dest-0x06000000)>>8),last=9+((dest+size-1-0x06000000)>>8),w=size>>2,fits=w<=cap;
   if(fits)cap-=w;
   /* Screen blocks 28..30 (233..256) use signature patches against the last sent copy: keep them literal. */
-  if(rp_n>=5 || (first<=256 && last>=233) || !fits || !words_equal((const volatile uint32_t*)dest,(const volatile uint32_t*)src,size)){
+  if(rp_n>=4 || (first<=256 && last>=233) || !fits || !words_equal((const volatile uint32_t*)dest,(const volatile uint32_t*)src,size)){
    for(unsigned b=first;b<=last;b++)other_mask[b>>5]|=BIT(b);
    continue;
   }
@@ -216,8 +222,8 @@ __attribute__((section(".scheduler"))) static void timer_arm(void){
 /* Sends changed VRAM blocks into the packet from `pay` on, until `limit` words or `deadline` scanlines after
    entry_line. Stage 0 starts with registers, palette and OAM (never held back by the time budget); stage 1 and 2
    walk the bulk blocks round robin from bulk_cursor. `strict` (idle time) also reserves the cost of the next block
-   (up to 24 scanlines), so the packet is finished by the deadline instead of starting there. */
-#define ITEM_LINES 24
+   (up to 22 scanlines), so the packet is finished by the deadline instead of starting there. */
+#define ITEM_LINES 22
 __attribute__((section(".scheduler"))) static unsigned fill(unsigned pay,unsigned limit,unsigned deadline,unsigned stage,unsigned strict,unsigned gate_hot,unsigned*records,unsigned*bulk){
  unsigned cursor=stage?bulk_cursor:0,margin=strict?ITEM_LINES:0;
  for(;;){
@@ -319,6 +325,19 @@ __attribute__((section(".scheduler"))) static unsigned fields(unsigned idle,unsi
  f[5]=idle?(idle_words>65535?65535:idle_words):((peak_lines>255?255:peak_lines)|((last_words>255?255:last_words)<<8));
  return pending;
 }
+/* Tiles of every visible sprite are verified each frame: the game redraws some of them in place (health bars, text in
+   boxes, battle sprites) without any copy request, and a rotating audit alone would show those changes in steps. */
+__attribute__((section(".scheduler"))) static void mark_objects(void){
+ static const uint8_t tiles[3][4]={{1,4,16,64},{2,4,8,32},{2,4,8,32}};
+ const volatile uint16_t*oam=(const volatile uint16_t*)0x07000000;
+ for(unsigned i=0;i<128;i++,oam+=4){
+  unsigned a0=oam[0],a1=oam[1],a2=oam[2],shape=a0>>14;
+  if((a0&0x300)==0x200 || shape==3)continue;
+  unsigned n=tiles[shape][a1>>14];if(a0&0x2000)n*=2;
+  unsigned first=265+((a2&1023)>>3),last=265+(((a2&1023)+n-1)>>3);if(last>392)last=392;
+  for(unsigned b=first;b<=last;b++){dirty_mask[b>>5]|=BIT(b);other_mask[b>>5]|=BIT(b);}
+ }
+}
 /* Entered from the timer 1 interrupt when the game waits for VBlank (interrupted inside its WaitForVBlank loop with
    the VBlank flag clear), in system mode with interrupts enabled. Reads the copy queues, then sends pending blocks
    and audits the rest of VRAM until IDLE_END. Runs only between ticks, so it never overlaps one. */
@@ -327,6 +346,7 @@ __attribute__((section(".scheduler"))) void idle(void){
  unsigned line=U16(0x04000006);
  if(line>=IDLE_END){timer_off();return;}
  observe();
+ if(!idle_ran)mark_objects();
  idle_ran=1;if(!idle_first)idle_first=line+1;
  unsigned audited=0,callback=vblank_seen,ie=U16(0x04000200);
  for(;;){
@@ -360,6 +380,34 @@ __attribute__((section(".scheduler"))) void idle(void){
  /* VBlank came while this was sending: the wrapper could not start the tick then, so run it now. */
  if(tick_owed){tick_owed=0;irq_lr=0x080008ca;tick();}
 }
+/* The game's scanline effect (gScanlineEffect at 0x02039b28 in the Italian BPEI: double buffer, destination register,
+   DMA control, current buffer): an HBlank DMA copies one value per line into a video register (battle intro slide,
+   waves). The table on screen is sent when it changes, in two halves of 80 lines, run-length coded when shorter;
+   the PC applies the values line by line. DMA set up by other code (some battle transitions) is not known. */
+static uint32_t raster_fold;
+__attribute__((section(".scheduler"))) static unsigned raster(unsigned pay,unsigned limit,unsigned*records){
+ unsigned cnt=U16(0x040000ba);
+ if(!(cnt&0x8000) || ((cnt>>12)&3)!=2){raster_fold=0;return pay;}
+ const volatile uint32_t*se=(const volatile uint32_t*)0x02039b28;
+ uint32_t ctl=se[3],dest=se[2],src=se[(U8(0x02039b3c)^1)&1];
+ if((ctl>>16)!=cnt || (ctl&0x0400ffffu)!=1 || dest<0x04000008 || dest>=0x04000060 || (dest&1) || src<0x02000002 || src>=0x02040000 || (src&1))return pay;
+ const volatile uint16_t*base=(const volatile uint16_t*)(src-2);
+ uint32_t h=dest;for(unsigned i=0;i<160;i++)h=(h^base[i])*0x9e3779b1u;
+ if(!h)h=1;
+ if(h==raster_fold)return pay;
+ unsigned start=pay;
+ for(unsigned part=0;part<2;part++){
+  const volatile uint16_t*v=base+part*80;
+  uint16_t*rec=packet+12+pay,*body=rec+2;unsigned n=1;
+  for(unsigned i=0;i<80 && n<80;){unsigned c=1;while(i+c<80 && v[i+c]==v[i])c++;body[n++]=c;body[n++]=v[i];i+=c;}
+  unsigned rle=n<80;
+  if(!rle){n=81;for(unsigned i=0;i<80;i++)body[1+i]=v[i];}
+  if(pay+2+n>limit)return start;
+  body[0]=(dest-0x04000000)|(part<<10)|(rle<<11);
+  rec[0]=0;rec[1]=(13<<8)|n;pay+=2+n;(*records)++;
+ }
+ raster_fold=h;return pay;
+}
 __attribute__((section(".scheduler"))) void tick(void){
  uint32_t now=U32(0x030022e0);if(now==last_vblank)return;last_vblank=now;visits++;
  /* The copies observed before this VBlank have been performed by the game's handler now. */
@@ -377,18 +425,21 @@ __attribute__((section(".scheduler"))) void tick(void){
     saving, scene setup), and the tick sends only registers, palette, OAM and ROM replays so it adds no lag. */
  unsigned slack=first?(first-1<IDLE_END?IDLE_END-(first-1):0):0;
  if(!enabled){timer_off();rq_n=0;return;}
- entry_line=U16(0x04000006);entry_rcnt=U16(0x04000134);
+ entry_line=U16(0x04000006);
  /* Some rooms poll the link port every frame: only the register is restored, no audit is forced. */
  U16(0x04000134)=0x8030;
- if(entry_line<160 || entry_line>=224){timer_arm();return;}
  if(skip){skip--;timer_arm();return;}
  skip=cadence-1;
  /* The interrupted code is not the game's WaitForVBlank loop: the game was still working when VBlank began, so it
-    is already behind. Give it the whole frame back (at most seven times in a row). */
- /* A busy game (saving, loading a scene) gets no idle checks either: they would only cost it interrupts. */
- if(irq_lr-0x080008cau>8 && busy_run<BUSY_SKIPS){busy_run++;skipped++;timer_off();return;}
- unsigned busy=irq_lr-0x080008cau>8,heavy=busy || slack<HEAVY_SLACK;
- busy_run=0;
+    is already behind: the tick sends only what fits in a few scanlines. Only a long busy stretch (saving, loading a
+    scene) skips three ticks out of four, and gets no idle checks: they would only cost it interrupts. A handler that
+    ended late (after scanline 223, or into the next frame) is treated the same way. */
+ unsigned busy=irq_lr-0x080008cau>8,late=entry_line<160 || entry_line>=224;
+ if(busy){
+  if(busy_run<255)busy_run++;
+  if(busy_run>LONG_BUSY && (busy_run&3)){skipped++;DEBUG_COUNT(busy_skips++;last_busy_pc=irq_lr;)timer_off();return;}
+ }else busy_run=0;
+ unsigned heavy=busy || late || slack<HEAVY_SLACK;
  unsigned ie=U16(0x04000200);
  unsigned known_cb=callback==0x080863a5 || callback==0x080bb399 || callback==0x081afcd5;
  mode=!known_cb;
@@ -399,7 +450,9 @@ __attribute__((section(".scheduler"))) void tick(void){
   for(unsigned i=0;i<393;i++)hashes[i]=0;
   mark_all();
  }else if(callback!=vblank_seen){
-  mark_all();
+  /* A scene change: every block is unverified. While the game has no VBlank callback it is between two scenes
+     (loading), and the audit waits for the callback that follows instead of restarting at each switch. */
+  if(callback)mark_all();
  }else{
   /* Known scenes are followed through the game's copy queues and idle time audits the rest; without idle time an
      unknown scene is audited here, a slice per tick. */
@@ -412,9 +465,15 @@ __attribute__((section(".scheduler"))) void tick(void){
  for(unsigned i=0;i<24;i++)regblock[i]=U32(0x03000818+i*4);
  unsigned pay=FIELDS,records=0,bulk=0;
  unsigned reserve=confirm_requests(),limit=PAY_MAX-reserve;
+ unsigned before=records;pay=raster(pay,limit,&records);if(records==before && pay!=FIELDS)records=before;
  /* In a heavy frame even registers, palette and OAM are bounded by the time the game left free last frame. */
  unsigned deadline=starved>=8?2*DEADLINE:DEADLINE;
- if(heavy)deadline=(!busy && slack>12)?slack-8:4;
+ if(heavy)deadline=(!busy && !late && slack>12)?slack-8:4;
+ /* Liveness: a game that never shows idle time still gets one normal tick every 30 starved ones. */
+ if(heavy && starved>=30)deadline=DEADLINE;
+ /* A light game leaves many scanlines free: the tick may use half of them (up to 60) instead of leaving them to the
+    idle checks, which lose a block's worth of time at the end of every frame. */
+ else if(slack>48){unsigned d=slack/2;if(d>60)d=60;if(d>deadline)deadline=d;}
  pay=fill(pay,limit,deadline,0,0,heavy,&records,&bulk);
  unsigned pending=pending_count(dirty_mask,strong_mask);
  if(pending && !bulk){if(starved<255)starved++;}else starved=0;
@@ -422,9 +481,9 @@ __attribute__((section(".scheduler"))) void tick(void){
  pay=emit_replays(pay,&records);
  fields(0,pending,records,ie,callback);skipped=0;
  emit(0x700,10,0,pay);
- last_words=pay+12;changed_total+=records;idle_words=0;
+ last_words=pay+12;idle_words=0;
  peak_lines=elapsed_lines(U16(0x04000006));
- valid=1;sequence++;
+ valid=1;sequence++;DEBUG_COUNT(ticks_sent++;)
  if(++since_feedback>=FEEDBACK_EVERY && !heavy){since_feedback=0;control_slot(now);}
- if(irq_lr-0x080008cau>8)timer_off();else timer_arm();
+ if(busy)timer_off();else timer_arm();
 }

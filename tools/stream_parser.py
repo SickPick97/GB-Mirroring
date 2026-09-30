@@ -103,9 +103,13 @@ def decode_unit(first,data,base):
 def region(block):
     return 'registers' if block==0 else 'palette' if block<5 else 'objects' if block<9 else 'field_maps' if 233<=block<257 else 'vram_other'
 
+def black(hot):
+    """A frame that renders black whatever VRAM holds: forced blank, or every palette entry black."""
+    return bool(struct.unpack_from('<H',hot,0)[0]&0x80) or not any(hot[256:1280])
+
 class StreamParser(GraphicsParser):
-    def __init__(self,renderer=None,max_hold=30,rom=None,long_hold=240,big_backlog=40,keep=12):
-        super().__init__(renderer);self.rom=rom;self.keep=keep;self.bulk_packets=0
+    def __init__(self,renderer=None,max_hold=30,rom=None,long_hold=240,big_backlog=40,keep=12,fade_keep=40):
+        super().__init__(renderer);self.rom=rom;self.keep=keep;self.fade_keep=fade_keep;self.bulk_packets=0;self.raster=[0]*160;self.raster_dest=None
         self.max_hold=max_hold;self.long_hold=long_hold;self.big_backlog=big_backlog;self.held=[];self.complete=False;self.feedback_available=False
         self.dropped_incomplete=0;self.forced_releases=0;self.ticks=0;self.frames_published=0
         self.rom_image=None;self.rom_seen=None;self.rom_total=None;self.rom_bad=0;self.rom_missing=0
@@ -169,12 +173,15 @@ class StreamParser(GraphicsParser):
             if pos+4>len(body):raise StreamError('record_bounds')
             tag,descriptor=struct.unpack_from('<HH',body,pos);pos+=4
             kind=descriptor>>8;size=(descriptor&255)*2;block=tag&511;slot=tag>>9
-            if kind not in (1,3,4,5,6,10,12) or size>(510 if kind==12 else 256) or pos+size>len(body):raise StreamError('record_kind')
+            if kind not in (1,3,4,5,6,10,12,13) or size>(510 if kind==12 else 256) or pos+size>len(body):raise StreamError('record_kind')
+            if kind==13:
+                self.apply_raster(body[pos:pos+size]);pos+=size
+                codecs['13']=codecs.get('13',0)+1;continue
             if kind==12:
                 first=tag&511
                 if first>=393-7 or any(b in seen for b in range(first,first+8)):raise StreamError('record_block')
                 unit=decode_unit(first,body[pos:pos+size],bytes(self.cache[first*256:(first+8)*256]));pos+=size
-                self.cache[first*256:(first+8)*256]=unit;seen.update(range(first,first+8))
+                self.cache[first*256:(first+8)*256]=unit;seen.update(range(first,first+8));self.complete_held(first*256,unit)
                 r=regions.setdefault('field_maps',dict(blocks=0,payload_bytes=0));r['blocks']+=8;r['payload_bytes']+=size
                 codecs['12']=codecs.get('12',0)+1;continue
             if kind==10:
@@ -186,10 +193,29 @@ class StreamParser(GraphicsParser):
             decoded=decode_record(kind,tag,body[pos:pos+size],base,self.dictionary);pos+=size
             if kind!=3:self.dictionary[slot]=decoded
             self.cache[block*256:(block+1)*256]=decoded;seen.add(block)
+            if block>=9:self.complete_held(block*256,decoded)
             r=regions.setdefault(region(block),dict(blocks=0,payload_bytes=0));r['blocks']+=1;r['payload_bytes']+=size
             codecs[str(kind)]=codecs.get(str(kind),0)+1
         if pos!=len(body):raise StreamError('record_trailing')
         return regions,codecs
+    def apply_raster(self,body):
+        """Half (80 lines) of the scanline-effect table: one value per line for one video register, raw or run-length."""
+        if len(body)<2:raise StreamError('raster_size')
+        flags=struct.unpack_from('<H',body)[0];dest=flags&0xff;part=(flags>>10)&1;words=struct.unpack('<%dH'%(len(body)//2-1),body[2:])
+        if dest<8 or dest>=0x60 or dest&1:raise StreamError('raster_register')
+        if flags&0x800:
+            values=[]
+            for i in range(0,len(words)-1,2):values+= [words[i+1]]*words[i]
+            if len(words)%2 or len(values)!=80:raise StreamError('raster_rle')
+        else:
+            if len(words)!=80:raise StreamError('raster_size')
+            values=list(words)
+        if self.raster_dest!=dest:self.raster=[0]*160
+        self.raster_dest=dest;self.raster[part*80:part*80+80]=values
+    def complete_held(self,offset,data):
+        """A block sent as content (not a ROM replay) completes the ticks still held: each keeps its own copy of VRAM,
+        so a sprite frame replayed for a later tick never shows up with an earlier tick's sprite positions."""
+        for entry in self.held:entry[4][offset-HOT_BYTES:offset-HOT_BYTES+len(data)]=data
     def continues(self,seq):
         """True when seq follows the last packet and the cache is usable; otherwise the cache waits for a keyframe."""
         if self.cache is not None and self.previous is not None and seq==((self.previous+1)&0xffffffff):return True
@@ -207,10 +233,12 @@ class StreamParser(GraphicsParser):
         except StreamError as exc:
             self.fail(str(exc));self.previous=seq;return []
         self.previous=seq;self.ticks+=1
-        meta=dict(version='emerald-stream-0.13.0',end_game_frame=lo|hi<<16,game_frame=lo|hi<<16,changed_blocks=records,pending_blocks=pending,
+        if not flags&2:self.raster_dest=None
+        raster=[self.raster_dest]+self.raster if self.raster_dest is not None else None
+        meta=dict(raster=raster,version='emerald-stream-0.13.1',end_game_frame=lo|hi<<16,game_frame=lo|hi<<16,changed_blocks=records,pending_blocks=pending,
             keyframe=key,raster_dma_active=bool(flags&2),feedback_available=bool(flags&256),cadence=(flags>>9)&3,skipped_ticks=(flags>>4)&7,interrupt_enable=interrupts,callback_id=callback_id,unknown_scene=bool(flags&2048),peak_work_scanlines=telemetry&255,previous_words=telemetry>>8,
             resource_regions=regions,block_codecs=codecs,idle_packets=0,idle_words=0,scope='Graphics stream; scanline effects and per-tick temporal coherence not fully verified')
-        self.held.append((seq,bytes(self.cache[:HOT_BYTES]),wire,meta))
+        self.held.append((seq,bytes(self.cache[:HOT_BYTES]),wire,meta,bytearray(self.cache[HOT_BYTES:])))
         if key:self.complete=False
         return self.settle(pending)
     def apply_bulk(self,seq,body,wire):
@@ -227,7 +255,7 @@ class StreamParser(GraphicsParser):
         if self.held:
             # registers, palette and OAM left over by a heavy tick belong to that tick
             if any(k in regions for k in ('registers','palette','objects')):
-                last=self.held[-1];self.held[-1]=(last[0],bytes(self.cache[:HOT_BYTES]),last[2],last[3])
+                last=self.held[-1];self.held[-1]=(last[0],bytes(self.cache[:HOT_BYTES]),last[2],last[3],last[4])
             m=self.held[-1][3];m['idle_packets']+=1;m['idle_words']=telemetry;m['pending_blocks']=pending
             for k,v in codecs.items():m['block_codecs'][k]=m['block_codecs'].get(k,0)+v
             for k,v in regions.items():
@@ -246,15 +274,19 @@ class StreamParser(GraphicsParser):
         limit=self.long_hold if pending>self.big_backlog else self.max_hold
         if pending>0 and len(self.held)<=limit:return []
         forced=pending>0
-        # After a long hold (a scene load) the held ticks carry registers and sprites of the loading screens: shown with
-        # the new tiles they would flash a mix of both scenes. Only the newest one is shown.
-        keep=1 if len(self.held)>self.max_hold else self.keep
+        # After a long hold (a scene load) the newest held ticks are replayed, so the fade-in of the new scene is seen as
+        # in the game; the black frames of the loading screen before it are collapsed into one. The browser then
+        # catches up with the live stream.
+        long=len(self.held)>self.max_hold
+        keep=self.fade_keep if long else self.keep
         if len(self.held)>keep:
             self.dropped_incomplete+=len(self.held)-keep;del self.held[:len(self.held)-keep]
-        vram=bytes(self.cache[HOT_BYTES:]);out=[];last=self.held[-1][0]
-        for held_seq,hot,held_wire,held_meta in self.held:
+        while long and len(self.held)>1 and black(self.held[0][1]) and black(self.held[1][1]):
+            del self.held[0];self.dropped_incomplete+=1
+        out=[];last=self.held[-1][0]
+        for held_seq,hot,held_wire,held_meta,vram in self.held:
             m=dict(held_meta,held_frames=len(self.held),incomplete=forced and held_seq==last)
-            out.append((held_seq,hot+vram,held_wire,4,m))
+            out.append((held_seq,hot+bytes(vram),held_wire,4,m))
         if forced:self.forced_releases+=1
         self.frames_published+=len(out);self.held=[]
         return out

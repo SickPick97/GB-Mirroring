@@ -1,5 +1,18 @@
 # Storico
 
+## 0.13.1 - Battaglie senza scatti, effetti per riga, animazioni e dissolvenze
+
+- Risultato hardware 0.13.0 (log-20260930-184140, riepilogo in test-results/hardware-v0.13.0): "funziona divinamente", restano glitch qua e la: animazioni di corsa a volte sbagliate, mosse come Surf non corrette, cambi mappa e ingresso in battaglia con schermo nero invece della transizione, barra HP che scende a scatti.
+- Battaglia a scatti: il 70% dei salti di frame era in battaglia, dove il gioco a volte e ancora occupato al VBlank o il suo gestore finisce dopo la riga 224; il residente saltava il tick. Ora in quei frame manda comunque registri, palette e OAM entro poche righe; salta tre tick su quattro solo in un lungo periodo occupato (salvataggio, caricamenti). Gioco emulato in battaglia: 900 tick su 900 (prima 845).
+- Barra HP e sprite ridisegnati sul posto: nel tempo libero, ogni frame, vengono verificati i tile di tutti gli sprite visibili (dalla OAM), non solo a rotazione.
+- Animazioni di corsa: un frame trattenuto dal PC usava la VRAM piu recente, quindi la posa successiva dello sprite (copiata dalla ROM nel tick dopo) compariva nella posizione precedente. Ogni frame trattenuto ora ha la propria copia della VRAM, completata solo dai blocchi inviati come contenuto (19% dei frame del campo era trattenuto nella prova hardware).
+- Effetti per riga: il residente legge `gScanlineEffect` (0x02039b28 in BPEI) e invia la tabella per riga (record tipo 13) quando cambia; il renderer nativo applica il registro riga per riga (`gbm_render_lines`). Intro della battaglia nel gioco emulato: 0 pixel sbagliati su 183 frame (senza: 586.996). Le transizioni che programmano il DMA da sole non sono ancora riprodotte (un tentativo euristico peggiorava l immagine ed e stato tolto).
+- Renderer ricompilato con Zig 0.16.0 (clang, statico; scaricato con permesso, sha256 verificato): pixel identici alla DLL MSVC precedente su 120 frame.
+- Cambi scena: il PC riproduce gli ultimi frame trattenuti (fino a 40, i neri del caricamento ridotti a uno) cosi la dissolvenza della nuova scena si vede; il browser recupera poi il ritardo riproducendo un po piu veloce. La verifica completa della VRAM non riparte piu quando il gioco resta senza callback VBlank durante il caricamento; il tick usa fino a meta del tempo libero del frame precedente (max 60 righe) e il lavoro nel tempo libero arriva alla riga 156.
+- RAM: lo stage di avvio del loader ora gira dentro la tabella delle firme del residente (azzerata al primo keyframe), liberando 256 byte; code di copia ROM 6 richieste, 4 conferme per tick; contatori di debug solo nelle build di sviluppo.
+- La statistica "salti di sequenza" della pagina conta solo le perdite reali (i pacchetti del tempo libero non generano immagini).
+- Salvataggio: `test_save_integrity.py` passa (flash identica al gioco senza residente, salvo il tempo di gioco; checksum valido). Non provata su console; firmware Pico invariato (0.7.0).
+
 ## 0.13.0 - Tempo libero del gioco, interrupt mai bloccati, firma dei blocchi corretta
 
 - Richiesta dopo la prova hardware 0.12.3: la battaglia non crasha piu ma resta un fermo immagine; entrando nelle case, nelle informazioni dei Pokemon e nei menu molti glitch grafici. Obiettivo: uno streaming come il gioco vero, senza toccare il salvataggio.

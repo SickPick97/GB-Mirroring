@@ -26,7 +26,7 @@ If the copy stops or reports a mismatch, delete `runtime/cache` and repeat. Only
 
 1. Start the GBA without a cartridge. Connect the adapter to the PC and console.
 2. Run `14-AVVIA-SMERALDO.bat`. Its offline package check should report `OK`.
-3. At `INVIO per multiboot`, press **Enter**. This loads the 0.13.0 resident. After a session press **Scarica log** in the page: it downloads a single zip with all logs to send. `R` resumes a resident already running; `B` selects the older 0.11.0 comparison baseline (no cartridge copy needed).
+3. At `INVIO per multiboot`, press **Enter**. This loads the 0.13.1 resident. After a session press **Scarica log** in the page: it downloads a single zip with all logs to send. `R` resumes a resident already running; `B` selects the older 0.11.0 comparison baseline (no cartridge copy needed).
 4. Follow the handheld prompt: insert your Emerald cartridge and press **START**. Enter the game.
 5. When the PC reports `PRONTO` (ready), press **SELECT + L + R** to enable capture. This combination toggles capture, so do not repeatedly press it while waiting for the initial image. The first image appears after a few seconds while the PC receives the initial graphics.
 6. Open **http://127.0.0.1:8765** if the viewer does not open automatically. Keep the BAT window running.

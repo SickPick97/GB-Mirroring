@@ -40,7 +40,7 @@ class Tests(unittest.TestCase):
   for i in range(1,6):out.extend(parse(p,tick(i,i+1,[raw(0,i)],pending=5)))
   self.assertEqual(len(out),1);self.assertEqual(p.forced_releases,1);self.assertTrue(out[-1][4]['incomplete'])
  def test_long_backlog_keeps_last_image_then_swaps_in_finished_scene(self):
-  p=StreamParser(Echo(),max_hold=3,keep=7);parse(p,key_all());out=[]
+  p=StreamParser(Echo(),max_hold=3,keep=7,fade_keep=1);parse(p,key_all());out=[]
   for i in range(1,40):out.extend(parse(p,tick(i,i+1,[raw(0,i)],pending=100)))
   self.assertEqual(out,[]);self.assertEqual(p.forced_releases,0)
   out=parse(p,tick(40,41,[raw(0,99),raw(9,7,1)],pending=0))
@@ -114,6 +114,12 @@ class Tests(unittest.TestCase):
   p=StreamParser(Echo());parse(p,key_all())
   body=struct.pack('<6H',0x2000,1,0,0,1,0)+raw(9,1)
   self.assertEqual(parse(p,packet(5,13,0,body,version=0x700)),[]);self.assertIsNone(p.cache);self.assertEqual(p.delta_misses,1)
+ def test_scene_load_replays_the_fade_in_after_one_black_frame(self):
+  p=StreamParser(Echo(),max_hold=3,fade_keep=10);parse(p,key_all());out=[]
+  for i in range(1,6):out+=parse(p,tick(i,i+1,[raw(0,i)],pending=100))
+  for i in range(6,10):out+=parse(p,tick(i,i+1,[raw(0,i),raw(1,0x1000*(i-5),i)],pending=100))
+  out+=parse(p,tick(10,11,[raw(0,10)],pending=0))
+  self.assertEqual([f[4]['end_game_frame'] for f in out],[6,7,8,9,10,11])
  def test_missing_tick_needs_keyframe(self):
   p=StreamParser(Echo());parse(p,key_all())
   self.assertEqual(parse(p,tick(2,3,[raw(0,7)])),[])
@@ -128,6 +134,15 @@ class Tests(unittest.TestCase):
   self.assertEqual(parse(p,tick(1,2,[raw(9,2,1)],pending=200)),[])
   out=parse(p,tick(2,3,[raw(10,3,2)],pending=0))
   self.assertEqual(len(out),3);self.assertEqual(out[-1][1][10*256:10*256+2],struct.pack('<H',3))
+ def test_held_tick_keeps_its_own_sprite_frame(self):
+  """A ROM replay of a later tick (next sprite pose) must not appear in an earlier held tick; content blocks complete it."""
+  rom=bytes((i*7)&255 for i in range(0x4000));p=StreamParser(Echo(),rom=rom);parse(p,key_all())
+  a=parse(p,tick(1,2,[raw(0,1)],pending=1))
+  b=parse(p,tick(2,3,[raw(0,2),rom_copy(0x08000100,0x06010000,0x80),raw(20,0x5555,2)],pending=0))
+  self.assertEqual(a,[]);self.assertEqual([f[4]['end_game_frame'] for f in b],[2,3])
+  first,second=b[0][1][HOT_BYTES:],b[1][1][HOT_BYTES:]
+  self.assertEqual(first[0x10000:0x10080],bytes(0x80));self.assertEqual(second[0x10000:0x10080],rom[0x100:0x180])
+  self.assertEqual(first[11*256:11*256+2],struct.pack('<H',0x5555))
  def test_rom_copy_replays_cartridge_bytes(self):
   rom=bytes((i*7)&255 for i in range(0x4000));p=StreamParser(Echo(),rom=rom);parse(p,key_all())
   out=parse(p,tick(1,2,[rom_copy(0x08000100,0x06000200,0x80)]))

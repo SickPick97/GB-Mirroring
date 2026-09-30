@@ -22,6 +22,8 @@ KEYS={'h':lambda f:1<<(7 if f%96<48 else 6),'v':lambda f:1<<(5 if f%96<48 else 4
       # Enter the Pokemon Center standing below its door (field.state), walk to the counter, come back out.
       'center':lambda f:1<<4 if 60<=f<230 else 1<<5 if 500<=f<640 else 0,
       # Wild battle: start from build/motion/battle.state (transition already running), press A now and then.
+      # build/motion/surf.state: wild battle whose first move was set to Surf; A every half second uses it.
+      'surf':lambda f:1<<8 if f%30<3 else 0,
       'battle':lambda f:1<<8 if f>=300 and f%40<3 else 0,
       'menus':lambda f:(1<<3 if 120<=f<123 else 1<<8 if 240<=f<243 else 1 if 480<=f<483 or 660<=f<663 else 0),
       'team':lambda f:(1<<3 if 120<=f<123 else 1<<5 if 180<=f<183 else 1<<8 if 240<=f<243 else 1 if 480<=f<483 or 660<=f<663 else 0)}
@@ -103,6 +105,9 @@ class Machine:
         u.mem_write(0x03000000,bytes(state[0x19000:0x19000+0x1000]))
         u.mem_write(0x02021800,bytes(state[0x21000+0x21800:0x21000+0x21a00]))
         u.mem_write(0x02037600,bytes(state[0x21000+0x37600:0x21000+0x37800]))
+        u.mem_write(0x02038c00,bytes(state[0x21000+0x38c00:0x21000+0x39c00]))
+        # scanline effect: gScanlineEffect, its double buffer and DMA0 control (the resident reads them after VBlank)
+        u.mem_write(0x040000ba,bytes(state[0x400+0xba:0x400+0xbc]))
         u.mem_write(0x030022cc,bytes(state[0x19000+0x22cc:0x19000+0x22d0]))
         u.mem_write(0x04000200,struct.pack('<HH',1,1))
     def observe(self):
@@ -130,6 +135,11 @@ class Machine:
         self.u.emu_start(self.symbol('idle'),0x03007000,count=40000000)
         words=self.bus['words'];self.bus['words']=[]
         return struct.pack('<'+'H'*len(words),*words),len(words)
+
+def parser_pending(wire):
+    """pending field of the last packet in a chunk of wire words (0x700 tick or bulk)"""
+    i=wire.rfind(bytes((0x7e,0xb4,0x47,0x56)))
+    return struct.unpack_from('<H',wire,i+24+6)[0]&511 if i>=0 and len(wire)>=i+32 else -1
 
 class Echo:
     def render(self,data):return bytes(data)
@@ -169,6 +179,7 @@ def run(args):
                 # the game finished its frame and waits for the next VBlank: queues for that VBlank are final
                 m.load_environment(state)
                 idle_wire,idle_words=m.idle(args.idle_start);out+=parser.feed(idle_wire)
+                if args.trace and args.trace[0]<=f<args.trace[1]:print('  f%4d idle words %4d idle lines %5.1f pending after idle %d held %d'%(f,idle_words,m.cycles/LINE,parser_pending(idle_wire),len(parser.held)))
             for seq,img,wire_bytes,codec,meta in out:
                 frames.append((f,seq,meta));ref=truth.get(meta.get('end_game_frame',meta.get('game_frame')))
                 if ref is not None:

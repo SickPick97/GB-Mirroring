@@ -27,9 +27,9 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
  def render_loop():
   try:
    while not stop.is_set() or not render_queue.empty():
-    try:seq,gfx,game_frame=render_queue.get(timeout=.1)
+    try:seq,gfx,game_frame,raster=render_queue.get(timeout=.1)
     except queue.Empty:continue
-    began=time.monotonic();pixels=renderer.render(gfx)
+    began=time.monotonic();pixels=renderer.render(gfx,raster)
     with lock:stats['render_peak_ms']=max(stats['render_peak_ms'],round((time.monotonic()-began)*1000,2))
     present(seq,pixels,game_frame)
   except Exception as exc:
@@ -43,6 +43,8 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
    for times in (presentations,changes):
     while times and now-times[0]>5:times.popleft()
    stats.update(stream_fps_last_5s=round(len(arrivals)/5,2),presented_fps_last_5s=round(len(presentations)/5,2),changed_fps_last_5s=round(len(changes)/5,2))
+   # 0.13 bulk packets use sequence numbers without producing an image: real losses are the parser's delta misses
+   if hasattr(parser,"bulk_packets"):stats["sequence_gaps"]=parser.delta_misses
    return dict(stats,held_ticks=len(getattr(parser,"held",()) or ()),usb_queue_peak_lag_ms=round(getattr(serial,"peak_lag_ms",0),2),unique_fps_last_5s=round(len(arrivals)/5,2),bit_resyncs=getattr(parser,"bit_resyncs",0),delta_reference_misses=parser.delta_misses,crc_errors=parser.bad_frames,repaired_payloads=getattr(parser,"repaired_payloads",0),repaired_headers=getattr(parser,"repaired_headers",0),payload_crc_errors=getattr(parser,"payload_crc_errors",0),transaction_errors=getattr(parser,"transaction_errors",0),last_validation_error=getattr(parser,"last_error",None),header_errors=parser.bad_headers,discarded_bytes=parser.discarded,elapsed_seconds=round(now-started,1))
  def make_bundle(notes=''):
   """One zip with every log of the session, written next to the reports and ready to send."""
@@ -57,7 +59,7 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
     fd,tmp=tempfile.mkstemp(suffix='.bmp',dir=folder);os.close(fd)
     bmp(tmp,struct.unpack('<38400H',pixels));bmp_bytes=Path(tmp).read_bytes();Path(tmp).unlink()
    except Exception:bmp_bytes=None
-  data,summary=log_summary.bundle(folder,folder/'frames.jsonl',snapshot(),log_path,tail,bmp_bytes,resident='0.13.0',notes=notes)
+  data,summary=log_summary.bundle(folder,folder/'frames.jsonl',snapshot(),log_path,tail,bmp_bytes,resident='0.13.1',notes=notes)
   target=folder/('log-'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')+'.zip');target.write_bytes(data)
   return target,data,summary
  def reader():
@@ -99,7 +101,7 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
        stats['gba']=metadata
        previous=seq;stats['valid_frames']+=1;stats['status']='STREAMING';stats['codec']=('RAW','RLE16','DELTA-RLE16','BLOCKS','GRAPHICS')[codec];arrivals.append(now)
       if emerald:
-       item=(seq,pixels,metadata.get('end_game_frame',metadata.get('game_frame',seq)))
+       item=(seq,pixels,metadata.get('end_game_frame',metadata.get('game_frame',seq)),metadata.pop('raster',None))
        try:render_queue.put_nowait(item)
        except queue.Full:
         try:render_queue.get_nowait()

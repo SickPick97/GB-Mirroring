@@ -3,6 +3,8 @@
 #define R16(a) (*(volatile uint16_t*)(a))
 #define R32(a) (*(volatile uint32_t*)(a))
 extern uint8_t resident_blob[],resident_blob_end[],stage_blob[],stage_blob_end[];
+/* The stage runs once at boot from inside the resident's block-hash table (zeroed at the first keyframe). */
+extern const uint32_t stage_address;
 extern void sd_send_fast(const uint16_t*,unsigned);
 static void text(unsigned y,const char*s){unsigned x=6;for(;*s;s++,x+=6){const uint8_t*g=0;if(*s>='A'&&*s<='Z')g=letters[*s-'A'];for(unsigned c=0;c<5;c++)for(unsigned r=0;r<7;r++)if(g&&(g[c]&(1<<r)))R16(0x06000000+((y+r)*240+x+c)*2)=32767;}}
 static uint32_t boot_crc(void){uint32_t c=~0u;for(unsigned i=0;i<8192;i++){c^=((volatile uint8_t*)0x08000000)[i];for(unsigned j=0;j<8;j++)c=(c>>1)^((0u-(c&1))&0xedb88320u);}return ~c;}
@@ -60,6 +62,6 @@ int main(void){
  }
  for(uint32_t a=0x0203cf80;a<0x02040000;a+=4)R32(a)=0;
  for(unsigned i=0;i<(unsigned)(resident_blob_end-resident_blob);i++)((volatile uint8_t*)0x0203cf80)[i]=resident_blob[i];
- for(unsigned i=0;i<(unsigned)(stage_blob_end-stage_blob);i++)((volatile uint8_t*)0x0203fe00)[i]=stage_blob[i];
- ((void(*)(void))0x0203fe00)();return 0;
+ for(unsigned i=0;i<(unsigned)(stage_blob_end-stage_blob);i++)((volatile uint8_t*)stage_address)[i]=stage_blob[i];
+ ((void(*)(void))stage_address)();return 0;
 }

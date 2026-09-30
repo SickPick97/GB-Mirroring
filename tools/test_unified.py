@@ -29,7 +29,7 @@ class SerialModel:
    return b''
 class Tests(unittest.TestCase):
  def test_multiboot_over_cdc(self):
-  for version in ('0.13.0','0.12.3','0.12.2','0.12.1','0.12.0','0.11.0'):
+  for version in ('0.13.1','0.13.0','0.12.3','0.12.2','0.12.1','0.12.0','0.11.0'):
    rom=prepara_rom((ROOT/('dist/gbmirroring-emerald-v'+version+'.gba')).read_bytes());serial=SerialModel(rom);link=BootTransport(serial)
    try:
     result=Multiboot(link,timing_fast=3700,timing_wait=129630,max_attempts=1,verbose=False).run(rom)

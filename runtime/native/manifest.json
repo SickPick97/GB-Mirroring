@@ -5,7 +5,7 @@
   "source_sha256": "27449f2064ee44261429d9c75406b58df25c0ca95c5a0510058f3b60abd08507",
   "files": 175,
   "scope": "Unmodified headers and software renderer translation units required for this DLL; no game content.",
-  "sha256": "9526213845b54e970a861f6d8f4f4864812d872acd1a5cf650dff92b0d787093",
-  "architecture": "Windows x64; static MSVC runtime",
+  "sha256": "d9a402bcd79583222f6089f7f639006b9c869af9430e8ca1f1d4dc0d0a6f9057",
+  "architecture": "Windows x64; zig cc (clang), static",
   "source": "native/renderer/mgba-source.zip"
 }

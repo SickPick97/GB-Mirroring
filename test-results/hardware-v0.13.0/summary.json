@@ -1,0 +1,80 @@
+{
+ "ticks": 21302,
+ "seconds": 378.3,
+ "version": "emerald-stream-0.13.0",
+ "tick_lines": {
+  "p50": 30,
+  "p95": 47,
+  "p99": 56,
+  "max": 85,
+  "over_100": 0,
+  "over_150": 0
+ },
+ "words": {
+  "mean": 50.9,
+  "max": 235
+ },
+ "pending": {
+  "max": 188,
+  "ticks_over_40": 22
+ },
+ "forced_releases": 12,
+ "keyframes": 0,
+ "raster_dma_ticks": 701,
+ "unknown_scene_ticks": 9808,
+ "idle_packets": 5430,
+ "idle_words_mean": 5.5,
+ "ticks_with_hblank_or_vcount_irq": 21302,
+ "interrupt_enable_seen": [
+  5,
+  69
+ ],
+ "callback_ids_seen": [
+  51,
+  55,
+  164,
+  206
+ ],
+ "ticks_after_skips": 117,
+ "cadence_changes": 0,
+ "game_frame_gaps": {
+  "of_2": 179,
+  "of_3_to_5": 66,
+  "of_6_or_more": 16,
+  "largest": 110
+ },
+ "sequence_jumps": 6834,
+ "record_types": {
+  "3": 6794,
+  "4": 4034,
+  "10": 34795,
+  "1": 3407,
+  "5": 11611,
+  "12": 726
+ },
+ "longest_run_of_ticks_over_150_lines": 0,
+ "pc": {
+  "valid_frames": 21286,
+  "sequence_gaps": 6828,
+  "bit_resyncs": 739,
+  "crc_errors": 0,
+  "discarded_bytes": 6177,
+  "usb_queue_peak_lag_ms": 11.27,
+  "browser": {
+   "presented": 21207,
+   "dropped": 49,
+   "resets": 9,
+   "queued": 12,
+   "fps": 59.8,
+   "late_ms": 32.95,
+   "hidden": false,
+   "received_seconds": 462.088
+  },
+  "render_peak_ms": 8.1,
+  "status": "STREAMING",
+  "error": null,
+  "elapsed_seconds": 462.4
+ },
+ "session": "log-20260930-184140",
+ "note": "Hardware 0.13.0: funziona; glitch residui (corsa, Surf, transizioni nere, barra HP a scatti). 181 dei 261 salti di frame in battaglia; 19% dei frame del campo rilasciati dopo attesa; sequence_gaps della pagina contava anche i pacchetti del tempo libero. Riepilogo ripulito; log grezzi restano locali."
+}
