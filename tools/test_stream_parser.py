@@ -134,6 +134,11 @@ class Tests(unittest.TestCase):
   self.assertEqual(parse(p,tick(1,2,[raw(9,2,1)],pending=200)),[])
   out=parse(p,tick(2,3,[raw(10,3,2)],pending=0))
   self.assertEqual(len(out),3);self.assertEqual(out[-1][1][10*256:10*256+2],struct.pack('<H',3))
+ def test_scene_load_replays_reach_every_held_loading_frame(self):
+  rom=bytes((i*7)&255 for i in range(0x4000));p=StreamParser(Echo(),rom=rom);parse(p,key_all())
+  parse(p,tick(1,2,[raw(0,1)],pending=50));parse(p,tick(2,3,[raw(0,2)],pending=50))
+  out=parse(p,tick(3,4,[raw(0,3),rom_copy(0x08000100,0x06010000,0x80)],pending=0))
+  self.assertEqual(len(out),3);self.assertTrue(all(f[1][HOT_BYTES+0x10000:HOT_BYTES+0x10080]==rom[0x100:0x180] for f in out))
  def test_held_tick_keeps_its_own_sprite_frame(self):
   """A ROM replay of a later tick (next sprite pose) must not appear in an earlier held tick; content blocks complete it."""
   rom=bytes((i*7)&255 for i in range(0x4000));p=StreamParser(Echo(),rom=rom);parse(p,key_all())

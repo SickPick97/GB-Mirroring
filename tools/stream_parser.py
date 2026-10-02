@@ -109,7 +109,7 @@ def black(hot):
 
 class StreamParser(GraphicsParser):
     def __init__(self,renderer=None,max_hold=30,rom=None,long_hold=240,big_backlog=40,keep=12,fade_keep=40):
-        super().__init__(renderer);self.rom=rom;self.keep=keep;self.fade_keep=fade_keep;self.bulk_packets=0;self.raster=[0]*160;self.raster_dest=None
+        super().__init__(renderer);self.rom=rom;self.keep=keep;self.fade_keep=fade_keep;self.bulk_packets=0;self.raster=[0]*160;self.raster_dest=None;self.load_backlog=8
         self.max_hold=max_hold;self.long_hold=long_hold;self.big_backlog=big_backlog;self.held=[];self.complete=False;self.feedback_available=False
         self.dropped_incomplete=0;self.forced_releases=0;self.ticks=0;self.frames_published=0
         self.rom_image=None;self.rom_seen=None;self.rom_total=None;self.rom_bad=0;self.rom_missing=0
@@ -166,6 +166,11 @@ class StreamParser(GraphicsParser):
         if not(0x08000000<=src and src-0x08000000+size<=len(self.rom) and 0x06000000<=dest and dest+size<=0x06018000 and size%4==0 and size>0):raise StreamError('rom_copy_bounds')
         offset=HOT_BYTES+dest-0x06000000
         self.cache[offset:offset+size]=self.rom[src-0x08000000:src-0x08000000+size]
+        # During a scene load (large backlog) the held ticks are the loading screens: tiles copied from the ROM belong in
+        # all of them, or the replayed fade would show the old scene under the new palette. While walking, each held tick
+        # keeps its own sprite pose.
+        for entry in self.held:
+            if entry[3]['pending_blocks']>self.load_backlog:entry[4][offset-HOT_BYTES:offset-HOT_BYTES+size]=self.rom[src-0x08000000:src-0x08000000+size]
     def apply_records(self,body,records):
         """Applies the records of a tick or bulk packet to the running cache; returns (regions, codecs)."""
         pos=12;seen=set();regions={};codecs={}
@@ -235,8 +240,8 @@ class StreamParser(GraphicsParser):
         self.previous=seq;self.ticks+=1
         if not flags&2:self.raster_dest=None
         raster=[self.raster_dest]+self.raster if self.raster_dest is not None else None
-        meta=dict(raster=raster,version='emerald-stream-0.13.1',end_game_frame=lo|hi<<16,game_frame=lo|hi<<16,changed_blocks=records,pending_blocks=pending,
-            keyframe=key,raster_dma_active=bool(flags&2),feedback_available=bool(flags&256),cadence=(flags>>9)&3,skipped_ticks=(flags>>4)&7,interrupt_enable=interrupts,callback_id=callback_id,unknown_scene=bool(flags&2048),peak_work_scanlines=telemetry&255,previous_words=telemetry>>8,
+        meta=dict(raster=raster,version='emerald-stream-0.13.2',end_game_frame=lo|hi<<16,game_frame=lo|hi<<16,changed_blocks=records,pending_blocks=pending,
+            keyframe=key,raster_dma_active=bool(flags&2),feedback_available=bool(flags&256),cadence=(flags>>9)&3,skipped_ticks=(flags>>4)&7,heavy_tick=bool(flags&128),interrupt_enable=interrupts,callback_id=callback_id,unknown_scene=bool(flags&2048),peak_work_scanlines=telemetry&255,idle_slack=telemetry>>8,
             resource_regions=regions,block_codecs=codecs,idle_packets=0,idle_words=0,scope='Graphics stream; scanline effects and per-tick temporal coherence not fully verified')
         self.held.append((seq,bytes(self.cache[:HOT_BYTES]),wire,meta,bytearray(self.cache[HOT_BYTES:])))
         if key:self.complete=False

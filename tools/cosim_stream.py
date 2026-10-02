@@ -225,6 +225,7 @@ def run(args):
         max_wrong_blocks=max((b for b,h,d in fidelity),default=None),wrong_hot_blocks=sum(h for b,h,d in fidelity),
         mean_delay_ticks=round(statistics.mean(d for b,h,d in fidelity),2) if fidelity else None,max_delay_ticks=max((d for b,h,d in fidelity),default=None),
         forced_releases=getattr(parser,'forced_releases',None),
+        frames_held_over_8=sum(1 for f,q,mt in frames if mt.get('held_frames',1)>8),frames_held_over_1=sum(1 for f,q,mt in frames if mt.get('held_frames',1)>1),
         **(dict(visually_exact_frames=sum(1 for v in visual if v==0),frames_rendered=len(visual),mean_wrong_pixels=round(statistics.mean(visual),1) if visual else None,max_wrong_pixels=max(visual,default=None),frames_over_100_wrong_pixels=sum(1 for v in visual if v>100)) if renderer is not None else {}),parser_bad_frames=parser.bad_frames,delta_misses=parser.delta_misses,
         scope='mGBA game + Unicorn ARM resident + cycle model; not hardware')
     print(json.dumps(result))

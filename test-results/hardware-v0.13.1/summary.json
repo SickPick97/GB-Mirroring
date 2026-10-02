@@ -1,0 +1,80 @@
+{
+ "ticks": 4762,
+ "seconds": 87.2,
+ "version": "emerald-stream-0.13.1",
+ "tick_lines": {
+  "p50": 34,
+  "p95": 67,
+  "p99": 82,
+  "max": 95,
+  "over_100": 0,
+  "over_150": 0
+ },
+ "words": {
+  "mean": 60.6,
+  "max": 236
+ },
+ "pending": {
+  "max": 371,
+  "ticks_over_40": 166
+ },
+ "forced_releases": 24,
+ "keyframes": 0,
+ "raster_dma_ticks": 304,
+ "unknown_scene_ticks": 2729,
+ "idle_packets": 900,
+ "idle_words_mean": 0.7,
+ "ticks_with_hblank_or_vcount_irq": 4762,
+ "interrupt_enable_seen": [
+  5,
+  69
+ ],
+ "callback_ids_seen": [
+  0,
+  164,
+  206
+ ],
+ "ticks_after_skips": 0,
+ "cadence_changes": 0,
+ "game_frame_gaps": {
+  "of_2": 5,
+  "of_3_to_5": 3,
+  "of_6_or_more": 15,
+  "largest": 142
+ },
+ "sequence_jumps": 1044,
+ "record_types": {
+  "1": 841,
+  "10": 5407,
+  "4": 471,
+  "5": 3271,
+  "3": 1149,
+  "12": 403,
+  "13": 374
+ },
+ "longest_run_of_ticks_over_150_lines": 0,
+ "pc": {
+  "valid_frames": 4759,
+  "sequence_gaps": 0,
+  "bit_resyncs": 175,
+  "crc_errors": 0,
+  "discarded_bytes": 3832,
+  "usb_queue_peak_lag_ms": 73.65,
+  "browser": {
+   "presented": 4702,
+   "dropped": 28,
+   "resets": 16,
+   "queued": 14,
+   "fps": 48.6,
+   "late_ms": 0,
+   "hidden": false,
+   "received_seconds": 125.424
+  },
+  "render_peak_ms": 0.96,
+  "status": "STREAMING",
+  "error": null,
+  "elapsed_seconds": 125.7
+ },
+ "session": "log-20261002-174228",
+ "note": "Hardware 0.13.1: piu scatti e piu glitch di 0.13.0. 14 azzeramenti della coda del browser in 87 s, 24 rilasci forzati nel campo con pending 24-32 per 31 tick (passi di scorrimento della mappa). Riepilogo ripulito; log grezzi restano locali."
+}

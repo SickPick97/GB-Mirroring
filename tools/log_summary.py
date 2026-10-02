@@ -15,17 +15,19 @@ def summarize(rows,report=None):
  gba=[r.get('gba',{}) for r in rows if r.get('gba')]
  out=dict(ticks=len(gba))
  if not gba:return out
- peaks=[g.get('peak_work_scanlines',0) for g in gba];words=[g.get('previous_words',0) for g in gba]
+ peaks=[g.get('peak_work_scanlines',0) for g in gba];words=[r.get('wire_bytes',0)//2 for r in rows if r.get('gba')]
  pending=[g.get('pending_blocks',0) for g in gba]
  def pct(v,p):s=sorted(v);return s[min(len(s)-1,int(len(s)*p))]
  out.update(seconds=round(rows[-1].get('seconds',0)-rows[0].get('seconds',0),1),
   version=gba[-1].get('version'),
+  idle_slack_lines=dict(p10=pct([g.get('idle_slack',0) for g in gba],.1),p50=pct([g.get('idle_slack',0) for g in gba],.5),p90=pct([g.get('idle_slack',0) for g in gba],.9)),
   tick_lines=dict(p50=pct(peaks,.5),p95=pct(peaks,.95),p99=pct(peaks,.99),max=max(peaks),over_100=sum(1 for p in peaks if p>100),over_150=sum(1 for p in peaks if p>150)),
   words=dict(mean=round(sum(words)/len(words),1),max=max(words)),
   pending=dict(max=max(pending),ticks_over_40=sum(1 for p in pending if p>40)),
   forced_releases=sum(1 for g in gba if g.get('incomplete')),keyframes=sum(1 for g in gba if g.get('keyframe')),
   raster_dma_ticks=sum(1 for g in gba if g.get('raster_dma_active')),
   unknown_scene_ticks=sum(1 for g in gba if g.get('unknown_scene')),
+  heavy_ticks=sum(1 for g in gba if g.get('heavy_tick')),
   idle_packets=sum(g.get('idle_packets',0) for g in gba),idle_words_mean=round(sum(g.get('idle_words',0) for g in gba)/len(gba),1),
   ticks_with_hblank_or_vcount_irq=sum(1 for g in gba if g.get('interrupt_enable',0)&6),
   interrupt_enable_seen=sorted({g.get('interrupt_enable',0) for g in gba}),

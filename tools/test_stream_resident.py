@@ -24,7 +24,7 @@ class Resident(unittest.TestCase):
   self.assertGreaterEqual(r['published_per_60_ticks'],58)
   self.assertEqual(r['wrong_hot_blocks'],0)
   self.assertLess(r['mean_wrong_blocks'],3)
-  self.assertLessEqual(r['words_max'],224+36)
+  self.assertLessEqual(r['words_max'],216+36)
  def test_walking_publishes_continuously(self):
   r=self.run_cosim('h',600,400)
   self.assertEqual(r['parser_bad_frames'],0);self.assertEqual(r['wrong_hot_blocks'],0)

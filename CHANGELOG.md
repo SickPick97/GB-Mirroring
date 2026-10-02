@@ -1,5 +1,15 @@
 # Storico
 
+## 0.13.2 - Riproduzione senza accumulo di ritardo, blocchi noti per primi, dissolvenze complete
+
+- Risultato hardware 0.13.1 (log-20261002-174228, riepilogo in test-results/hardware-v0.13.1): in esplorazione scatta di piu e nelle lotte e nelle case ci sono piu glitch. Il log del PC mostra 14 azzeramenti della coda del browser in 87 s (0.13.0: 9 in 378 s), 48,6 fps nel browser e, nel campo, 24 rilasci forzati: durante la camminata continua i 24 blocchi mappa di ogni passo di scorrimento restavano in attesa per 7 tick su 8, la pagina tratteneva l immagine fino a 31 frame e poi la mostrava tutta insieme.
+- Browser (`playout.js`): il recupero del ritardo della 0.13.1 accumulava uno sfasamento permanente (608 ms su quel log) e provocava azzeramenti. Ora i frame arrivati in ritardo in blocco (dissolvenze dopo un caricamento) vengono mostrati in ordine, qualche frame in piu per aggiornamento finche il ritardo e rientrato, senza scartare la coda; l azzeramento scatta solo oltre 3 s di ritardo. Simulato sul log: 4673 frame mostrati su 4765 e 3 azzeramenti (la riproduzione della 0.13.0 mostrava 1041 frame su 4765 su quel log).
+- Residente: i blocchi noti come modificati (copie in coda del gioco, scorrimento della mappa) vengono inviati per primi; i blocchi solo in verifica (audit a rotazione, tile degli sprite visibili) usano il tempo rimasto. Prima la verifica di molti blocchi sprite ritardava i 24 blocchi mappa di un passo di scorrimento. Il tick non usa piu meta del tempo libero del frame precedente (era 33,5 contro 29,4 righe di media nel campo in co-simulazione).
+- La modalita "tick pesante" (poche righe) scatta solo se il gioco e occupato al VBlank, il suo gestore finisce tardi o il tempo libero misurato e basso; la mancanza di un controllo di tempo libero non basta piu. Nuova telemetria nel log: tempo libero misurato (`idle_slack`) e tick pesanti (`heavy_tick`).
+- Dissolvenze: durante un caricamento le copie di tile dalla ROM arrivate dopo entrano in tutti i frame trattenuti (prima la dissolvenza mostrava la scena vecchia con la palette nuova); durante la camminata ogni frame trattenuto conserva la propria posa degli sprite.
+- Il residente occupa 7756 byte, EWRAM quasi piena (20 byte liberi); carico utile massimo 216 parole, 5 richieste ROM per VBlank.
+- Non ancora provata su console; firmware Pico invariato (0.7.0).
+
 ## 0.13.1 - Battaglie senza scatti, effetti per riga, animazioni e dissolvenze
 
 - Risultato hardware 0.13.0 (log-20260930-184140, riepilogo in test-results/hardware-v0.13.0): "funziona divinamente", restano glitch qua e la: animazioni di corsa a volte sbagliate, mosse come Surf non corrette, cambi mappa e ingresso in battaglia con schermo nero invece della transizione, barra HP che scende a scatti.

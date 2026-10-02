@@ -11,7 +11,7 @@ sys.path.insert(0,str(ROOT/'tools'))
 from mgba_headless import Core
 from verify_firmware import elf_symbols
 ROM=ROOT/'PROGETTO AMICO/MGBA TEST/Pokemon - Versione Smeraldo (Italy).gba'
-COUNTER=0x0203fff0
+COUNTER=0x0203cc00
 def keys_for(name,f):
     if name=='h':return 1<<(7 if f%240<120 else 6)
     if name=='run':return (1<<(7 if f%240<120 else 6))|1

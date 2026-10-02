@@ -2,7 +2,7 @@
 class Playout {
   constructor(delay=200) {
     this.delay=delay;this.queue=[];this.lastSource=null;this.lastArrival=null;
-    this.clock=0;this.base=null;this.lastShown=null;this.dropped=0;this.resets=0;this.skew=0;this.caughtUp=0;
+    this.clock=0;this.base=null;this.lastShown=null;this.dropped=0;this.resets=0;
   }
   push(sequence,source,pixels,now) {
     source>>>=0;sequence>>>=0;
@@ -15,27 +15,30 @@ class Playout {
       } else this.clock+=delta*(280896/16777216)*1000;
     }
     this.lastSource=source;this.lastArrival=now;
-    if(this.base===null){this.base=now+this.delay-this.clock;this.skew=0;}
-    // Late transport must not turn the buffer into seconds of old playback.
-    if(this.base+this.clock-this.skew<now-100) {
+    if(this.base===null)this.base=now+this.delay-this.clock;
+    // Frames released together after a scene load are late by design: they are played in order, faster than real
+    // time (see take), instead of being thrown away. Only a buffer seconds behind starts over.
+    if(this.base+this.clock<now-3000) {
       this.dropped+=this.queue.length;this.queue=[];
-      this.base=now+this.delay-this.clock;this.skew=0;this.resets++;
+      this.base=now+this.delay-this.clock;this.resets++;
     }
     this.queue.push({sequence,source,pixels,due:this.base+this.clock});
-    if(this.queue.length>64){this.queue.shift();this.dropped++;}
+    if(this.queue.length>96){this.queue.shift();this.dropped++;}
     return true;
   }
   take(now) {
-    // After a scene load the replayed fade-in leaves the buffer behind the live stream: play half a frame faster per
-    // display frame until only the normal delay is queued again.
-    const last=this.queue.length?this.queue[this.queue.length-1].due-this.skew:0;
-    if(this.queue.length && last-now>this.delay+60){this.skew+=8;this.caughtUp++;}
+    let due=0;
+    while(due<this.queue.length && this.queue[due].due<=now)due++;
+    if(!due)return null;
+    // Up to three late frames are collapsed into the newest (jitter); a longer backlog (a fade replayed after a
+    // load) is shown in order but about 20% faster per late frame until it is gone, so latency returns to normal.
+    const pop=due<=3?due:1+Math.ceil(due/6);
     let frame=null;
-    while(this.queue.length && this.queue[0].due-this.skew<=now) {
+    for(let i=0;i<pop;i++) {
       if(frame)this.dropped++;
       frame=this.queue.shift();
     }
-    if(frame)this.lastShown=frame.sequence;
+    this.lastShown=frame.sequence;
     return frame;
   }
 }

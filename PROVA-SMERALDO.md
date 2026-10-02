@@ -1,14 +1,14 @@
-# Avvio e collaudo unico (residente 0.13.1, pacchetto 0.13.1)
+# Avvio e collaudo unico (residente 0.13.2, pacchetto 0.13.2)
 
 [English quick start](docs/QUICKSTART.en.md). Pacchetto pronto, senza compilazione. Il Pico unificato **0.7.0 resta compatibile**: non occorre riflasharlo.
 
-La 0.13.1 (dopo la prova 0.13.0) corregge: battaglie a scatti, barra HP a scatti, animazioni di corsa sbagliate, effetti per riga (intro della battaglia, Surf) e la dissolvenza nei cambi scena. Il residente usa il tempo in cui Smeraldo aspetta il VBlank e non blocca mai gli interrupt del gioco. Il pulsante **Scarica log** crea un unico file da inviarmi. Se hai gia la cache ROM in `runtime/cache/` copia la cartella nel nuovo pacchetto. **Salvataggio:** il residente non legge ne scrive la memoria di salvataggio e non ne conosce l'indirizzo; in emulazione la partita salvata e identica a quella senza residente (salvo il tempo di gioco). Per sicurezza fai comunque una copia del tuo `.sav` prima della prova.
+La 0.13.2 (dopo la prova 0.13.0) corregge: battaglie a scatti, barra HP a scatti, animazioni di corsa sbagliate, effetti per riga (intro della battaglia, Surf) e la dissolvenza nei cambi scena. Il residente usa il tempo in cui Smeraldo aspetta il VBlank e non blocca mai gli interrupt del gioco. Il pulsante **Scarica log** crea un unico file da inviarmi. Se hai gia la cache ROM in `runtime/cache/` copia la cartella nel nuovo pacchetto. **Salvataggio:** il residente non legge ne scrive la memoria di salvataggio e non ne conosce l'indirizzo; in emulazione la partita salvata e identica a quella senza residente (salvo il tempo di gioco). Per sicurezza fai comunque una copia del tuo `.sav` prima della prova.
 
 **Non c'e ancora una prova fisica di questa versione.** I numeri disponibili vengono da un gioco emulato, con il vero codice ARM del residente e un modello approssimato dei cicli: non misurano audio, tempi elettrici o presentazione del browser.
 
 ## Prima volta: copia della cartuccia
 
-1. Estrai tutto lo ZIP 0.13.1 in una nuova cartella scrivibile. Chiudi il vecchio BAT e la vecchia pagina.
+1. Estrai tutto lo ZIP 0.13.2 in una nuova cartella scrivibile. Chiudi il vecchio BAT e la vecchia pagina.
 2. Spegni il GBA, togli la cartuccia e riaccendilo. Apri **14-AVVIA-SMERALDO.bat** e premi **INVIO**. Non scegliere R.
 3. Sul GBA inserisci Smeraldo italiano originale e premi **A** (non START). Compare una barra di avanzamento; il PC scrive la percentuale.
 4. Quando il PC scrive `Cache ROM salvata`, chiudi il BAT. Il file e in `runtime/cache/` e non viene mai inserito nella repository. Spegni e riaccendi il GBA senza cartuccia.
@@ -17,7 +17,7 @@ Se la copia si interrompe o la ROM non viene riconosciuta, cancella `runtime/cac
 
 ## Avvio normale
 
-1. Con il GBA acceso senza cartuccia, apri **14-AVVIA-SMERALDO.bat** e premi **INVIO** per caricare il residente 0.13.1. Mantieni cavo e selettore attuali.
+1. Con il GBA acceso senza cartuccia, apri **14-AVVIA-SMERALDO.bat** e premi **INVIO** per caricare il residente 0.13.2. Mantieni cavo e selettore attuali.
 2. Quando richiesto sul GBA, inserisci la cartuccia e premi **START**. Entra nella partita.
 3. Quando il PC indica PRONTO, premi **SELECT + L + R** sul GBA. Il visualizzatore si apre su http://127.0.0.1:8765. La prima immagine arriva dopo alcuni secondi: il PC riceve prima la grafica iniziale.
 
