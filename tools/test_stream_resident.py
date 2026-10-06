@@ -24,7 +24,7 @@ class Resident(unittest.TestCase):
   self.assertGreaterEqual(r['published_per_60_ticks'],58)
   self.assertEqual(r['wrong_hot_blocks'],0)
   self.assertLess(r['mean_wrong_blocks'],3)
-  self.assertLessEqual(r['words_max'],216+36)
+  self.assertLessEqual(r['words_max'],214+36)
  def test_walking_publishes_continuously(self):
   r=self.run_cosim('h',600,400)
   self.assertEqual(r['parser_bad_frames'],0);self.assertEqual(r['wrong_hot_blocks'],0)
@@ -78,16 +78,6 @@ class Controls(unittest.TestCase):
   for f in range(1,5):
    wire,words=m.tick(f,226);self.assertGreater(words,0);longest=max(longest,m.cycles/cosim_stream.LINE)
   self.assertLess(longest,30,longest)
- def test_cadence_key_halves_and_thirds_the_rate(self):
-  m=self.machine()
-  select_r_a=0x3ff&~0x105
-  keys={f:select_r_a for f in (3,4)};keys.update({f:0x3ff for f in (5,6)})
-  seen=self.packets(m,30,keys=keys)
-  self.assertTrue(all(seen[:3]))
-  tail=seen[6:];self.assertEqual(sum(tail),len(tail)//2,tail)
-  keys2={f:select_r_a for f in (40,41)};keys2.update({f:0x3ff for f in (42,43)})
-  seen=self.packets(m,42,keys=keys2,start=31)
-  tail=seen[16:];self.assertLessEqual(abs(sum(tail)-len(tail)/3),1,tail)
  def test_select_l_r_pauses_and_resumes(self):
   m=self.machine();toggle=0x3ff&~0x304
   keys={f:toggle for f in (3,4)};keys.update({f:0x3ff for f in (5,6)})

@@ -43,7 +43,7 @@ class BootTransport:
   self.worker=None
 
 def boot(serial,folder,baseline=False):
- version="0.11.0" if baseline else "0.13.2"
+ version="0.11.0" if baseline else "0.14.0"
  sys.path.insert(0,str(ROOT/'vendor/celio_transport'));from mb_multi import Multiboot
  data=(ROOT/('dist/gbmirroring-emerald-v'+version+'.gba')).read_bytes()
  expected=json.loads((ROOT/('dist/verifica-emerald-v'+version+'.json')).read_text())['sha256']

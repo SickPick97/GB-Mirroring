@@ -1,5 +1,8 @@
 ; SC is GPIO0, SD is GPIO3. Only drive SD in the explicit long-high slot.
 ; Normal sender pulses are shorter than the qualification interval.
+; Autopull, shift right. Word 0: x = number of verdict bits - 1 (16 bits), then "present" and "resync" (one bit each,
+; as in 0.7), 14 unused bits. The verdict bits follow, one at every falling SC; the falling edge after the last one
+; releases SD. A resident older than 0.14 gets x = 0: one spare bit, released at its first flush pulse.
 .program video_control
 .wrap_target
 start:
@@ -11,13 +14,18 @@ qualify:
     jmp start
 high:
     jmp y-- qualify
-    set x, 0
-    pull noblock
+    out x, 16
     out pins, 1
     set pindirs, 1
     wait 0 gpio 0
     out pins, 1
     wait 1 gpio 0
+    out null, 14
+bits:
+    wait 0 gpio 0
+    out pins, 1
+    wait 1 gpio 0
+    jmp x-- bits
     wait 0 gpio 0
     set pindirs, 0
 idle:

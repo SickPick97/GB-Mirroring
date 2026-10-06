@@ -66,5 +66,5 @@ target_link_libraries(gbmirroring_unified PRIVATE pico_stdlib pico_unique_id har
 pico_enable_stdio_uart(gbmirroring_unified 0)
 pico_enable_stdio_usb(gbmirroring_unified 0)
 target_compile_options(gbmirroring_unified PRIVATE -Wall -Wextra -Werror)
-pico_set_program_version(gbmirroring_unified "0.7.0")
+pico_set_program_version(gbmirroring_unified "0.8.0")
 pico_add_bin_output(gbmirroring_unified)

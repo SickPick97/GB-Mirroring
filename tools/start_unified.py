@@ -14,8 +14,8 @@ if __name__=='__main__':
   try:
    from check_portable import main as check
    check()
-   print('Pico: firmware UNIFIED 0.7.0. Cavo invariato. Nessun cambio UF2 durante la sessione.')
-   answer=input('INVIO per multiboot 0.13.2 (GBA acceso SENZA cartuccia); R per riprendere; B per la baseline 0.11.0: ').strip().lower()
+   print('Pico: firmware UNIFIED 0.8.0. Cavo invariato. Nessun cambio UF2 durante la sessione.')
+   answer=input('INVIO per multiboot 0.14.0 (GBA acceso SENZA cartuccia); R per riprendere; B per la baseline 0.11.0: ').strip().lower()
    if answer not in ('','r','b'):raise SystemExit('Scelta non riconosciuta; nessun trasferimento avviato.')
    result=main(emerald=True,unified=True,resume=answer=='r',log_path=log_path,baseline=answer=='b')
   finally:sys.stdout=original

@@ -49,6 +49,9 @@ class Machine:
         self.word(0x030022cc,rom_state_callback);u.mem_write(0x04000134,struct.pack('<H',0x8030))
         self.cycles=0;self.entry=200;self.bus=dict(clock=0,bits=0,word=0,words=[]);self.by_function={}
         u.hook_add(UC_HOOK_MEM_WRITE,self._link,begin=0x04000134,end=0x04000135)
+        u.hook_add(UC_HOOK_MEM_READ,self._sd,begin=0x04000134,end=0x04000135)
+        self.slot=None;self.slot_pos=0;self.slot_done=False;self.slots=0;self.verdict=None;self.link_value=0x8030
+        self.pio=None;self.pio_last=0;self.pio_debt=0.0;self.contention=0
         u.hook_add(UC_HOOK_MEM_READ,self._vcount,begin=0x04000006,end=0x04000007)
         u.hook_add(UC_HOOK_CODE,self._code)
         u.hook_add(UC_HOOK_MEM_READ|UC_HOOK_MEM_WRITE,self._data,begin=0x02000000,end=0x02ffffff)
@@ -61,10 +64,37 @@ class Machine:
     def symbol(self,name):return self.sy[name][0]
     def _link(self,uc,access,address,size,value,user):
         b=self.bus
+        # Pico 0.8 control slot: with SD released by the GBA, a rising SC starts the answer (present, no resync, then
+        # the 448 verdict bits); every falling SC moves to the next bit, and the last one releases SD (pulled high).
+        if self.pio is not None:
+            # instruction-level Pico model (test_control.Machine), stepped by elapsed GBA cycles
+            self._pio_advance()
+            if self.pio.direction and value&32:self.contention+=1
+        elif value&32:self.slot=None
+        else:
+            if value&1 and not b['clock'] and self.slot is None and not self.slot_done:
+                data=self.verdict or bytes(56)
+                self.slot=[0,0]+[(data[i>>3]>>(i&7))&1 for i in range(448)];self.slot_pos=0;self.slot_done=True;self.slots+=1
+            elif b['clock'] and not value&1 and self.slot is not None:
+                self.slot_pos+=1
+                if self.slot_pos>=len(self.slot):self.slot=None
+        if value&32:self.slot_done=False
+        self.link_value=value
         if value&32 and value&1 and not b['clock']:
             b['word']=((b['word']<<1)|((value>>1)&1))&65535;b['bits']+=1
             if b['bits']==16:b['words'].append(b['word']);b['bits']=0
         b['clock']=value&1
+    def _pio_advance(self):
+        # 125 MHz / 16 per PIO instruction against 16.78 MHz GBA cycles
+        self.pio_debt+=(self.cycles-self.pio_last)*(125e6/16/16777216);self.pio_last=self.cycles
+        steps=int(self.pio_debt);self.pio_debt-=steps
+        for _ in range(steps):self.pio.step(self.bus['clock'])
+    def _sd(self,uc,access,address,size,value,user):
+        if self.pio is not None:
+            self._pio_advance();bit=self.pio.pin if self.pio.direction else 1
+            uc.mem_write(0x04000134,struct.pack('<H',(self.link_value&~2)|(bit<<1)));return
+        bit=self.slot[self.slot_pos] if self.slot is not None else 1
+        uc.mem_write(0x04000134,struct.pack('<H',(self.link_value&~2)|(bit<<1)))
     def _vcount(self,uc,access,address,size,value,user):
         uc.mem_write(0x04000006,struct.pack('<H',(self.entry+self.cycles//LINE)%228))
     def _code(self,uc,address,size,user):
@@ -152,6 +182,9 @@ def run(args):
     rom_bytes=(ROOT/'PROGETTO AMICO/MGBA TEST/Pokemon - Versione Smeraldo (Italy).gba').read_bytes()
     m.load_rom(rom_bytes)
     parser=(StreamParser(Echo(),rom=rom_bytes) if stream else GraphicsParser(Echo()));rng=random.Random(args.seed)
+    if args.store and stream:parser.load_store(args.store)
+    if args.rom_index and stream:
+        import rom_blocks;parser.rom_index=rom_blocks.build(rom_bytes)
     renderer=None
     if args.render:
         from native_renderer import Renderer
@@ -162,24 +195,28 @@ def run(args):
     try:
         core.run();core.restore(bytearray(Path(args.state).read_bytes()));core.run(60)
         pending_state=core.state()
+        verdict_now=None
         for f in range(args.frames):
             core.run(1,KEYS[args.scenario](f));state=core.state();gfx=graphics_from_state(state)
             # requests queued in the previous snapshot are executed by this VBlank; the resident sees their result
             m.load_environment(pending_state);m.observe();pending_state=state
             m.load_graphics(gfx);truth[f+1]=gfx;truth.pop(f-200,None)
             entry=args.entry if args.entry else rng.choice((198,200,202,204,206,208,210))
+            if stream and args.verdict:m.verdict=verdict_now
             wire,words=m.tick(f+1,entry)
             lines=m.cycles/LINE;tick_cycles=m.cycles
             if args.trace and args.trace[0]<=f<args.trace[1]:
                 pend=struct.unpack_from('<H',wire,30)[0] if len(wire)>=32 else -1
-                print('  f%4d entry %3d lines %5.1f words %3d pending %3d cb %08x'%(f,entry,lines,words,pend,m.read32(0x030022cc)))
             out=parser.feed(wire)
+            if args.trace and args.trace[0]<=f<args.trace[1]:
+                print('  f%4d lines %5.1f words %3d pending %3d later %3d pc: waiting %d held %d out %d cb %08x'%(f,lines,words,pend&511,struct.unpack_from('<H',wire,36)[0] if len(wire)>=38 else -1,len(getattr(parser,'waiting',())),len(getattr(parser,'held',())),len(out),m.read32(0x030022cc)));print('        tick records',[(struct.unpack_from('<H',wire,38+0)[0]&511,) ] if 0 else '',dict((k,v) for k,v in (out[-1][4]['block_codecs'].items() if out else ())),'sb_known',m.read32(m.symbol('sb_known')) if 'sb_known' in m.sy else '?')
             idle_words=0
             if args.idle_start is not None:
                 # the game finished its frame and waits for the next VBlank: queues for that VBlank are final
                 m.load_environment(state)
                 idle_wire,idle_words=m.idle(args.idle_start);out+=parser.feed(idle_wire)
                 if args.trace and args.trace[0]<=f<args.trace[1]:print('  f%4d idle words %4d idle lines %5.1f pending after idle %d held %d'%(f,idle_words,m.cycles/LINE,parser_pending(idle_wire),len(parser.held)))
+            verdict_now=parser.verdict() if stream and hasattr(parser,'verdict') else None
             for seq,img,wire_bytes,codec,meta in out:
                 frames.append((f,seq,meta));ref=truth.get(meta.get('end_game_frame',meta.get('game_frame')))
                 if ref is not None:
@@ -196,6 +233,7 @@ def run(args):
                     if renderer is not None and f>=args.warmup:
                         a=renderer.render(img);b=renderer.render(ref)
                         visual.append(sum(1 for i in range(0,76800,2) if a[i:i+2]!=b[i:i+2]))
+                        if args.show_wrong and visual[-1]:print('  pixels f%d tick %d wrong %d held %s pending %s waiting %s blocks %s'%(f,meta.get('end_game_frame'),visual[-1],meta.get('held_frames'),meta.get('pending_blocks'),meta.get('waiting_blocks'),bad[:12]))
             ticks.append(dict(frame=f,cycles=tick_cycles,words=words,idle_words=idle_words,frames_out=len(out)))
             if args.profile and tick_cycles>args.slow*LINE:slow.append((f,round(m.cycles/LINE),words,sorted(m.by_function.items(),key=lambda x:-x[1])[:3]))
             if f<args.warmup:fidelity.clear();frames.clear();fn_total.clear()
@@ -224,10 +262,11 @@ def run(args):
         mean_wrong_blocks=round(statistics.mean(b for b,h,d in fidelity),2) if fidelity else None,
         max_wrong_blocks=max((b for b,h,d in fidelity),default=None),wrong_hot_blocks=sum(h for b,h,d in fidelity),
         mean_delay_ticks=round(statistics.mean(d for b,h,d in fidelity),2) if fidelity else None,max_delay_ticks=max((d for b,h,d in fidelity),default=None),
-        forced_releases=getattr(parser,'forced_releases',None),
+        forced_releases=getattr(parser,'forced_releases',None),store_hits=getattr(parser,'store_hits',None),store_misses=getattr(parser,'store_misses',None),control_slots=m.slots,
         frames_held_over_8=sum(1 for f,q,mt in frames if mt.get('held_frames',1)>8),frames_held_over_1=sum(1 for f,q,mt in frames if mt.get('held_frames',1)>1),
         **(dict(visually_exact_frames=sum(1 for v in visual if v==0),frames_rendered=len(visual),mean_wrong_pixels=round(statistics.mean(visual),1) if visual else None,max_wrong_pixels=max(visual,default=None),frames_over_100_wrong_pixels=sum(1 for v in visual if v>100)) if renderer is not None else {}),parser_bad_frames=parser.bad_frames,delta_misses=parser.delta_misses,
         scope='mGBA game + Unicorn ARM resident + cycle model; not hardware')
+    if args.store and stream:parser.save_store(args.store)
     print(json.dumps(result))
     if args.profile:
         for row in slow[:25]:print('  slow tick',row)
@@ -241,6 +280,9 @@ if __name__=='__main__':
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--resident',default='build/emerald-columns');ap.add_argument('--state',type=Path,default=ROOT/'build/motion/field.state')
     ap.add_argument('--scenario',choices=sorted(KEYS),default='h');ap.add_argument('--frames',type=int,default=600)
+    ap.add_argument('--rom-index',action='store_true',help='index the LZ77 graphics of the cartridge image, as the viewer does')
+    ap.add_argument('--no-verdict',dest='verdict',action='store_false',help='no answer in the control slot (Pico 0.7)')
+    ap.add_argument('--store',help='block content store to load before and save after the run (a second run shows the effect of contents already seen)')
     ap.add_argument('--entry',type=int,default=0,help='fixed VBlank handler exit line; default random 198..210');ap.add_argument('--seed',type=int,default=1);ap.add_argument('--idle-start',type=int,default=None,help='model idle time from this scanline to the resident IDLE_END each frame')
     ap.add_argument('--parser',choices=('auto','stream','graphics'),default='auto')
     ap.add_argument('--warmup',type=int,default=0,help='ticks excluded from statistics');ap.add_argument('--render',action='store_true',help='compare rendered pixels of published frames with the true frame');ap.add_argument('--profile',action='store_true');ap.add_argument('--slow',type=int,default=70,help='profile: list ticks longer than this many lines');ap.add_argument('--stop-on-error',action='store_true');ap.add_argument('--show-wrong',action='store_true');ap.add_argument('--trace',type=int,nargs=2,help='print every tick between two frames')

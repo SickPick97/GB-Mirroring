@@ -12,7 +12,7 @@ GBMirroring is an experimental hardware/software project for displaying gameplay
 
 This early release shares working code, ready-to-run tools and measured limitations. **Version 0.13.0 streams queued graphics in the time the game spends waiting for VBlank, never holds off the game's interrupts and fixes a block-hash weakness that left stale tiles in menus; it has been verified only with an emulated game and the real resident code, not yet on a physical console.** A 0.12.x hardware test showed smooth walking but glitches in menus and a frozen image during battles.
 
-Package **0.13.2** carries resident **0.13.2** and the unchanged Pico firmware **0.7.0**. Project-owned code is [GPL-3.0](LICENSE); see [third-party notices](THIRD_PARTY.md) for dependencies and source access.
+Package **0.14.0** carries resident **0.14.0** and Pico firmware **0.8.0** (new: reflash the Pico). Project-owned code is [GPL-3.0](LICENSE); see [third-party notices](THIRD_PARTY.md) for dependencies and source access.
 
 ## What works today
 
@@ -33,14 +33,14 @@ The public documentation is English-first, with an Italian counterpart. Some his
 | Adapter | RP2040 Pico on the [agtbaskara Link adapter design](https://github.com/agtbaskara/game-boy-pico-link-board) |
 | Cable | Tested GBA Link cable with hub, smaller plug at adapter, larger plug at GBA; GBA selector position |
 | PC | Windows 10/11 x64, USB data connection, web browser |
-| Software | Emerald resident 0.13.2, unified Pico firmware 0.7.0 |
+| Software | Emerald resident 0.14.0, unified Pico firmware 0.8.0 |
 
 No internal console modification is required. The current Italian cartridge profile contains revision-specific addresses and a cartridge check. Other Emerald languages, FireRed/LeafGreen, GB/GBC games and arbitrary cartridges are **not supported by this release**. Do not assume another adapter or cable has the same signal routing.
 
 ## Quick start
 
 1. Download the complete repository ZIP from **Code → Download ZIP**, then extract it into a writable folder. Do not run a BAT from inside the ZIP.
-2. If your adapter does not already use our unified 0.7.0 firmware, hold the Pico's BOOTSEL button while connecting USB and copy `dist/gbmirroring-unified-v0.7.0.uf2` to its drive. This is a one-time step for this release.
+2. If your adapter does not already use our unified 0.8.0 firmware, hold the Pico's BOOTSEL button while connecting USB and copy `dist/gbmirroring-unified-v0.8.0.uf2` to its drive. This is a one-time step for this release.
 3. **First run only:** start the GBA without a cartridge, run **`14-AVVIA-SMERALDO.bat`**, press **Enter**, insert your Italian Emerald when asked and press **A** (not START). The GBA copies the cartridge to `runtime/cache/` on the PC in about three minutes. Restart the GBA when the PC says the cache was saved.
 4. Start the GBA without a cartridge. Run **`14-AVVIA-SMERALDO.bat`** and press **Enter** to load the resident via multiboot.
 5. When the handheld requests it, insert your Italian Emerald cartridge, press **START**, and enter your game.

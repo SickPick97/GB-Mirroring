@@ -6,11 +6,12 @@ class Echo:
  def render(self,data):return bytes(data)
 def record(kind,block,body,slot=0):
  return struct.pack('<HH',(slot<<9)|block,(kind<<8)|(len(body)//2))+body
-def tick(seq,frame,records=(),pending=0,key=False,feedback=False):
- body=struct.pack('<6H',int(key)|(256 if feedback else 0)|0x2000,frame&65535,frame>>16,pending,len(records),0)+b''.join(records)
+def tick(seq,frame,records=(),pending=0,key=False,feedback=False,later=0):
+ body=struct.pack('<7H',int(key)|(256 if feedback else 0)|0x2000,frame&65535,frame>>16,pending,len(records),0,later)+b''.join(records)
  return packet(seq,10,0,body,version=0x700)
 def raw(block,value,slot=0):return record(4,block,struct.pack('<2H',128,value),slot)  # constant block as RLE (packets are limited to 160 words)
 def rom_copy(src,dest,size):return record(10,9+((dest-0x06000000)>>8),struct.pack('<5H',src&65535,src>>16,dest&65535,dest>>16,size))
+def announce(block,key):return record(14,block,struct.pack('<I',key))
 def parse(parser,*packets):
  out=[]
  for p in packets:out.extend(parser.feed_aligned(p))
@@ -95,16 +96,16 @@ class Tests(unittest.TestCase):
   self.assertEqual(len(out),2);self.assertEqual(out[-1][1][HOT_BYTES+(first-9)*256:HOT_BYTES+(first-9)*256+2048],bytes(new))
  def test_interrupt_enable_and_callback_id_ride_in_the_high_bits(self):
   p=StreamParser(Echo());parse(p,key_all())
-  body=struct.pack('<6H',0x2000|(3<<4)|2048,2,0,(6<<9)|0,(0x5a<<8)|1,0)+raw(0,0x7777)
+  body=struct.pack('<7H',0x2000|(3<<4)|2048,2,0,(6<<9)|0,(0x5a<<8)|1,0,0)+raw(0,0x7777)
   out=parse(p,packet(1,10,0,body,version=0x700))
   self.assertEqual(len(out),1);m=out[0][4]
   self.assertEqual((m['pending_blocks'],m['changed_blocks'],m['interrupt_enable'],m['callback_id'],m['skipped_ticks'],m['unknown_scene']),(0,1,6,0x5a,3,True))
  def test_bulk_packet_completes_the_held_tick_without_a_new_image(self):
   p=StreamParser(Echo());parse(p,key_all())
   a=parse(p,tick(1,2,[raw(0,0xaaaa)],pending=2))
-  body=struct.pack('<6H',0x2000,2,0,1,1,40)+raw(9,0x5555,3)
+  body=struct.pack('<7H',0x2000,2,0,1,1,40,0)+raw(9,0x5555,3)
   b=parse(p,packet(2,13,0,body,version=0x700))
-  body=struct.pack('<6H',0x2000,2,0,0,1,80)+raw(10,0x6666,4)
+  body=struct.pack('<7H',0x2000,2,0,0,1,80,0)+raw(10,0x6666,4)
   c=parse(p,packet(3,13,0,body,version=0x700))
   self.assertEqual((a,b),([],[]));self.assertEqual(len(c),1)
   m=c[0][4];self.assertEqual((m['end_game_frame'],m['idle_packets'],m['pending_blocks'],m['incomplete']),(2,2,0,False))
@@ -112,7 +113,7 @@ class Tests(unittest.TestCase):
   self.assertEqual(p.bulk_packets,2)
  def test_bulk_packet_out_of_sequence_waits_for_a_keyframe(self):
   p=StreamParser(Echo());parse(p,key_all())
-  body=struct.pack('<6H',0x2000,1,0,0,1,0)+raw(9,1)
+  body=struct.pack('<7H',0x2000,1,0,0,1,0,0)+raw(9,1)
   self.assertEqual(parse(p,packet(5,13,0,body,version=0x700)),[]);self.assertIsNone(p.cache);self.assertEqual(p.delta_misses,1)
  def test_scene_load_replays_the_fade_in_after_one_black_frame(self):
   p=StreamParser(Echo(),max_hold=3,fade_keep=10);parse(p,key_all());out=[]
@@ -139,6 +140,38 @@ class Tests(unittest.TestCase):
   parse(p,tick(1,2,[raw(0,1)],pending=50));parse(p,tick(2,3,[raw(0,2)],pending=50))
   out=parse(p,tick(3,4,[raw(0,3),rom_copy(0x08000100,0x06010000,0x80)],pending=0))
   self.assertEqual(len(out),3);self.assertTrue(all(f[1][HOT_BYTES+0x10000:HOT_BYTES+0x10080]==rom[0x100:0x180] for f in out))
+ def test_announced_block_is_shown_from_contents_seen_before(self):
+  """Record 14 (hash only): a content seen earlier is restored at once and no longer counts as pending, although the
+  resident still reports the block until it has sent the content itself."""
+  from stream_parser import block_fold
+  p=StreamParser(Echo());parse(p,key_all())
+  parse(p,tick(1,2,[raw(20,0x7777,1)]));known=struct.pack('<H',0x7777)*128
+  parse(p,tick(2,3,[raw(20,0x1234,2)]))
+  out=parse(p,tick(3,4,[announce(20,block_fold(known))],pending=0,later=1))
+  self.assertEqual(len(out),1);self.assertEqual(out[0][1][20*256:21*256],known);self.assertEqual(p.store_hits,1)
+  self.assertEqual(out[0][4]['pending_blocks'],0)
+  out=parse(p,tick(4,5,[raw(20,0x7777,3)],pending=0));self.assertEqual(len(out),1);self.assertEqual(p.announced,set())
+ def test_unknown_announcement_waits_for_the_content(self):
+  p=StreamParser(Echo());parse(p,key_all())
+  self.assertEqual(parse(p,tick(1,2,[announce(30,0xdeadbeef)],pending=0,later=1)),[]);self.assertEqual(p.waiting,{30:0xdeadbeef})
+  out=parse(p,tick(2,3,[raw(30,0x4444,1)],pending=0));self.assertEqual([f[4]['end_game_frame'] for f in out],[2,3])
+  self.assertEqual(p.waiting,{});self.assertEqual(out[0][1][30*256:30*256+2],struct.pack('<H',0x4444))
+ def test_announcement_is_found_in_the_cartridge_graphics(self):
+  import rom_blocks
+  from stream_parser import block_fold
+  data=bytes((i*5+i//7)&255 for i in range(1024))
+  packed=bytearray(bytes([16])+struct.pack('<I',len(data))[:3])
+  for i in range(0,len(data),8):packed+=bytes(1)+data[i:i+8]
+  rom=bytes(16)+bytes(packed)+bytes(64)
+  index=rom_blocks.build(rom);window=data[96:352];self.assertIn(block_fold(window),index)
+  p=StreamParser(Echo());p.rom_index=index;parse(p,key_all())
+  out=parse(p,tick(1,2,[announce(40,block_fold(window))],pending=0,later=1))
+  self.assertEqual(out[0][1][40*256:41*256],window)
+ def test_store_is_saved_and_loaded(self):
+  import os,tempfile
+  p=StreamParser(Echo());parse(p,key_all());parse(p,tick(1,2,[raw(20,0x7777,1)]))
+  path=os.path.join(tempfile.mkdtemp(),'store.bin');p.save_store(path)
+  q=StreamParser(Echo());self.assertGreater(q.load_store(path),0);self.assertEqual(q.store,p.store)
  def test_held_tick_keeps_its_own_sprite_frame(self):
   """A ROM replay of a later tick (next sprite pose) must not appear in an earlier held tick; content blocks complete it."""
   rom=bytes((i*7)&255 for i in range(0x4000));p=StreamParser(Echo(),rom=rom);parse(p,key_all())

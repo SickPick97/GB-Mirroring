@@ -1,0 +1,86 @@
+{
+ "ticks": 29757,
+ "seconds": 517.4,
+ "version": "emerald-stream-0.13.2",
+ "idle_slack_lines": {
+  "p10": 64,
+  "p50": 82,
+  "p90": 98
+ },
+ "tick_lines": {
+  "p50": 33,
+  "p95": 53,
+  "p99": 65,
+  "max": 92,
+  "over_100": 0,
+  "over_150": 0
+ },
+ "words": {
+  "mean": 60.9,
+  "max": 228
+ },
+ "pending": {
+  "max": 393,
+  "ticks_over_40": 515
+ },
+ "forced_releases": 44,
+ "keyframes": 0,
+ "raster_dma_ticks": 448,
+ "unknown_scene_ticks": 2973,
+ "heavy_ticks": 690,
+ "idle_packets": 5697,
+ "idle_words_mean": 0.3,
+ "ticks_with_hblank_or_vcount_irq": 29757,
+ "interrupt_enable_seen": [
+  5,
+  69
+ ],
+ "callback_ids_seen": [
+  0,
+  164,
+  206
+ ],
+ "ticks_after_skips": 2,
+ "cadence_changes": 0,
+ "game_frame_gaps": {
+  "of_2": 30,
+  "of_3_to_5": 14,
+  "of_6_or_more": 38,
+  "largest": 102
+ },
+ "sequence_jumps": 9252,
+ "record_types": {
+  "4": 2730,
+  "10": 82077,
+  "5": 14913,
+  "3": 10680,
+  "1": 5255,
+  "12": 1420,
+  "13": 506
+ },
+ "longest_run_of_ticks_over_150_lines": 0,
+ "pc": {
+  "valid_frames": 29734,
+  "sequence_gaps": 0,
+  "bit_resyncs": 1043,
+  "crc_errors": 0,
+  "discarded_bytes": 7594,
+  "usb_queue_peak_lag_ms": 354.94,
+  "browser": {
+   "presented": 29537,
+   "dropped": 153,
+   "resets": 11,
+   "queued": 39,
+   "fps": 59.8,
+   "late_ms": 337.26,
+   "hidden": false,
+   "received_seconds": 571.028
+  },
+  "render_peak_ms": 1.85,
+  "status": "STREAMING",
+  "error": null,
+  "elapsed_seconds": 571.1
+ },
+ "session": "log-20261006-151923",
+ "note": "Hardware 0.13.2 con osservazione diretta della pagina (screenshot non conservati): sentiero bianco al cambio di zona, nero di circa 4 s e interno con piastrelle sbagliate entrando nel Centro Pokemon, sfondo di Surf a piastrella ripetuta. 44 rilasci forzati, pending fino a 393, circa 2 blocchi per frame durante i caricamenti con tempo libero mediano di 82 righe. Riepilogo ripulito; log grezzi restano locali."
+}

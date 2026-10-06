@@ -67,3 +67,11 @@ Smeraldo non ferma la CPU in attesa del VBlank: gira in un ciclo (`WaitForVBlank
 - Le copie osservate prima del VBlank vengono applicate alle maschere solo dopo il VBlank, quando il gioco le ha eseguite: il residente non invia un blocco prima che cambi.
 - Dopo un cambio di scena tutti i blocchi non verificati contano come in attesa: il PC tiene l ultima immagine completa invece di mostrare tile vecchi e nuovi mescolati. Il PC trattiene fino a 30 tick (240 con piu di 40 blocchi in attesa) e al rilascio mostra al massimo gli ultimi 12.
 - CRC-32 calcolato in ARM nella IWRAM (quattro bit per passo).
+
+## 0.14.0: annunci e verdetto
+
+Il campo fisso di tick e pacchetti del tempo libero ha sette parole: la settima conta i blocchi annunciati il cui contenuto non e ancora stato inviato; la quarta (bit 0-8) conta ora solo i blocchi cambiati ne inviati ne annunciati.
+
+Record 14 (annuncio), corpo di due parole: firma a 32 bit del blocco (la stessa usata dal residente, `block_fold` in `tools/stream_parser.py`). Il ricevitore cerca il contenuto tra quelli gia visti e nell indice della grafica LZ77 della cartuccia (finestre di 256 byte a passo 32). Se lo trova lo applica subito, altrimenti il blocco resta in attesa del contenuto, che arriva con un record normale. Il residente annuncia solo con almeno 48 blocchi cambiati in sospeso. Il record 3 (dizionario del residente) non e piu emesso; il ricevitore lo accetta ancora.
+
+Verdetto (slot di controllo, Pico 0.8.0): dopo i due bit storici (presente, richiesta di risincronizzazione) il residente legge 28 parole da 16 bit, un bit a ogni fronte di discesa di SC, meno significativo per primo: numero di sequenza dell ultimo pacchetto elaborato dal PC, 13 maschere da 32 bit (bit = numero di blocco) con i blocchi di cui il PC possiede il contenuto annunciato per ultimo, parola di controllo tale che lo xor delle 28 parole valga 0x5aa5. Il residente lo applica solo se il numero di sequenza non precede il suo ultimo annuncio. Il PC lo passa al Pico con la riga seriale `V` seguita da 112 cifre esadecimali; il Pico lo considera valido per 200 ms. Il pacchetto END del residente segnala lo slot esteso con il bit 15 del campo mode.
