@@ -6,8 +6,8 @@ class Echo:
  def render(self,data):return bytes(data)
 def record(kind,block,body,slot=0):
  return struct.pack('<HH',(slot<<9)|block,(kind<<8)|(len(body)//2))+body
-def tick(seq,frame,records=(),pending=0,key=False,feedback=False):
- body=struct.pack('<6H',int(key)|(256 if feedback else 0)|0x2000,frame&65535,frame>>16,pending,len(records),0)+b''.join(records)
+def tick(seq,frame,records=(),pending=0,key=False,feedback=False,scene=0):
+ body=struct.pack('<6H',int(key)|(256 if feedback else 0)|0x2000,frame&65535,frame>>16,pending,len(records)|(scene<<8),0)+b''.join(records)
  return packet(seq,10,0,body,version=0x700)
 def raw(block,value,slot=0):return record(4,block,struct.pack('<2H',128,value),slot)  # constant block as RLE (packets are limited to 160 words)
 def rom_copy(src,dest,size):return record(10,9+((dest-0x06000000)>>8),struct.pack('<5H',src&65535,src>>16,dest&65535,dest>>16,size))
@@ -40,6 +40,16 @@ class Tests(unittest.TestCase):
   for i in range(1,5):out.extend(parse(p,tick(i,i+1,[raw(0,i)],pending=5)))
   self.assertEqual(len(out),4);self.assertEqual(p.forced_releases,1);self.assertTrue(out[-1][4]['incomplete'])
   self.assertFalse(out[0][4]['incomplete'])
+ def test_battle_effect_is_shown_while_its_graphics_arrive(self):
+  """A move keeps a hundred blocks outstanding for its whole length: frames come out every few ticks, marked incomplete."""
+  p=StreamParser(Echo());parse(p,key_all());out=[]
+  for i in range(1,41):out.extend(parse(p,tick(i,i+1,[raw(0,i)],pending=100,scene=164)))
+  self.assertGreaterEqual(len(out),27);self.assertGreater(p.forced_releases,2)
+  self.assertEqual([f[4]['end_game_frame'] for f in out],list(range(2,2+len(out))))
+ def test_battle_start_is_still_waited_for(self):
+  p=StreamParser(Echo());parse(p,key_all());out=[]
+  for i in range(1,61):out.extend(parse(p,tick(i,i+1,[raw(0,i)],pending=393 if i<20 else 80,scene=164)))
+  self.assertEqual(out,[]);self.assertEqual(p.forced_releases,0)
  def test_no_forced_release_while_blocks_keep_arriving(self):
   """A backlog that shrinks is waited for even past forty blocks left: the image is never shown unfinished."""
   p=StreamParser(Echo());parse(p,key_all());out=[]

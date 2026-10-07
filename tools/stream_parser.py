@@ -113,8 +113,12 @@ class StreamParser(GraphicsParser):
         self.max_hold=max_hold;self.long_hold=long_hold;self.big_backlog=big_backlog;self.held=[];self.complete=False;self.feedback_available=False
         self.dropped_incomplete=0;self.forced_releases=0;self.ticks=0;self.frames_published=0
         self.rom_image=None;self.rom_seen=None;self.rom_total=None;self.rom_bad=0;self.rom_missing=0
+        self.hold_peak=0;self.scene=None  # most blocks outstanding during the current wait; callback id of the last tick
         self.packet_log=None  # called with one dict per packet received, also for ticks later dropped by a hold
     ROM_CHUNKS=65536
+    BATTLE=164          # callback id of the battle VBlank callback (0x08038a2d folded to a byte)
+    battle_hold=8       # ticks an unfinished image may wait during a battle
+    scene_backlog=250   # outstanding blocks that mean a scene change rather than an effect
     def rom_chunk(self,seq,body):
         """256-byte piece of the cartridge image, sent once by the GBA dump mode."""
         if len(body)!=260:self.rom_bad+=1;return
@@ -238,7 +242,7 @@ class StreamParser(GraphicsParser):
         try:regions,codecs=self.apply_records(body,records)
         except StreamError as exc:
             self.fail(str(exc));self.previous=seq;return []
-        self.previous=seq;self.ticks+=1
+        self.previous=seq;self.ticks+=1;self.scene=callback_id
         if not flags&2:self.raster_dest=None
         raster=[self.raster_dest]+self.raster if self.raster_dest is not None else None
         meta=dict(raster=raster,version='emerald-stream-0.13.0',end_game_frame=lo|hi<<16,game_frame=lo|hi<<16,changed_blocks=records,pending_blocks=pending,
@@ -282,8 +286,15 @@ class StreamParser(GraphicsParser):
         # forty blocks were left and thirty ticks had passed: wrong tiles at the start and end of battles and inside
         # buildings (7 times in the hardware log of 2026-10-07, none with this rule on the same packets). Only a wait
         # longer than long_hold ticks (4 s) is given up.
-        forced=pending>0 and len(self.held)>self.long_hold
+        # Inside a battle the graphics keep changing for the whole length of a move (a background, waves, many sprites)
+        # and the image would never be finished before the move ends: there it is shown after battle_hold ticks even
+        # if blocks are missing, so the move is seen while its graphics fill in. A scene change (nearly every block
+        # outstanding) is still waited for.
+        self.hold_peak=max(self.hold_peak,pending)
+        limit=self.battle_hold if self.scene==self.BATTLE and self.hold_peak<self.scene_backlog else self.long_hold
+        forced=pending>0 and len(self.held)>limit
         if pending>0 and not forced:return []
+        self.hold_peak=0
         # After a long hold (a scene load) the newest held ticks are replayed, so the fade-in of the new scene is seen as
         # in the game; the black frames of the loading screen before it are collapsed into one. The browser then
         # catches up with the live stream.

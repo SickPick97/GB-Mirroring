@@ -1,5 +1,12 @@
 # Storico
 
+## 0.15.2 (linea stabile, solo PC) - Le mosse si vedono mentre la loro grafica arriva
+
+- Risultato hardware 0.15.1: quasi tutte le mosse che mettono molta grafica a schermo (Surf e simili) non si vedono. Causa: la 0.15.1 aspettava l immagine completa in ogni situazione; durante una mossa la grafica cambia per tutta la sua durata, l immagine non e mai completa e la pagina restava ferma fino alla fine, conservando solo gli ultimi 30 frame.
+- In lotta (callback VBlank della lotta) e senza un cambio di scena in corso (meno di 250 blocchi mancanti) l immagine viene ora mostrata dopo al piu 8 tick anche se mancano blocchi: la mossa si vede mentre i suoi disegni si completano. Cambi di scena, inizio e fine lotta restano in attesa dell immagine completa.
+- Sugli stessi pacchetti del log 0.15.0: 10 rilasci incompleti, tutti dentro le lotte con 2-11 blocchi mancanti; nessuno ai cambi di scena.
+- Limite noto: lo sfondo di una mossa come Surf (un centinaio di blocchi) arriva in circa mezzo secondo, quindi i primi istanti della mossa mostrano lo sfondo che si riempie; gli effetti riga per riga non sono trasmessi dal programma GBA 0.13.0. Programma GBA e Pico invariati.
+
 ## 0.15.1 (linea stabile, solo PC) - Niente immagini incomplete, niente frame scartati nelle lotte
 
 - Risultato hardware 0.15.0 (programma GBA 0.13.0, Pico 0.7.0; log-20261007-163038, riepilogo in test-results/hardware-v0.15.0): "muovendosi e perfetto"; restano problemi entrando nelle strutture e nelle lotte: molte mosse non vengono mostrate, bug grafici dopo la lotta, grafica di inizio lotta caricata male.
