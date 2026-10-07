@@ -1,5 +1,14 @@
 # Storico
 
+## 0.14.1 con Pico 0.8.1 - Slot di controllo: non piu a ogni frame, e mai sopra i pacchetti
+
+- **Richiede il firmware Pico 0.8.1** (`dist/gbmirroring-unified-v0.8.1.uf2`).
+- Risultato hardware 0.14.0 + Pico 0.8.0 con il registro di tutti i pacchetti (log-20261007-152655, riepilogo in test-results/hardware-v0.14.0b): 4 s di ritardo entrando in una struttura; correndo nei percorsi lo streaming rallenta fino a fermarsi. Sul GBA il gioco non rallenta.
+- Causa 1 (riprodotta nell emulatore con il residente iniettato): durante un caricamento lo slot di controllo veniva eseguito nel tempo libero di ogni frame; i suoi quasi trenta righe non lasciavano spazio ad altro e per decine di frame partiva il solo tick. Nel log: dopo l ingresso 30 frame con il gioco occupato (inevitabili) e poi circa 100 frame con tick da 19-46 parole e nessun pacchetto nel tempo libero. Ora lo slot gira nel tempo libero ogni 30 frame, ogni 8 durante un caricamento, e solo con almeno 60 righe davanti; non gira piu dentro il tick. Emulatore, stesso ingresso: blocchi in sospeso esauriti circa 40 frame prima (senza Pico, quindi senza annunci).
+- Causa 2 (Pico 0.8.0): una risposta armata in ritardo restava in attesa per 5 ms di un SC alto lungo; quello successivo e un pacchetto messo in pausa da un interrupt del gioco, e i 450 bit della risposta venivano scritti sopra i pacchetti. Nel log: pacchetti persi (salti di sequenza di 5 e 283 pacchetti, 3,75 s senza dati validi), 4 richieste di risincronizzazione in 50 s e fotogrammi chiave a catena: il blocco nei percorsi. Pico 0.8.1: nessuna risposta se dopo END sono gia arrivate altre parole, e risposta ritirata se non inizia entro 500 us.
+- Richieste di copia ROM osservate per VBlank da 5 a 4 (le conferme erano gia 4) per fare posto in RAM.
+- Non ancora provata su console.
+
 ## 0.14.0 (aggiornamento solo PC, nessun binario nuovo) - Registro di tutti i pacchetti
 
 - Risultato hardware 0.14.0 con Pico 0.8.0 (log-20261006-230154, riepilogo in test-results/hardware-v0.14.0): per l utente non e cambiato nulla, stessi problemi nei caricamenti.

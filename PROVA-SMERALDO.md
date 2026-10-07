@@ -1,14 +1,14 @@
-# Avvio e collaudo unico (residente 0.14.0, pacchetto 0.14.0)
+# Avvio e collaudo unico (residente 0.14.1, pacchetto 0.14.1)
 
-[English quick start](docs/QUICKSTART.en.md). Pacchetto pronto, senza compilazione. **Questa versione richiede di riflashare il Pico con il firmware 0.8.0** (`dist/gbmirroring-unified-v0.8.0.uf2`): tieni premuto BOOTSEL mentre colleghi l'USB e copia il file sul disco `RPI-RP2`. Con il Pico 0.7.0 lo streaming funziona ancora, ma senza il miglioramento dei caricamenti.
+[English quick start](docs/QUICKSTART.en.md). Pacchetto pronto, senza compilazione. **Questa versione richiede di riflashare il Pico con il firmware 0.8.1** (`dist/gbmirroring-unified-v0.8.1.uf2`): tieni premuto BOOTSEL mentre colleghi l'USB e copia il file sul disco `RPI-RP2`. Con il Pico 0.7.0 o 0.8.0 lo streaming funziona ancora, ma senza il miglioramento dei caricamenti.
 
-La 0.14.0 affronta i caricamenti (cambio di zona, ingresso negli edifici, sfondi delle mosse), dove la 0.13.2 mostrava pezzi bianchi, nero prolungato o grafica sbagliata. Per ogni blocco di grafica nuovo il GBA manda prima solo una firma; il PC, che conosce gia quasi tutta la grafica (dalla copia della cartuccia e da quello che ha gia visto), risponde attraverso il Pico quali blocchi gli mancano, e il GBA manda solo quelli. Il pulsante **Scarica log** crea un unico file da inviarmi. Se hai gia la cache ROM in `runtime/cache/` copia la cartella nel nuovo pacchetto. **Salvataggio:** il residente non legge ne scrive la memoria di salvataggio; in emulazione la partita salvata e identica a quella senza residente (salvo il tempo di gioco). Per sicurezza fai comunque una copia del tuo `.sav` prima della prova.
+La 0.14.1 affronta i caricamenti (cambio di zona, ingresso negli edifici, sfondi delle mosse), dove la 0.13.2 mostrava pezzi bianchi, nero prolungato o grafica sbagliata. Per ogni blocco di grafica nuovo il GBA manda prima solo una firma; il PC, che conosce gia quasi tutta la grafica (dalla copia della cartuccia e da quello che ha gia visto), risponde attraverso il Pico quali blocchi gli mancano, e il GBA manda solo quelli. Il pulsante **Scarica log** crea un unico file da inviarmi. Se hai gia la cache ROM in `runtime/cache/` copia la cartella nel nuovo pacchetto. **Salvataggio:** il residente non legge ne scrive la memoria di salvataggio; in emulazione la partita salvata e identica a quella senza residente (salvo il tempo di gioco). Per sicurezza fai comunque una copia del tuo `.sav` prima della prova.
 
 **Non c'e ancora una prova fisica di questa versione.** I numeri disponibili vengono da un gioco emulato, con il vero codice ARM del residente e un modello approssimato dei cicli: non misurano audio, tempi elettrici o presentazione del browser.
 
 ## Prima volta: copia della cartuccia
 
-1. Estrai tutto lo ZIP 0.14.0 in una nuova cartella scrivibile. Chiudi il vecchio BAT e la vecchia pagina.
+1. Estrai tutto lo ZIP 0.14.1 in una nuova cartella scrivibile. Chiudi il vecchio BAT e la vecchia pagina.
 2. Spegni il GBA, togli la cartuccia e riaccendilo. Apri **14-AVVIA-SMERALDO.bat** e premi **INVIO**. Non scegliere R.
 3. Sul GBA inserisci Smeraldo italiano originale e premi **A** (non START). Compare una barra di avanzamento; il PC scrive la percentuale.
 4. Quando il PC scrive `Cache ROM salvata`, chiudi il BAT. Il file e in `runtime/cache/` e non viene mai inserito nella repository. Spegni e riaccendi il GBA senza cartuccia.
@@ -17,7 +17,7 @@ Se la copia si interrompe o la ROM non viene riconosciuta, cancella `runtime/cac
 
 ## Avvio normale
 
-1. Con il GBA acceso senza cartuccia, apri **14-AVVIA-SMERALDO.bat** e premi **INVIO** per caricare il residente 0.14.0. Mantieni cavo e selettore attuali.
+1. Con il GBA acceso senza cartuccia, apri **14-AVVIA-SMERALDO.bat** e premi **INVIO** per caricare il residente 0.14.1. Mantieni cavo e selettore attuali.
 2. Quando richiesto sul GBA, inserisci la cartuccia e premi **START**. Entra nella partita.
 3. Quando il PC indica PRONTO, premi **SELECT + L + R** sul GBA. Il visualizzatore si apre su http://127.0.0.1:8765. La prima immagine arriva dopo alcuni secondi: il PC riceve prima la grafica iniziale.
 

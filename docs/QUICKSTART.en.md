@@ -8,7 +8,7 @@ Windows 10/11 x64, a USB data cable, an RP2040 Pico Link adapter and the tested 
 
 ## One-time firmware installation
 
-Hold BOOTSEL on the Pico while connecting USB. Copy `dist/gbmirroring-unified-v0.8.0.uf2` to the `RPI-RP2` drive. The adapter reboots automatically. Skip this if that exact firmware is already installed. Flashing is performed by you; the launcher does not flash the Pico.
+Hold BOOTSEL on the Pico while connecting USB. Copy `dist/gbmirroring-unified-v0.8.1.uf2` to the `RPI-RP2` drive. The adapter reboots automatically. Skip this if that exact firmware is already installed. Flashing is performed by you; the launcher does not flash the Pico.
 
 Use the same cable orientation throughout: smaller connector at the adapter, larger connector at the GBA, selector at GBA. No cable reversal or mid-session firmware change is required.
 
@@ -26,7 +26,7 @@ If the copy stops or reports a mismatch, delete `runtime/cache` and repeat. Only
 
 1. Start the GBA without a cartridge. Connect the adapter to the PC and console.
 2. Run `14-AVVIA-SMERALDO.bat`. Its offline package check should report `OK`.
-3. At `INVIO per multiboot`, press **Enter**. This loads the 0.14.0 resident. After a session press **Scarica log** in the page: it downloads a single zip with all logs to send. `R` resumes a resident already running; `B` selects the older 0.11.0 comparison baseline (no cartridge copy needed).
+3. At `INVIO per multiboot`, press **Enter**. This loads the 0.14.1 resident. After a session press **Scarica log** in the page: it downloads a single zip with all logs to send. `R` resumes a resident already running; `B` selects the older 0.11.0 comparison baseline (no cartridge copy needed).
 4. Follow the handheld prompt: insert your Emerald cartridge and press **START**. Enter the game.
 5. When the PC reports `PRONTO` (ready), press **SELECT + L + R** to enable capture. This combination toggles capture, so do not repeatedly press it while waiting for the initial image. The first image appears after a few seconds while the PC receives the initial graphics.
 6. Open **http://127.0.0.1:8765** if the viewer does not open automatically. Keep the BAT window running.

@@ -19,6 +19,7 @@ def main():
     if libusb_package.get_libusb1_backend() is None:
         raise RuntimeError('Backend USB non disponibile')
     for report,binary,key in [
+        ('verifica-emerald-v0.14.1.json','gbmirroring-emerald-v0.14.1.gba','sha256'),
         ('verifica-emerald-v0.14.0.json','gbmirroring-emerald-v0.14.0.gba','sha256'),
         ('verifica-emerald-v0.13.2.json','gbmirroring-emerald-v0.13.2.gba','sha256'),
         ('verifica-emerald-v0.13.1.json','gbmirroring-emerald-v0.13.1.gba','sha256'),
@@ -32,6 +33,7 @@ def main():
         ('verifica-emerald-v0.9.0.json','gbmirroring-emerald-v0.9.0.gba','sha256'),
         ('verifica-emerald-v0.8.0.json','gbmirroring-emerald-v0.8.0.gba','sha256'),
         ('verifica-emerald-v0.7.1.json','gbmirroring-emerald-v0.7.1.gba','sha256'),
+        ('verifica-unified-v0.8.1.json','gbmirroring-unified-v0.8.1.uf2','uf2_sha256'),
         ('verifica-unified-v0.8.0.json','gbmirroring-unified-v0.8.0.uf2','uf2_sha256'),
         ('verifica-unified-v0.7.0.json','gbmirroring-unified-v0.7.0.uf2','uf2_sha256'),
         ('verifica-emerald-v0.7.0.json','gbmirroring-emerald-v0.7.0.gba','sha256'),

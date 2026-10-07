@@ -17,6 +17,11 @@ static uint64_t control_until;
    14 words follow with the PC's verdict (28 16-bit words). Without a fresh verdict they are all ones, which the
    resident rejects by its check word. */
 static uint32_t slot_words[15],verdict_words[14];static bool verdict_valid;static uint64_t verdict_time;static int cdma;
+/* Words already captured after the one being examined: the resident sends one flush word after END and then holds
+   SC high. With more than that behind END its slot is already under way and must not be answered: an answer armed
+   late waits for the next long SC high, which is then a sender paused by one of the game's interrupts, and 450
+   bits of answer would be driven over its packets (0.8.0 lost packets this way). */
+static unsigned control_behind;static bool control_extended;
 static uint32_t control_shift;static unsigned control_bits,control_count;static uint16_t control_packet[24];
 static void control_word(uint16_t w){
  for(int i=15;i>=0;i--){
@@ -31,12 +36,14 @@ static void control_word(uint16_t w){
   for(unsigned j=4;j<20;j++){h^=(uint16_t)p[j]<<8;for(unsigned k=0;k<8;k++)h=(uint16_t)((h<<1)^((h&0x8000)?0x1021:0));}
   for(unsigned j=24;j<48;j++){crc^=p[j];for(unsigned k=0;k<8;k++)crc=(crc>>1)^((0u-(crc&1))&0xedb88320u);}
   if(h!=control_packet[10] || (~crc)!=(uint32_t)(control_packet[8]|((uint32_t)control_packet[9]<<16)))continue;
+  if(control_behind>1)continue;
   pio_sm_set_enabled(pio0,csm,false);pio_sm_clear_fifos(pio0,csm);pio_sm_restart(pio0,csm);pio_sm_exec(pio0,csm,pio_encode_jmp(coffset));
   bool extended=(control_packet[22]&0x8000)!=0,fresh=extended && verdict_valid && time_us_64()-verdict_time<200000;
   slot_words[0]=(extended?447u:0u)|(control_request?0x20000u:0u);
   for(unsigned j=0;j<14;j++)slot_words[1+j]=fresh?verdict_words[j]:0xffffffffu;
   dma_channel_abort(cdma);dma_channel_set_read_addr(cdma,slot_words,false);dma_channel_set_trans_count(cdma,15,true);
-  control_request=false;control_until=time_us_64()+(extended?5000:1500);control_active=true;pio_sm_set_enabled(pio0,csm,true);
+  /* The resident's long SC high follows END within about 200 us: an answer not started by then is withdrawn. */
+  control_request=false;control_until=time_us_64()+500;control_extended=extended;control_active=true;pio_sm_set_enabled(pio0,csm,true);
  }
 }
 static uint sm,offset;static int dma;static bool armed;static uint32_t consumed;
@@ -93,7 +100,11 @@ int main(void){
  tusb_rhport_init_t init={.role=TUSB_ROLE_DEVICE,.speed=TUSB_SPEED_FULL};tusb_init(0,&init);
  char cmd[128];unsigned n=0;
  for(;;){
-  tud_task();if(control_active && time_us_64()>=control_until){pio_sm_set_enabled(pio0,csm,false);pio_sm_set_consecutive_pindirs(pio0,csm,3,1,false);dma_channel_abort(cdma);control_active=false;}
+  tud_task();if(control_active && time_us_64()>=control_until){
+   /* Past the qualification (program offsets 0-5) the answer is being read: give it time to finish, once. */
+   if(control_extended && pio_sm_get_pc(pio0,csm)>coffset+5){control_extended=false;control_until=time_us_64()+6000;}
+   else{pio_sm_set_enabled(pio0,csm,false);pio_sm_set_consecutive_pindirs(pio0,csm,3,1,false);dma_channel_abort(cdma);control_active=false;}
+  }
   if(!tud_cdc_connected()){release_bus();remaining=0;n=0;continue;}
   while(tud_cdc_available()){
    if(remaining && head-tail>=8192)break;
@@ -112,7 +123,7 @@ int main(void){
   uint32_t produced=0xffffffff-dma_channel_hw_addr(dma)->transfer_count;__dmb();
   if(produced-consumed>8192 || (pio0->fdebug&(1u<<sm))){video_stop();tud_cdc_write_str("\nERROR SD DMA OVERRUN\n");tud_cdc_write_flush();continue;}
   unsigned count=produced-consumed,capacity=tud_cdc_write_available()/2;if(count>capacity)count=capacity;if(count>256)count=256;
-  uint16_t bytes[256];for(unsigned i=0;i<count;i++){bytes[i]=(uint16_t)ring[(consumed+i)&8191];control_word(bytes[i]);}
+  uint16_t bytes[256];for(unsigned i=0;i<count;i++){bytes[i]=(uint16_t)ring[(consumed+i)&8191];control_behind=produced-consumed-i-1;control_word(bytes[i]);}
   if(count){consumed+=tud_cdc_write(bytes,count*2)/2;tud_cdc_write_flush();}
  }
 }

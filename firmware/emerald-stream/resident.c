@@ -52,7 +52,7 @@ static unsigned backlog;
 static uint32_t strong_mask[13],other_mask[13];
 /* Copies observed before a VBlank are only merged after it, once the game has actually performed them. */
 static uint32_t nx_dirty[13],nx_other[13];
-#define RQ 5
+#define RQ 4
 static uint32_t rq[RQ][3],rp[4][3];static unsigned rq_n,rp_n;
 static unsigned feedback,vblank_seen,bulk_cursor=9;
 /* Codecs write straight into the packet; the slack lets a 128-word body be built past the limit and dropped. */
@@ -200,7 +200,7 @@ __attribute__((section(".scheduler"))) static void poll_control(void){
  }
 }
 /* The Pico only recognizes this exact 0.6/0.7 END layout; it opens the feedback slot after it. */
-__attribute__((section(".scheduler"))) static void control_slot(uint32_t now){
+__attribute__((noinline,section(".scheduler"))) static void control_slot(uint32_t now){
  uint16_t*p=packet+12;
  p[0]=now;p[1]=now>>16;p[2]=0;p[3]=0;p[4]=now;p[5]=now>>16;p[6]=1;p[7]=0;p[8]=0;p[9]=peak_lines;
  p[10]=2|(feedback<<8)|16384|32768;p[11]=visits;
@@ -424,9 +424,11 @@ __attribute__((section(".scheduler"))) void idle(void){
  observe();
  if(!idle_ran){
   mark_objects();
-  /* Ask the PC which announced blocks it already holds, once per frame, before sending any content: worth its
-     twenty-odd scanlines only when several are outstanding (a load); a few are simply sent. */
-  if(backlog>=ANNOUNCE_FROM && line<IDLE_END-30)control_slot(tick_frame);
+  /* The control slot (resync request, and which announced blocks the PC already holds) costs nearly thirty
+     scanlines: it runs here, in idle time with room left for sending afterwards, every thirtieth frame, or every
+     eighth during a load. In 0.14.0 it ran in every frame of a load and used up the idle time: nothing else was
+     sent for seconds. It no longer runs inside the tick. */
+  if(++since_feedback>=(backlog>=ANNOUNCE_FROM?8u:FEEDBACK_EVERY) && line<IDLE_END-60){since_feedback=0;control_slot(tick_frame);}
  }
  idle_ran=1;if(!idle_first)idle_first=line+1;
  unsigned audited=0,callback=vblank_seen,ie=U16(0x04000200);
@@ -557,6 +559,5 @@ __attribute__((section(".scheduler"))) void tick(void){
  idle_words=0;
  peak_lines=elapsed_lines(U16(0x04000006));
  valid=1;sequence++;DEBUG_COUNT(ticks_sent++;)
- if(++since_feedback>=FEEDBACK_EVERY && !heavy){since_feedback=0;control_slot(now);}
  if(busy)timer_off();else timer_arm();
 }

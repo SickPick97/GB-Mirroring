@@ -8,7 +8,7 @@ ROOT=Path(__file__).resolve().parents[1]
 
 def verify():
     binary=(ROOT/'build/uvc-test/gbmirroring_unified.bin').read_bytes()
-    uf2=(ROOT/'dist/gbmirroring-unified-v0.8.0.uf2').read_bytes()
+    uf2=(ROOT/'dist/gbmirroring-unified-v0.8.1.uf2').read_bytes()
     symbols=elf_symbols((ROOT/'build/uvc-test/gbmirroring_unified.elf').read_bytes())
     crc=0xffffffff
     for b in binary[:252]:
@@ -44,7 +44,7 @@ def verify():
     check(endpoints==[(0x81,3,8),(2,2,64),(0x82,2,64)],'CDC endpoint layout')
     report=dict(status='PASS static; hardware untested',uf2_sha256=hashlib.sha256(uf2).hexdigest(),
                 binary_bytes=len(binary),uf2_bytes=len(uf2),usb='CAFE:4024 CDC')
-    (ROOT/'dist/verifica-unified-v0.8.0.json').write_text(json.dumps(report,indent=2)+'\n')
+    (ROOT/'dist/verifica-unified-v0.8.1.json').write_text(json.dumps(report,indent=2)+'\n')
     return report
 
 if __name__=='__main__': print(json.dumps(verify(),indent=2))

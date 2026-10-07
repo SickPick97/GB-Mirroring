@@ -295,7 +295,7 @@ class StreamParser(GraphicsParser):
         self.previous=seq;self.ticks+=1;pending=self.outstanding(pending,sent_later)
         if not flags&2:self.raster_dest=None
         raster=[self.raster_dest]+self.raster if self.raster_dest is not None else None
-        meta=dict(raster=raster,version='emerald-stream-0.14.0',end_game_frame=lo|hi<<16,game_frame=lo|hi<<16,changed_blocks=records,pending_blocks=pending,
+        meta=dict(raster=raster,version='emerald-stream-0.14.1',end_game_frame=lo|hi<<16,game_frame=lo|hi<<16,changed_blocks=records,pending_blocks=pending,
             keyframe=key,raster_dma_active=bool(flags&2),feedback_available=bool(flags&256),cadence=(flags>>9)&3,skipped_ticks=(flags>>4)&7,heavy_tick=bool(flags&128),interrupt_enable=interrupts,callback_id=callback_id,unknown_scene=bool(flags&2048),peak_work_scanlines=telemetry&255,idle_slack=telemetry>>8,waiting_blocks=len(self.waiting),announced_blocks=sent_later,
             resource_regions=regions,block_codecs=codecs,idle_packets=0,idle_words=0,scope='Graphics stream; scanline effects and per-tick temporal coherence not fully verified')
         self.held.append((seq,bytes(self.cache[:HOT_BYTES]),wire,meta,bytearray(self.cache[HOT_BYTES:])))

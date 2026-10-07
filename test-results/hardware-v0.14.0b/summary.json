@@ -1,0 +1,84 @@
+{
+ "ticks": 1712,
+ "seconds": 51.4,
+ "version": "emerald-stream-0.14.0",
+ "idle_slack_lines": {
+  "p10": 53,
+  "p50": 80,
+  "p90": 94
+ },
+ "tick_lines": {
+  "p50": 34,
+  "p95": 58,
+  "p99": 78,
+  "max": 101,
+  "over_100": 1,
+  "over_150": 0
+ },
+ "words": {
+  "mean": 74.6,
+  "max": 225
+ },
+ "pending": {
+  "max": 225,
+  "ticks_over_40": 146
+ },
+ "forced_releases": 4,
+ "keyframes": 0,
+ "raster_dma_ticks": 0,
+ "unknown_scene_ticks": 20,
+ "heavy_ticks": 93,
+ "idle_packets": 386,
+ "idle_words_mean": 0.0,
+ "ticks_with_hblank_or_vcount_irq": 1712,
+ "interrupt_enable_seen": [
+  5,
+  69
+ ],
+ "callback_ids_seen": [
+  0,
+  206
+ ],
+ "ticks_after_skips": 0,
+ "cadence_changes": 0,
+ "game_frame_gaps": {
+  "of_2": 3,
+  "of_3_to_5": 2,
+  "of_6_or_more": 14,
+  "largest": 939
+ },
+ "sequence_jumps": 502,
+ "record_types": {
+  "1": 470,
+  "10": 3988,
+  "5": 975,
+  "4": 402,
+  "12": 103,
+  "14": 153
+ },
+ "longest_run_of_ticks_over_150_lines": 0,
+ "pc": {
+  "valid_frames": 1711,
+  "sequence_gaps": 284,
+  "bit_resyncs": 1238,
+  "crc_errors": 0,
+  "discarded_bytes": 77326,
+  "usb_queue_peak_lag_ms": 107.12,
+  "browser": {
+   "presented": 1642,
+   "dropped": 0,
+   "resets": 5,
+   "queued": 25,
+   "fps": 14.2,
+   "late_ms": 6.9,
+   "hidden": false,
+   "received_seconds": 95.756
+  },
+  "render_peak_ms": 0.86,
+  "status": "STREAMING",
+  "error": null,
+  "elapsed_seconds": 96.5
+ },
+ "session": "log-20261007-152655",
+ "note": "Hardware 0.14.0 + Pico 0.8.0 con registro di tutti i pacchetti. 4 s di ritardo entrando in una struttura, blocco dello streaming correndo nei percorsi; il GBA non rallenta. Salti di sequenza di 5 e 283 pacchetti, 4 risincronizzazioni in 50 s; durante i caricamenti nessun pacchetto nel tempo libero e tick da 19-46 parole per circa 100 frame. Riepilogo ripulito; log grezzi restano locali."
+}

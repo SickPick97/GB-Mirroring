@@ -59,7 +59,7 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
     fd,tmp=tempfile.mkstemp(suffix='.bmp',dir=folder);os.close(fd)
     bmp(tmp,struct.unpack('<38400H',pixels));bmp_bytes=Path(tmp).read_bytes();Path(tmp).unlink()
    except Exception:bmp_bytes=None
-  data,summary=log_summary.bundle(folder,folder/'frames.jsonl',snapshot(),log_path,tail,bmp_bytes,resident='0.14.0',notes=notes)
+  data,summary=log_summary.bundle(folder,folder/'frames.jsonl',snapshot(),log_path,tail,bmp_bytes,resident='0.14.1',notes=notes)
   target=folder/('log-'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')+'.zip');target.write_bytes(data)
   return target,data,summary
  def reader():
@@ -211,7 +211,7 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
   if unified:command=command.replace('PID_4023','PID_4024')
   result=subprocess.run(['powershell.exe','-NoProfile','-Command',command],capture_output=True,text=True,check=True)
   ports=re.findall(r'\((COM\d+)\)',result.stdout)
-  if len(ports)!=1:raise RuntimeError('Serve un solo Pico con firmware UNIFIED 0.8.0. Nessun driver Zadig richiesto.' if unified else 'Serve un solo Pico con SD Video 0.4.0. Nessun driver Zadig richiesto.')
+  if len(ports)!=1:raise RuntimeError('Serve un solo Pico con firmware UNIFIED 0.8.1. Nessun driver Zadig richiesto.' if unified else 'Serve un solo Pico con SD Video 0.4.0. Nessun driver Zadig richiesto.')
   server=ThreadingHTTPServer(('127.0.0.1',8765),Handler);server.timeout=.2
   serial=Serial(ports[0],read_timeout=5) if unified else Serial(ports[0]);time.sleep(.4)
   if unified and not resume:
