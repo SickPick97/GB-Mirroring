@@ -71,7 +71,7 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
     if time.monotonic()>deadline:raise RuntimeError('Firmware non pronto: usa SD Video 0.4.0 e attendi PRONTO prima di A')
    print('PRONTO. Premi SELECT + L + R nel gioco.' if emerald else 'PRONTO. Premi e rilascia A sul GBA. Apri http://127.0.0.1:8765',flush=True)
    with lock:stats['status']='READY: SELECT + L + R' if emerald else 'READY: premi A sul GBA'
-   last_data=time.monotonic();last_save=0;recovery=RecoveryPolicy();last_verdict=0
+   last_data=time.monotonic();last_save=0;recovery=RecoveryPolicy();last_verdict=0;last_store=now if False else time.monotonic()
    if unified:serial.write(b'CONTROL\n'+(b'RESYNC\n' if resume else b''))
    while not stop.is_set():
     data=serial.read();now=time.monotonic();received_valid=False
@@ -88,6 +88,11 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
      # receives valid answers.
      if unified and emerald and not baseline and hasattr(parser,'verdict') and (parser.resolved or now-last_verdict>0.08):
       answer=parser.verdict()
+      if now-last_store>30:
+       # kept across sessions even when the window is simply closed
+       last_store=now
+       try:parser.save_store(store_path)
+       except Exception:pass
       if answer:last_verdict=now;serial.write(b'V'+answer.hex().encode()+b'\n')
      if emerald and not baseline and getattr(parser,'rom_image',None) is not None and not parser.rom_complete:
       with lock:stats['status']='COPIA CARTUCCIA %d%%'%(parser.rom_received*100//parser.ROM_CHUNKS)
@@ -185,6 +190,11 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
     try:rom=rom_cache.load()
     except rom_cache.RomCacheError as exc:raise RuntimeError('Cache ROM non valida: %s. Cancella runtime/cache e ripeti la copia dalla cartuccia.'%exc)
     parser=StreamParser(GraphicsSnapshot(),rom=rom)
+    # Every packet received, also the ticks later dropped while the page waited: what happens during a scene load.
+    packets=(folder/'pacchetti.jsonl').open('w',encoding='utf-8',buffering=1)
+    def packet_log(entry):
+     entry['s']=round(time.monotonic()-started,3);packets.write(json.dumps(entry,separators=(',',':'))+chr(10))
+    parser.packet_log=packet_log
     # Block contents already seen in earlier sessions, and the graphics the game unpacks from the cartridge: a block
     # the GBA announces by hash is shown from these without waiting for its data.
     store_path=Path(rom_cache.DEFAULT).with_name('blocchi-visti.bin');store_path.parent.mkdir(parents=True,exist_ok=True)

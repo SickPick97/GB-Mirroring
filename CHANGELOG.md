@@ -1,5 +1,12 @@
 # Storico
 
+## 0.14.0 (aggiornamento solo PC, nessun binario nuovo) - Registro di tutti i pacchetti
+
+- Risultato hardware 0.14.0 con Pico 0.8.0 (log-20261006-230154, riepilogo in test-results/hardware-v0.14.0): per l utente non e cambiato nulla, stessi problemi nei caricamenti.
+- Dal log: il canale di ritorno funziona sull hardware (19 slot su 19 nella coda USB portano un verdetto valido, i due bit storici sono corretti) e, nella parte visibile, gli annunci vengono risolti in pochi tick. Ma a ogni cambio di scena la pagina resta in attesa 2,4-3,6 s (0.13.2: circa 2 s; 0.13.0: 1,0-1,8 s) e il registro contiene solo i frame pubblicati: i tick ricevuti e poi scartati durante l attesa non compaiono, quindi non si vede che cosa il GBA manda in quei secondi. Solo 16 annunci risultano nei frame pubblicati.
+- Nuovo file `pacchetti.jsonl` nel log scaricato: una riga per ogni pacchetto ricevuto (tick e tempo libero), anche quelli scartati dall attesa, con blocchi in sospeso, annunciati, in attesa, parole, codec, righe usate e tempo libero.
+- La memoria dei blocchi visti viene salvata ogni 30 s (prima solo alla chiusura ordinata, che di fatto non avveniva: il file non era mai stato creato).
+
 ## 0.14.0 - Caricamenti: blocchi annunciati per firma e risposta del PC (Pico 0.8.0)
 
 - **Richiede il firmware Pico 0.8.0** (`dist/gbmirroring-unified-v0.8.0.uf2`). Con il Pico 0.7.0 il residente 0.14.0 funziona ma senza la risposta del PC; il Pico 0.8.0 resta compatibile con i residenti precedenti.

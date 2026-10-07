@@ -115,7 +115,7 @@ class StreamParser(GraphicsParser):
         self.rom_image=None;self.rom_seen=None;self.rom_total=None;self.rom_bad=0;self.rom_missing=0
         # Every block content seen, by the resident's hash. A block the GBA announces by hash alone (record 14) is shown
         # at once when its content is here; `waiting` holds the announced blocks whose content must still arrive.
-        self.store={};self.rom_index={};self.announced=set();self.waiting={};self.resolved=set();self.resolved=set();self.store_hits=0;self.store_misses=0;self.store_dirty=False
+        self.packet_log=None;self.store={};self.rom_index={};self.announced=set();self.waiting={};self.resolved=set();self.resolved=set();self.store_hits=0;self.store_misses=0;self.store_dirty=False
     STORE_MAX=60000
     def remember(self,content):
         if len(self.store)<self.STORE_MAX:
@@ -299,6 +299,7 @@ class StreamParser(GraphicsParser):
             keyframe=key,raster_dma_active=bool(flags&2),feedback_available=bool(flags&256),cadence=(flags>>9)&3,skipped_ticks=(flags>>4)&7,heavy_tick=bool(flags&128),interrupt_enable=interrupts,callback_id=callback_id,unknown_scene=bool(flags&2048),peak_work_scanlines=telemetry&255,idle_slack=telemetry>>8,waiting_blocks=len(self.waiting),announced_blocks=sent_later,
             resource_regions=regions,block_codecs=codecs,idle_packets=0,idle_words=0,scope='Graphics stream; scanline effects and per-tick temporal coherence not fully verified')
         self.held.append((seq,bytes(self.cache[:HOT_BYTES]),wire,meta,bytearray(self.cache[HOT_BYTES:])))
+        if self.packet_log:self.packet_log(dict(t='tick',seq=seq,frame=lo|hi<<16,pending=pending,later=sent_later,waiting=len(self.waiting),held=len(self.held),words=wire//2,codecs=codecs,lines=telemetry&255,slack=telemetry>>8,heavy=int(bool(flags&128)),key=int(key),cb=callback_id,skipped=(flags>>4)&7))
         if key:self.complete=False
         return self.settle(pending,pending+sent_later)
     def apply_bulk(self,seq,body,wire):
@@ -312,6 +313,7 @@ class StreamParser(GraphicsParser):
         except StreamError as exc:
             self.fail(str(exc));self.previous=seq;return []
         self.previous=seq;self.bulk_packets+=1;pending=self.outstanding(pending,sent_later)
+        if self.packet_log:self.packet_log(dict(t='idle',seq=seq,pending=pending,later=sent_later,waiting=len(self.waiting),held=len(self.held),words=wire//2,codecs=codecs))
         if self.held:
             # registers, palette and OAM left over by a heavy tick belong to that tick
             if any(k in regions for k in ('registers','palette','objects')):

@@ -1,0 +1,86 @@
+{
+ "ticks": 7429,
+ "seconds": 139.7,
+ "version": "emerald-stream-0.14.0",
+ "idle_slack_lines": {
+  "p10": 59,
+  "p50": 84,
+  "p90": 102
+ },
+ "tick_lines": {
+  "p50": 35,
+  "p95": 57,
+  "p99": 73,
+  "max": 94,
+  "over_100": 0,
+  "over_150": 0
+ },
+ "words": {
+  "mean": 68.4,
+  "max": 219
+ },
+ "pending": {
+  "max": 154,
+  "ticks_over_40": 52
+ },
+ "forced_releases": 23,
+ "keyframes": 0,
+ "raster_dma_ticks": 283,
+ "unknown_scene_ticks": 1177,
+ "heavy_ticks": 241,
+ "idle_packets": 1844,
+ "idle_words_mean": 0.2,
+ "ticks_with_hblank_or_vcount_irq": 7429,
+ "interrupt_enable_seen": [
+  5,
+  69
+ ],
+ "callback_ids_seen": [
+  0,
+  164,
+  206
+ ],
+ "ticks_after_skips": 0,
+ "cadence_changes": 0,
+ "game_frame_gaps": {
+  "of_2": 9,
+  "of_3_to_5": 12,
+  "of_6_or_more": 30,
+  "largest": 201
+ },
+ "sequence_jumps": 2225,
+ "record_types": {
+  "5": 6467,
+  "10": 18667,
+  "1": 2214,
+  "4": 617,
+  "12": 415,
+  "14": 16,
+  "13": 374
+ },
+ "longest_run_of_ticks_over_150_lines": 0,
+ "pc": {
+  "valid_frames": 7423,
+  "sequence_gaps": 12,
+  "bit_resyncs": 777,
+  "crc_errors": 0,
+  "discarded_bytes": 50254,
+  "usb_queue_peak_lag_ms": 16.5,
+  "browser": {
+   "presented": 4197,
+   "dropped": 3170,
+   "resets": 4,
+   "queued": 51,
+   "fps": 59.8,
+   "late_ms": 988.1,
+   "hidden": false,
+   "received_seconds": 204.978
+  },
+  "render_peak_ms": 1.44,
+  "status": "STREAMING",
+  "error": null,
+  "elapsed_seconds": 205.1
+ },
+ "session": "log-20261006-230154",
+ "note": "Hardware 0.14.0 + Pico 0.8.0: per l utente nessun cambiamento. Verdetto valido in 19 slot su 19 della coda USB. Attese di 2,4-3,6 s a ogni cambio scena; i tick scartati durante l attesa non sono nel registro. Riepilogo ripulito; log grezzi restano locali."
+}
