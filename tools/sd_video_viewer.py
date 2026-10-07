@@ -59,7 +59,7 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
     fd,tmp=tempfile.mkstemp(suffix='.bmp',dir=folder);os.close(fd)
     bmp(tmp,struct.unpack('<38400H',pixels));bmp_bytes=Path(tmp).read_bytes();Path(tmp).unlink()
    except Exception:bmp_bytes=None
-  data,summary=log_summary.bundle(folder,folder/'frames.jsonl',snapshot(),log_path,tail,bmp_bytes,resident='0.13.2',notes=notes)
+  data,summary=log_summary.bundle(folder,folder/'frames.jsonl',snapshot(),log_path,tail,bmp_bytes,resident='0.13.0',notes=notes)
   target=folder/('log-'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')+'.zip');target.write_bytes(data)
   return target,data,summary
  def reader():
@@ -178,6 +178,11 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
     try:rom=rom_cache.load()
     except rom_cache.RomCacheError as exc:raise RuntimeError('Cache ROM non valida: %s. Cancella runtime/cache e ripeti la copia dalla cartuccia.'%exc)
     parser=StreamParser(GraphicsSnapshot(),rom=rom)
+    # Every packet received, also the ticks later dropped while the page waited: what happens during a scene load.
+    packets=(folder/'pacchetti.jsonl').open('w',encoding='utf-8',buffering=1)
+    def packet_log(entry):
+     entry['s']=round(time.monotonic()-started,3);packets.write(json.dumps(entry,separators=(',',':'))+chr(10))
+    parser.packet_log=packet_log
     if rom is None:print('Cache ROM assente: al menu del GBA premi A (non START) per copiare la cartuccia, circa 3 minuti. Succede una sola volta.',flush=True)
   command="Get-PnpDevice -PresentOnly | Where-Object { $_.InstanceId -match 'VID_CAFE&PID_4023' } | ForEach-Object { $_.FriendlyName }"
   if unified:command=command.replace('PID_4023','PID_4024')

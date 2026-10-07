@@ -63,7 +63,7 @@ def bundle(folder,rows_path,report,console_path=None,raw_tail=b'',last_bmp=None,
   z.writestr('sistema.json',json.dumps(dict(python=platform.python_version(),os=platform.platform(),residente=resident),indent=2)+'\n')
   try:z.write(rows_path,'frames.jsonl')
   except OSError:pass
-  for name in ('multiboot.json',):
+  for name in ('multiboot.json','pacchetti.jsonl'):
    try:z.write(Path(folder)/name,name)
    except OSError:pass
   if console_path:

@@ -113,6 +113,7 @@ class StreamParser(GraphicsParser):
         self.max_hold=max_hold;self.long_hold=long_hold;self.big_backlog=big_backlog;self.held=[];self.complete=False;self.feedback_available=False
         self.dropped_incomplete=0;self.forced_releases=0;self.ticks=0;self.frames_published=0
         self.rom_image=None;self.rom_seen=None;self.rom_total=None;self.rom_bad=0;self.rom_missing=0
+        self.packet_log=None  # called with one dict per packet received, also for ticks later dropped by a hold
     ROM_CHUNKS=65536
     def rom_chunk(self,seq,body):
         """256-byte piece of the cartridge image, sent once by the GBA dump mode."""
@@ -240,10 +241,11 @@ class StreamParser(GraphicsParser):
         self.previous=seq;self.ticks+=1
         if not flags&2:self.raster_dest=None
         raster=[self.raster_dest]+self.raster if self.raster_dest is not None else None
-        meta=dict(raster=raster,version='emerald-stream-0.13.2',end_game_frame=lo|hi<<16,game_frame=lo|hi<<16,changed_blocks=records,pending_blocks=pending,
+        meta=dict(raster=raster,version='emerald-stream-0.13.0',end_game_frame=lo|hi<<16,game_frame=lo|hi<<16,changed_blocks=records,pending_blocks=pending,
             keyframe=key,raster_dma_active=bool(flags&2),feedback_available=bool(flags&256),cadence=(flags>>9)&3,skipped_ticks=(flags>>4)&7,heavy_tick=bool(flags&128),interrupt_enable=interrupts,callback_id=callback_id,unknown_scene=bool(flags&2048),peak_work_scanlines=telemetry&255,idle_slack=telemetry>>8,
             resource_regions=regions,block_codecs=codecs,idle_packets=0,idle_words=0,scope='Graphics stream; scanline effects and per-tick temporal coherence not fully verified')
         self.held.append((seq,bytes(self.cache[:HOT_BYTES]),wire,meta,bytearray(self.cache[HOT_BYTES:])))
+        if self.packet_log:self.packet_log(dict(t='tick',seq=seq,frame=lo|hi<<16,pending=pending,held=len(self.held),words=wire//2,codecs=codecs,lines=telemetry&255,key=int(key),cb=callback_id,skipped=(flags>>4)&7))
         if key:self.complete=False
         return self.settle(pending)
     def apply_bulk(self,seq,body,wire):
@@ -257,6 +259,7 @@ class StreamParser(GraphicsParser):
         except StreamError as exc:
             self.fail(str(exc));self.previous=seq;return []
         self.previous=seq;self.bulk_packets+=1
+        if self.packet_log:self.packet_log(dict(t='idle',seq=seq,pending=pending,held=len(self.held),words=wire//2,codecs=codecs))
         if self.held:
             # registers, palette and OAM left over by a heavy tick belong to that tick
             if any(k in regions for k in ('registers','palette','objects')):

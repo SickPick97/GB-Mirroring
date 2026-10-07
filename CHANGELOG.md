@@ -1,5 +1,14 @@
 # Storico
 
+## 0.15.0 (linea stabile) - Programma GBA 0.13.0 e Pico 0.7.0 invariati, miglioramenti solo sul PC
+
+- Dopo la 0.13.0, l unica giudicata buona sull hardware ("funziona divinamente", 2026-09-30), le versioni 0.13.1, 0.13.2, 0.14.0 e 0.14.1 (con Pico 0.8.0/0.8.1) sono risultate peggiori o uguali per l utente pur superando la co-simulazione, che concede al GBA piu tempo libero e piu banda di quanti ne abbia la console. Quelle versioni restano nel ramo `main` e non sono consigliate.
+- Questa linea riparte dalla 0.13.0: il binario caricato sul GBA e `gbmirroring-emerald-v0.13.0.gba`, identico a quello provato, e il Pico resta lo 0.7.0. Nessun firmware nuovo.
+- Sul PC restano i miglioramenti che non dipendono dal GBA: ogni frame trattenuto conserva la propria copia della VRAM (pose di corsa sbagliate), la dissolvenza della nuova scena viene riprodotta dopo un caricamento, la riproduzione nel browser recupera il ritardo senza scartare la coda, e il log scaricato contiene `pacchetti.jsonl` con ogni pacchetto ricevuto.
+- Co-simulazione con il residente 0.13.0 (non hardware): corsa 299/299 frame identici, lotta 672/690, menu 564/567, ingresso nel Centro Pokemon 764/833.
+- I sorgenti in `firmware/emerald-stream` di questo ramo sono quelli della 0.13.2 e non corrispondono al binario caricato; il sorgente del binario 0.13.0 e al commit 40ffdd4.
+- Non ancora provata su console in questa combinazione.
+
 ## 0.13.2 - Riproduzione senza accumulo di ritardo, blocchi noti per primi, dissolvenze complete
 
 - Risultato hardware 0.13.1 (log-20261002-174228, riepilogo in test-results/hardware-v0.13.1): in esplorazione scatta di piu e nelle lotte e nelle case ci sono piu glitch. Il log del PC mostra 14 azzeramenti della coda del browser in 87 s (0.13.0: 9 in 378 s), 48,6 fps nel browser e, nel campo, 24 rilasci forzati: durante la camminata continua i 24 blocchi mappa di ogni passo di scorrimento restavano in attesa per 7 tick su 8, la pagina tratteneva l immagine fino a 31 frame e poi la mostrava tutta insieme.

@@ -1,6 +1,6 @@
 # GBMirroring
 
-Pacchetto **0.13.2**: residente **0.13.2** e firmware Pico **0.7.0** invariato. Codice proprio [GPL-3.0](LICENSE); dipendenze e sorgenti in [THIRD_PARTY.md](THIRD_PARTY.md).
+Pacchetto **0.15.0** (linea stabile): programma GBA **0.13.0** e firmware Pico **0.7.0** invariato. Codice proprio [GPL-3.0](LICENSE); dipendenze e sorgenti in [THIRD_PARTY.md](THIRD_PARTY.md).
 
 **Streaming di Pokémon Smeraldo da un GBA SP senza modifiche interne al browser del PC, attraverso Raspberry Pi Pico e porta Link.**
 

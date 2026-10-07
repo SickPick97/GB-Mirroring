@@ -12,7 +12,7 @@ GBMirroring is an experimental hardware/software project for displaying gameplay
 
 This early release shares working code, ready-to-run tools and measured limitations. **Version 0.13.0 streams queued graphics in the time the game spends waiting for VBlank, never holds off the game's interrupts and fixes a block-hash weakness that left stale tiles in menus; it has been verified only with an emulated game and the real resident code, not yet on a physical console.** A 0.12.x hardware test showed smooth walking but glitches in menus and a frozen image during battles.
 
-Package **0.13.2** carries resident **0.13.2** and the unchanged Pico firmware **0.7.0**. Project-owned code is [GPL-3.0](LICENSE); see [third-party notices](THIRD_PARTY.md) for dependencies and source access.
+Package **0.15.0** (stable line) carries resident **0.13.0** and the unchanged Pico firmware **0.7.0**. Project-owned code is [GPL-3.0](LICENSE); see [third-party notices](THIRD_PARTY.md) for dependencies and source access.
 
 ## What works today
 
