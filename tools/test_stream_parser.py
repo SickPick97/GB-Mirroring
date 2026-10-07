@@ -35,13 +35,20 @@ class Tests(unittest.TestCase):
   self.assertTrue(all(f[1][9*256+256:9*256+258]==struct.pack('<H',0x4444) for f in c))
   self.assertEqual([f[4]['held_frames'] for f in c],[3,3,3])
  def test_forced_release_after_bounded_hold(self):
-  p=StreamParser(Echo(),max_hold=3);parse(p,key_all())
+  p=StreamParser(Echo(),long_hold=3);parse(p,key_all())
   out=[]
-  for i in range(1,6):out.extend(parse(p,tick(i,i+1,[raw(0,i)],pending=5)))
-  self.assertEqual(len(out),1);self.assertEqual(p.forced_releases,1);self.assertTrue(out[-1][4]['incomplete'])
+  for i in range(1,5):out.extend(parse(p,tick(i,i+1,[raw(0,i)],pending=5)))
+  self.assertEqual(len(out),4);self.assertEqual(p.forced_releases,1);self.assertTrue(out[-1][4]['incomplete'])
+  self.assertFalse(out[0][4]['incomplete'])
+ def test_no_forced_release_while_blocks_keep_arriving(self):
+  """A backlog that shrinks is waited for even past forty blocks left: the image is never shown unfinished."""
+  p=StreamParser(Echo());parse(p,key_all());out=[]
+  for i in range(1,60):out.extend(parse(p,tick(i,i+1,[raw(0,i)],pending=30 if i<45 else 60-i)))
+  self.assertEqual(out,[]);self.assertEqual(p.forced_releases,0)
+  out=parse(p,tick(60,61,[raw(0,60)],pending=0));self.assertTrue(out);self.assertFalse(any(f[4]['incomplete'] for f in out))
  def test_long_backlog_keeps_last_image_then_swaps_in_finished_scene(self):
   p=StreamParser(Echo(),max_hold=3,keep=7,fade_keep=1);parse(p,key_all());out=[]
-  for i in range(1,40):out.extend(parse(p,tick(i,i+1,[raw(0,i)],pending=100)))
+  for i in range(1,40):out.extend(parse(p,tick(i,i+1,[raw(0,i)],pending=140-i)))
   self.assertEqual(out,[]);self.assertEqual(p.forced_releases,0)
   out=parse(p,tick(40,41,[raw(0,99),raw(9,7,1)],pending=0))
   self.assertEqual(len(out),1);self.assertEqual(out[-1][4]['end_game_frame'],41)
@@ -115,9 +122,9 @@ class Tests(unittest.TestCase):
   body=struct.pack('<6H',0x2000,1,0,0,1,0)+raw(9,1)
   self.assertEqual(parse(p,packet(5,13,0,body,version=0x700)),[]);self.assertIsNone(p.cache);self.assertEqual(p.delta_misses,1)
  def test_scene_load_replays_the_fade_in_after_one_black_frame(self):
-  p=StreamParser(Echo(),max_hold=3,fade_keep=10);parse(p,key_all());out=[]
-  for i in range(1,6):out+=parse(p,tick(i,i+1,[raw(0,i)],pending=100))
-  for i in range(6,10):out+=parse(p,tick(i,i+1,[raw(0,i),raw(1,0x1000*(i-5),i)],pending=100))
+  p=StreamParser(Echo(),max_hold=3,keep=3,fade_keep=10);parse(p,key_all());out=[]
+  for i in range(1,6):out+=parse(p,tick(i,i+1,[raw(0,i)],pending=100-i))
+  for i in range(6,10):out+=parse(p,tick(i,i+1,[raw(0,i),raw(1,0x1000*(i-5),i)],pending=100-i))
   out+=parse(p,tick(10,11,[raw(0,10)],pending=0))
   self.assertEqual([f[4]['end_game_frame'] for f in out],[6,7,8,9,10,11])
  def test_missing_tick_needs_keyframe(self):

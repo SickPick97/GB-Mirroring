@@ -1,14 +1,14 @@
-# Avvio e collaudo unico (programma GBA 0.13.0, pacchetto 0.15.0)
+# Avvio e collaudo unico (programma GBA 0.13.0, pacchetto 0.15.1)
 
 [English quick start](docs/QUICKSTART.en.md). Pacchetto pronto, senza compilazione. Il Pico unificato **0.7.0 resta compatibile**: non occorre riflasharlo.
 
-Questa e la linea stabile 0.15.0: sul GBA gira il programma 0.13.0 (quello che andava bene) e sul Pico il firmware **0.7.0**. Se il Pico ha un firmware 0.8.x, riflashalo con `dist/gbmirroring-unified-v0.7.0.uf2` (BOOTSEL premuto mentre colleghi l USB, poi copia il file su `RPI-RP2`). I miglioramenti sono solo sul PC: pose di corsa corrette, dissolvenza dopo i caricamenti, riproduzione piu regolare. Il pulsante **Scarica log** crea un unico file da inviarmi. **Salvataggio:** il residente non legge ne scrive la memoria di salvataggio. Per sicurezza fai comunque una copia del tuo `.sav` prima della prova.
+Questa e la linea stabile 0.15.1: sul GBA gira il programma 0.13.0 (quello che andava bene) e sul Pico il firmware **0.7.0**. Se il Pico ha un firmware 0.8.x, riflashalo con `dist/gbmirroring-unified-v0.7.0.uf2` (BOOTSEL premuto mentre colleghi l USB, poi copia il file su `RPI-RP2`). I miglioramenti sono solo sul PC: pose di corsa corrette, dissolvenza dopo i caricamenti, riproduzione piu regolare. Il pulsante **Scarica log** crea un unico file da inviarmi. **Salvataggio:** il residente non legge ne scrive la memoria di salvataggio. Per sicurezza fai comunque una copia del tuo `.sav` prima della prova.
 
 **Non c'e ancora una prova fisica di questa versione.** I numeri disponibili vengono da un gioco emulato, con il vero codice ARM del residente e un modello approssimato dei cicli: non misurano audio, tempi elettrici o presentazione del browser.
 
 ## Prima volta: copia della cartuccia
 
-1. Estrai tutto lo pacchetto 0.15.0 in una nuova cartella scrivibile. Chiudi il vecchio BAT e la vecchia pagina.
+1. Estrai tutto lo pacchetto 0.15.1 in una nuova cartella scrivibile. Chiudi il vecchio BAT e la vecchia pagina.
 2. Spegni il GBA, togli la cartuccia e riaccendilo. Apri **14-AVVIA-SMERALDO.bat** e premi **INVIO**. Non scegliere R.
 3. Sul GBA inserisci Smeraldo italiano originale e premi **A** (non START). Compare una barra di avanzamento; il PC scrive la percentuale.
 4. Quando il PC scrive `Cache ROM salvata`, chiudi il BAT. Il file e in `runtime/cache/` e non viene mai inserito nella repository. Spegni e riaccendi il GBA senza cartuccia.

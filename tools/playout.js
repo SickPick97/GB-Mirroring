@@ -2,7 +2,7 @@
 class Playout {
   constructor(delay=200) {
     this.delay=delay;this.queue=[];this.lastSource=null;this.lastArrival=null;
-    this.clock=0;this.base=null;this.lastShown=null;this.dropped=0;this.resets=0;
+    this.clock=0;this.base=null;this.lastShown=null;this.dropped=0;this.resets=0;this.skipped=0;this.lastPixels=null;
   }
   push(sequence,source,pixels,now) {
     source>>>=0;sequence>>>=0;
@@ -22,7 +22,8 @@ class Playout {
       this.dropped+=this.queue.length;this.queue=[];
       this.base=now+this.delay-this.clock;this.resets++;
     }
-    this.queue.push({sequence,source,pixels,due:this.base+this.clock});
+    const same=Playout.equal(pixels,this.lastPixels);this.lastPixels=pixels;
+    this.queue.push({sequence,source,pixels,due:this.base+this.clock,same});
     if(this.queue.length>96){this.queue.shift();this.dropped++;}
     return true;
   }
@@ -30,16 +31,21 @@ class Playout {
     let due=0;
     while(due<this.queue.length && this.queue[due].due<=now)due++;
     if(!due)return null;
-    // Up to three late frames are collapsed into the newest (jitter); a longer backlog (a fade replayed after a
-    // load) is shown in order but about 20% faster per late frame until it is gone, so latency returns to normal.
-    const pop=due<=3?due:1+Math.ceil(due/6);
-    let frame=null;
-    for(let i=0;i<pop;i++) {
-      if(frame)this.dropped++;
-      frame=this.queue.shift();
-    }
+    // Frames that arrive together (a wait for missing blocks, then all at once) are shown one per refresh, in order:
+    // 0.13.2-0.15.0 dropped up to two out of three of them and battle moves lost most of their frames. The delay is
+    // made up by skipping frames identical to the one before them (text waiting, a still screen), which costs nothing
+    // to see. Only more than a fifth of a second of distinct frames behind drops one of them per refresh.
+    let frame=this.queue.shift();due--;
+    while(due>0 && this.queue[0].same){frame=this.queue.shift();due--;this.skipped++;}
+    if(due>12){frame=this.queue.shift();this.dropped++;}
     this.lastShown=frame.sequence;
     return frame;
+  }
+  static equal(a,b) {
+    if(!(a instanceof ArrayBuffer) || !(b instanceof ArrayBuffer) || a.byteLength!==b.byteLength || !a.byteLength || a.byteLength&3)return false;
+    const x=new Uint32Array(a),y=new Uint32Array(b);
+    for(let i=0;i<x.length;i++)if(x[i]!==y[i])return false;
+    return true;
   }
 }
 if(typeof module!=='undefined')module.exports={Playout};

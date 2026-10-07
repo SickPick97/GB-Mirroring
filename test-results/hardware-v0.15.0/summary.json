@@ -1,0 +1,87 @@
+{
+ "ticks": 8682,
+ "seconds": 155.8,
+ "version": "emerald-stream-0.13.0",
+ "idle_slack_lines": {
+  "p10": 18,
+  "p50": 31,
+  "p90": 86
+ },
+ "tick_lines": {
+  "p50": 28,
+  "p95": 46,
+  "p99": 64,
+  "max": 86,
+  "over_100": 0,
+  "over_150": 0
+ },
+ "words": {
+  "mean": 46.8,
+  "max": 235
+ },
+ "pending": {
+  "max": 393,
+  "ticks_over_40": 270
+ },
+ "forced_releases": 7,
+ "keyframes": 0,
+ "raster_dma_ticks": 660,
+ "unknown_scene_ticks": 5424,
+ "heavy_ticks": 0,
+ "idle_packets": 2903,
+ "idle_words_mean": 8.2,
+ "ticks_with_hblank_or_vcount_irq": 8682,
+ "interrupt_enable_seen": [
+  5,
+  69,
+  71
+ ],
+ "callback_ids_seen": [
+  0,
+  95,
+  164,
+  206
+ ],
+ "ticks_after_skips": 56,
+ "cadence_changes": 0,
+ "game_frame_gaps": {
+  "of_2": 70,
+  "of_3_to_5": 27,
+  "of_6_or_more": 17,
+  "largest": 70
+ },
+ "sequence_jumps": 2718,
+ "record_types": {
+  "1": 1407,
+  "10": 8955,
+  "4": 1613,
+  "5": 5579,
+  "3": 2819,
+  "12": 680
+ },
+ "longest_run_of_ticks_over_150_lines": 0,
+ "pc": {
+  "valid_frames": 8677,
+  "sequence_gaps": 0,
+  "bit_resyncs": 303,
+  "crc_errors": 0,
+  "discarded_bytes": 4416,
+  "usb_queue_peak_lag_ms": 142.69,
+  "browser": {
+   "presented": 7091,
+   "dropped": 1518,
+   "resets": 5,
+   "queued": 52,
+   "fps": 12.8,
+   "late_ms": 2103.94,
+   "hidden": false,
+   "received_seconds": 255.824
+  },
+  "render_peak_ms": 83.0,
+  "status": "STREAMING",
+  "error": null,
+  "elapsed_seconds": 256.1
+ },
+ "session": "log-20261007-163038",
+ "note": "Hardware 0.15.0 (GBA 0.13.0, Pico 0.7.0, PC nuovo): movimento perfetto; problemi in strutture e lotte (mosse non mostrate, grafica sbagliata a inizio e fine lotta). 7 rilasci incompleti, attese di 2-12 tick nel 36% dei tick di lotta, 1518 frame scartati dal browser. Riepilogo ripulito; log grezzi restano locali."
+}

@@ -108,7 +108,7 @@ def black(hot):
     return bool(struct.unpack_from('<H',hot,0)[0]&0x80) or not any(hot[256:1280])
 
 class StreamParser(GraphicsParser):
-    def __init__(self,renderer=None,max_hold=30,rom=None,long_hold=240,big_backlog=40,keep=12,fade_keep=40):
+    def __init__(self,renderer=None,max_hold=30,rom=None,long_hold=240,big_backlog=40,keep=30,fade_keep=40):
         super().__init__(renderer);self.rom=rom;self.keep=keep;self.fade_keep=fade_keep;self.bulk_packets=0;self.raster=[0]*160;self.raster_dest=None;self.load_backlog=8
         self.max_hold=max_hold;self.long_hold=long_hold;self.big_backlog=big_backlog;self.held=[];self.complete=False;self.feedback_available=False
         self.dropped_incomplete=0;self.forced_releases=0;self.ticks=0;self.frames_published=0
@@ -278,14 +278,16 @@ class StreamParser(GraphicsParser):
             # Cache still being rebuilt after a keyframe: nothing meaningful to show yet.
             if len(self.held)>self.keep:self.dropped_incomplete+=len(self.held)-self.keep;del self.held[:len(self.held)-self.keep]
             return []
-        # A scene load leaves a long backlog: keep the last complete image and swap in the finished one.
-        limit=self.long_hold if pending>self.big_backlog else self.max_hold
-        if pending>0 and len(self.held)<=limit:return []
-        forced=pending>0
+        # The image waits until every known-changed block has arrived. 0.13-0.14 released it unfinished once fewer than
+        # forty blocks were left and thirty ticks had passed: wrong tiles at the start and end of battles and inside
+        # buildings (7 times in the hardware log of 2026-10-07, none with this rule on the same packets). Only a wait
+        # longer than long_hold ticks (4 s) is given up.
+        forced=pending>0 and len(self.held)>self.long_hold
+        if pending>0 and not forced:return []
         # After a long hold (a scene load) the newest held ticks are replayed, so the fade-in of the new scene is seen as
         # in the game; the black frames of the loading screen before it are collapsed into one. The browser then
         # catches up with the live stream.
-        long=len(self.held)>self.max_hold
+        long=len(self.held)>self.keep
         keep=self.fade_keep if long else self.keep
         if len(self.held)>keep:
             self.dropped_incomplete+=len(self.held)-keep;del self.held[:len(self.held)-keep]

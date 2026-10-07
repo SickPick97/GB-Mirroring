@@ -1,5 +1,12 @@
 # Storico
 
+## 0.15.1 (linea stabile, solo PC) - Niente immagini incomplete, niente frame scartati nelle lotte
+
+- Risultato hardware 0.15.0 (programma GBA 0.13.0, Pico 0.7.0; log-20261007-163038, riepilogo in test-results/hardware-v0.15.0): "muovendosi e perfetto"; restano problemi entrando nelle strutture e nelle lotte: molte mosse non vengono mostrate, bug grafici dopo la lotta, grafica di inizio lotta caricata male.
+- Immagini incomplete: 7 volte in 156 s la pagina ha pubblicato l immagine con 15-40 blocchi ancora mancanti (inizio lotta, ritorno dalla lotta, ingresso in struttura). La regola rilasciava dopo 30 tick appena i blocchi mancanti scendevano sotto 40. Ora si aspetta finche arrivano tutti (limite 240 tick). Stessi pacchetti del log con la nuova regola: nessun rilascio incompleto, attese piu lunghe di pochi tick (per esempio 65 -> 74).
+- Mosse non mostrate: in lotta i frame arrivano spesso a gruppi (attese di 2-12 tick nel 36% dei tick) e la riproduzione nel browser, per recuperare, ne scartava fino a due su tre; inoltre oltre 12 frame in attesa i piu vecchi venivano eliminati. Ora i frame arrivati insieme vengono mostrati tutti, in ordine; il ritardo si recupera saltando i frame identici al precedente (testo fermo, schermata ferma) e solo oltre 12 frame distinti di ritardo se ne scarta uno per aggiornamento. Frame conservati per attesa: 30.
+- Programma GBA e Pico invariati (0.13.0 e 0.7.0).
+
 ## 0.15.0 (linea stabile) - Programma GBA 0.13.0 e Pico 0.7.0 invariati, miglioramenti solo sul PC
 
 - Dopo la 0.13.0, l unica giudicata buona sull hardware ("funziona divinamente", 2026-09-30), le versioni 0.13.1, 0.13.2, 0.14.0 e 0.14.1 (con Pico 0.8.0/0.8.1) sono risultate peggiori o uguali per l utente pur superando la co-simulazione, che concede al GBA piu tempo libero e piu banda di quanti ne abbia la console. Quelle versioni restano nel ramo `main` e non sono consigliate.

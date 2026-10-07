@@ -18,4 +18,17 @@ assert.equal(wrap.take(200).sequence,1);
 assert.equal(wrap.take(234).sequence,2);
 wrap.push(3,500,[],3000);assert.equal(wrap.resets,1);
 assert.equal(wrap.take(3100),null);assert.equal(wrap.take(3200).sequence,3);
+// A burst of late, distinct frames (a move animation released after a wait) is shown completely and in order.
+const burst=new Playout(200);
+const picture=v=>{const b=new ArrayBuffer(16);new Uint32Array(b).fill(v);return b};
+for(let i=0;i<12;i++)burst.push(i,i,picture(i),1000+i*0.1);
+const seen=[];
+for(let t=1000;t<1800;t+=period){const f=burst.take(t+400);if(f)seen.push(f.sequence)}
+assert.deepEqual(seen,[0,1,2,3,4,5,6,7,8,9,10,11]);assert.equal(burst.dropped,0);
+// Behind, with identical frames in the queue: those are skipped, nothing distinct is lost.
+const still=new Playout(200);
+for(let i=0;i<10;i++)still.push(i,i,picture(i<3?i:(i<8?3:i)),1000+i*0.1);
+const kept=[];
+for(let t=1000;t<1800;t+=period){const f=still.take(t+400);if(f)kept.push(new Uint32Array(f.pixels)[0])}
+assert.deepEqual(kept,[0,1,2,3,8,9]);assert.equal(still.dropped,0);assert.equal(still.skipped,4);
 console.log('OK: 30 Hz jittered source, distinct frames, wrap and pause recovery');
