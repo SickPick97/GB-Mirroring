@@ -18,4 +18,12 @@ assert.equal(wrap.take(200).sequence,1);
 assert.equal(wrap.take(234).sequence,2);
 wrap.push(3,500,[],3000);assert.equal(wrap.resets,1);
 assert.equal(wrap.take(3100),null);assert.equal(wrap.take(3200).sequence,3);
+// After a pause, frames released together span a second of game time: playback must not fall behind by that second.
+const held=new Playout(200);held.push(1,1000,[],0);held.take(250);
+for(let i=0;i<38;i++)held.push(2+i,1100+i*2,[],2000);   // 38 frames, 76 game frames apart in total, all at t=2000
+let at=2000,seq=40,src=1176,last=null,played=0;
+for(let n=0;n<300;n++){at+=period;held.push(seq++,++src,[],at);const f=held.take(at);if(f){played++;last=f;}}
+assert(played>250,"playback stalled: "+played);
+assert(at-last.due<260 && at-last.due>-260,'newest frame not shown within the buffer delay');
+assert(held.queue.length<20,'queue grows: '+held.queue.length);
 console.log('OK: 30 Hz jittered source, distinct frames, wrap and pause recovery');

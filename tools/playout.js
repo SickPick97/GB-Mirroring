@@ -22,6 +22,12 @@ class Playout {
       this.dropped+=this.queue.length;this.queue=[];
       this.base=now+this.delay-this.clock;this.resets++;
     }
+    // The newest frame is never scheduled later than `delay` from now: the game cannot be ahead of real time. Frames
+    // released together after a wait carry source times up to a second apart; anchored on the first of them, the rest
+    // (and everything after) were scheduled that much too late, and past 1.6 s the queue overflowed before any frame
+    // came due: the picture lagged by seconds or froze (hardware logs of 2026-10-11).
+    const excess=this.base+this.clock-(now+this.delay);
+    if(excess>0){this.base-=excess;for(const q of this.queue)q.due-=excess;}
     this.queue.push({sequence,source,pixels,due:this.base+this.clock});
     if(this.queue.length>96){this.queue.shift();this.dropped++;}
     return true;

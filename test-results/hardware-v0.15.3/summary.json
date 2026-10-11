@@ -1,0 +1,89 @@
+{
+ "ticks": 11328,
+ "seconds": 203.5,
+ "version": "emerald-stream-0.13.0",
+ "idle_slack_lines": {
+  "p10": 18,
+  "p50": 31,
+  "p90": 93
+ },
+ "tick_lines": {
+  "p50": 28,
+  "p95": 47,
+  "p99": 70,
+  "max": 83,
+  "over_100": 0,
+  "over_150": 0
+ },
+ "words": {
+  "mean": 48.8,
+  "max": 235
+ },
+ "pending": {
+  "max": 393,
+  "ticks_over_40": 234
+ },
+ "forced_releases": 17,
+ "keyframes": 0,
+ "raster_dma_ticks": 1427,
+ "unknown_scene_ticks": 7057,
+ "heavy_ticks": 0,
+ "idle_packets": 3509,
+ "idle_words_mean": 7.6,
+ "ticks_with_hblank_or_vcount_irq": 11328,
+ "interrupt_enable_seen": [
+  5,
+  69,
+  71
+ ],
+ "callback_ids_seen": [
+  0,
+  56,
+  57,
+  95,
+  164,
+  206
+ ],
+ "ticks_after_skips": 93,
+ "cadence_changes": 0,
+ "game_frame_gaps": {
+  "of_2": 83,
+  "of_3_to_5": 51,
+  "of_6_or_more": 28,
+  "largest": 89
+ },
+ "sequence_jumps": 3445,
+ "record_types": {
+  "1": 1981,
+  "4": 1526,
+  "5": 8178,
+  "3": 3603,
+  "12": 910,
+  "10": 12441
+ },
+ "longest_run_of_ticks_over_150_lines": 0,
+ "pc": {
+  "valid_frames": 11321,
+  "sequence_gaps": 0,
+  "bit_resyncs": 389,
+  "crc_errors": 0,
+  "discarded_bytes": 1921,
+  "usb_queue_peak_lag_ms": 17.3,
+  "browser": {
+   "presented": 2922,
+   "dropped": 3233,
+   "resets": 2,
+   "queued": 96,
+   "fps": 0,
+   "late_ms": 455.5,
+   "hidden": false,
+   "received_seconds": 235.99
+  },
+  "render_peak_ms": 0.79,
+  "status": "STREAMING",
+  "error": null,
+  "elapsed_seconds": 236.1
+ },
+ "session": "log-20261011-192312",
+ "note": "Hardware 0.15.3: nessun cambiamento per l utente. Stream a 60 fps senza errori; browser fermo con 96 frame in coda (riproduzione ancorata al primo frame di un gruppo rilasciato dopo una pausa). Riepilogo ripulito; log grezzi restano locali."
+}

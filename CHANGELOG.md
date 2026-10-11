@@ -1,5 +1,12 @@
 # Storico
 
+## 0.15.4 (linea stabile, solo PC) - Trovato il ritardo: la riproduzione restava indietro dopo ogni attesa
+
+- Risultato hardware 0.15.3 (log-20261011-192312, riepilogo in test-results/hardware-v0.15.3): per l utente nessun cambiamento, stessi problemi; il browser risulta fermo (0 fps mostrati, 96 frame in coda, 3233 scartati) mentre lo stream arriva a 60 fps senza errori.
+- Causa, riprodotta fuori dal browser facendo passare i tempi di arrivo del log nella riproduzione (`playout.js`): dopo una pausa di oltre un secondo (cambio di scena) la linea del tempo ripartiva dal primo frame rilasciato; i frame rilasciati insieme coprono fino a un secondo di tempo di gioco, quindi tutto il resto veniva programmato con quel ritardo in piu. A ogni attesa il ritardo cresceva e oltre 1,6 s la coda (96 frame) traboccava prima che un frame diventasse visibile: immagine ferma. Sul log: 8007 frame mostrati su 11337, con blocchi di 4, 3 e 42 secondi. Il difetto esisteva dalla 0.13.0 ma con soli 12 frame conservati valeva al massimo 0,2 s; le versioni che conservano piu frame (dissolvenze, attese complete) lo hanno reso visibile. E la causa del "ritardo di quasi 3 secondi" e di buona parte dei glitch segnalati dalla 0.15.0 in poi.
+- Correzione: il frame piu recente non viene mai programmato oltre il ritardo di buffer (200 ms); l eccesso viene tolto a tutta la coda. Stessi tempi di arrivo: log 0.15.3 11073 mostrati su 11337 senza blocchi oltre le attese reali dei cambi di scena (1-2 s); log 0.15.2 7206 su 7391; log 0.15.0 8487 su 8690; log 0.13.0 invariato (21306 su 21322).
+- Programma GBA e Pico invariati.
+
 ## 0.15.3 (linea stabile, solo PC) - Via il ritardo e i frame intermedi sbagliati
 
 - Risultato hardware 0.15.2 (log-20261011-191536, riepilogo in test-results/hardware-v0.15.2): glitch in lotta, fuori e nei menu; quasi 3 secondi di ritardo tra il GBA e la pagina.
