@@ -1,5 +1,13 @@
 # Storico
 
+## 0.15.3 (linea stabile, solo PC) - Via il ritardo e i frame intermedi sbagliati
+
+- Risultato hardware 0.15.2 (log-20261011-191536, riepilogo in test-results/hardware-v0.15.2): glitch in lotta, fuori e nei menu; quasi 3 secondi di ritardo tra il GBA e la pagina.
+- Entrambi vengono dalla riproduzione introdotta nella 0.15.1, che mostrava tutti i frame arrivati insieme senza scartarne. (1) Ritardo: dopo ogni cambio di scena i frame trattenuti arrivano vecchi di 1-2 s e, senza scarti, il ritardo restava finche l immagine non stava ferma (nel log: 51 frame in coda, 1,3 s di ritardo massimo registrato dal browser; la pubblicazione dal PC ritarda al massimo 0,7 s). (2) Glitch: i frame intermedi di un attesa non sono stati fedeli del gioco (grafica finale con registri e mappe precedenti); prima venivano quasi tutti saltati, la 0.15.1 li mostrava.
+- Ripristinata la riproduzione della 0.15.0 (quella del "muovendosi e perfetto") e il limite di 12 frame conservati per attesa.
+- Restano dalla 0.15.1/0.15.2: ai cambi di scena, a inizio e fine lotta l immagine esce solo completa; dentro una lotta esce dopo al piu 8 tick.
+- Limite noto: le mosse con molta grafica perdono di nuovo una parte dei frame, come nella 0.15.0; mostrarle intere senza ritardo richiede che il GBA trasmetta di piu, cioe una modifica al suo programma. Programma GBA e Pico invariati.
+
 ## 0.15.2 (linea stabile, solo PC) - Le mosse si vedono mentre la loro grafica arriva
 
 - Risultato hardware 0.15.1: quasi tutte le mosse che mettono molta grafica a schermo (Surf e simili) non si vedono. Causa: la 0.15.1 aspettava l immagine completa in ogni situazione; durante una mossa la grafica cambia per tutta la sua durata, l immagine non e mai completa e la pagina restava ferma fino alla fine, conservando solo gli ultimi 30 frame.
