@@ -78,12 +78,22 @@ timer1:
  strh r0,[r1,#2]
  ldr r0,[sp,#20]
  ldr r1,=0x080008ca
- sub r0,r0,r1
- cmp r0,#8
+ sub r2,r0,r1
+ cmp r2,#8
+ bls 1f
+ /* Second waiting place: the loop in which the game times its wireless-adapter probe (0x082e7d58-0x082e7d5c, a
+    timer polled for about half a second at every building entrance, with the new scene already in VRAM). */
+ ldr r1,=0x082e7d5c
+ sub r2,r0,r1
+ cmp r2,#6
  bxhi lr
- ldr r0,=0x030022dc
- ldrh r0,[r0]
- tst r0,#1
+1:
+ /* No VBlank since the last tick: the frame's work is done and the game waits for the next one. */
+ ldr r0,=0x030022e0
+ ldr r0,[r0]
+ ldr r1,=last_vblank
+ ldr r1,[r1]
+ cmp r0,r1
  bxne lr
  ldr r12,=idle
 /* Runs r12 in system mode on the interrupted context's stack with interrupts enabled, so the game's interrupts are

@@ -8,7 +8,7 @@ Windows 10/11 x64, a USB data cable, an RP2040 Pico Link adapter and the tested 
 
 ## One-time firmware installation
 
-Hold BOOTSEL on the Pico while connecting USB. Copy `dist/gbmirroring-unified-v0.7.0.uf2` to the `RPI-RP2` drive. The adapter reboots automatically. Skip this if that exact firmware is already installed. Flashing is performed by you; the launcher does not flash the Pico.
+Hold BOOTSEL on the Pico while connecting USB. Copy `dist/gbmirroring-unified-v0.8.1.uf2` to the `RPI-RP2` drive (resident 0.16.0 is meant for 0.8.1; with 0.7.0 answer S at start for the stable resident). The adapter reboots automatically. Skip this if that exact firmware is already installed. Flashing is performed by you; the launcher does not flash the Pico.
 
 Use the same cable orientation throughout: smaller connector at the adapter, larger connector at the GBA, selector at GBA. No cable reversal or mid-session firmware change is required.
 

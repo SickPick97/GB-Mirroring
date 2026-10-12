@@ -1,0 +1,7 @@
+{
+  "source": "native/blocks/blocks.c",
+  "sha256": "2b39681d77f5137c68b119e19ecd30808a5dd1252a702e118aba1b64a0884182",
+  "source_sha256": "e574e076ddbd202e8690925450069348bcc3bb5e5c6885ab0b2c6604e6fd3030",
+  "architecture": "Windows x64; zig cc (clang), static",
+  "scope": "Hashes and offsets of the user's own cartridge image, in memory; no game content."
+}

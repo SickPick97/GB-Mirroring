@@ -11,7 +11,7 @@ from link_protocol import bmp
 from recovery_policy import RecoveryPolicy
 from frame_hub import FrameHub,websocket
 ROOT=Path(__file__).resolve().parents[1]
-def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
+def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False,stable=False):
  folder=ROOT/('dist/emerald-reports' if emerald else 'dist/sd-video-reports')/datetime.datetime.now().strftime('%Y%m%d-%H%M%S');folder.mkdir(parents=True)
  parser=Parser();lock=threading.Lock();stop=threading.Event();latest=[None];arrivals=collections.deque();presentations=collections.deque();changes=collections.deque()
  stats=dict(changed_images=0,resync_requests=0,status='WAITING',valid_frames=0,sequence_gaps=0,duplicates=0,bytes_received=0,codec=None,error=None,scope='Experimental Italian Emerald graphics. Scanline effects incomplete; no UVC.' if emerald else 'Homebrew VRAM over software SD/SC. No cartridge or UVC support.')
@@ -35,7 +35,7 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
   except Exception as exc:
    with lock:stats['error']='Renderer: '+str(exc)
    stop.set()
- started=time.monotonic();previous=None;last_pixels=None;events=(folder/'frames.jsonl').open('w',encoding='utf-8');serial=None;server=None;worker=None;renderer=None
+ started=time.monotonic();previous=None;last_pixels=None;events=(folder/'frames.jsonl').open('w',encoding='utf-8');serial=None;server=None;worker=None;renderer=None;packets=None
  def snapshot():
   with lock:
    now=time.monotonic()
@@ -59,7 +59,7 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
     fd,tmp=tempfile.mkstemp(suffix='.bmp',dir=folder);os.close(fd)
     bmp(tmp,struct.unpack('<38400H',pixels));bmp_bytes=Path(tmp).read_bytes();Path(tmp).unlink()
    except Exception:bmp_bytes=None
-  data,summary=log_summary.bundle(folder,folder/'frames.jsonl',snapshot(),log_path,tail,bmp_bytes,resident='0.13.0',notes=notes)
+  data,summary=log_summary.bundle(folder,folder/'frames.jsonl',snapshot(),log_path,tail,bmp_bytes,resident='0.16.0' if getattr(parser,'fields',7)==7 else '0.13.0',notes=notes)
   target=folder/('log-'+datetime.datetime.now().strftime('%Y%m%d-%H%M%S')+'.zip');target.write_bytes(data)
   return target,data,summary
  def reader():
@@ -71,7 +71,7 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
     if time.monotonic()>deadline:raise RuntimeError('Firmware non pronto: usa SD Video 0.4.0 e attendi PRONTO prima di A')
    print('PRONTO. Premi SELECT + L + R nel gioco.' if emerald else 'PRONTO. Premi e rilascia A sul GBA. Apri http://127.0.0.1:8765',flush=True)
    with lock:stats['status']='READY: SELECT + L + R' if emerald else 'READY: premi A sul GBA'
-   last_data=time.monotonic();last_save=0;recovery=RecoveryPolicy()
+   last_data=time.monotonic();last_save=0;recovery=RecoveryPolicy();last_verdict=0;last_store=time.monotonic()
    if unified:serial.write(b'CONTROL\n'+(b'RESYNC\n' if resume else b''))
    while not stop.is_set():
     data=serial.read();now=time.monotonic();received_valid=False
@@ -82,6 +82,17 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
      if b'ERROR SD DMA OVERRUN' in data:raise RuntimeError('Pico DMA overrun: interrompi e conserva i risultati')
      with lock:stats['bytes_received']+=len(data)
      decoded=parser.feed(data)
+     # Pico 0.8.1 hands this to the resident's control slot: which announced blocks are already known here, so only the
+     # others are sent. Sent while announced blocks are known here and at least every 80 ms (the resident only
+     # announces while it receives valid answers). An older Pico ignores the line.
+     if unified and emerald and not baseline and getattr(parser,'fields',6)==7 and (parser.resolved or now-last_verdict>0.08):
+      answer=parser.verdict()
+      if answer:last_verdict=now;serial.write(b'V'+answer.hex().encode()+b'\n')
+      if now-last_store>30:
+       # kept across sessions even when the window is simply closed
+       last_store=now
+       try:parser.save_store(store_path)
+       except Exception:pass
      if emerald and not baseline and getattr(parser,'rom_image',None) is not None and not parser.rom_complete:
       with lock:stats['status']='COPIA CARTUCCIA %d%%'%(parser.rom_received*100//parser.ROM_CHUNKS)
      if emerald and not baseline and parser.rom_complete:
@@ -183,17 +194,28 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
     def packet_log(entry):
      entry['s']=round(time.monotonic()-started,3);packets.write(json.dumps(entry,separators=(',',':'))+chr(10))
     parser.packet_log=packet_log
+    # Block contents already seen in earlier sessions, and the graphics the game unpacks from the cartridge: a block
+    # the GBA announces by hash is shown from these without waiting for its data.
+    store_path=Path(rom_cache.DEFAULT).with_name('blocchi-visti-2.bin');store_path.parent.mkdir(parents=True,exist_ok=True)
+    try:parser.load_store(store_path)
+    except Exception:pass
+    if rom is not None:
+     def index_rom():
+      import rom_blocks
+      try:parser.fade_solver=rom_blocks.fade_solver();parser.raw_index=rom_blocks.build_raw(rom);parser.rom_index=rom_blocks.build(rom)
+      except Exception as exc:print('Indice grafica cartuccia non costruito:',exc,flush=True)
+     threading.Thread(target=index_rom,daemon=True).start()
     if rom is None:print('Cache ROM assente: al menu del GBA premi A (non START) per copiare la cartuccia, circa 3 minuti. Succede una sola volta.',flush=True)
   command="Get-PnpDevice -PresentOnly | Where-Object { $_.InstanceId -match 'VID_CAFE&PID_4023' } | ForEach-Object { $_.FriendlyName }"
   if unified:command=command.replace('PID_4023','PID_4024')
   result=subprocess.run(['powershell.exe','-NoProfile','-Command',command],capture_output=True,text=True,check=True)
   ports=re.findall(r'\((COM\d+)\)',result.stdout)
-  if len(ports)!=1:raise RuntimeError('Serve un solo Pico con firmware UNIFIED 0.7.0. Nessun driver Zadig richiesto.' if unified else 'Serve un solo Pico con SD Video 0.4.0. Nessun driver Zadig richiesto.')
+  if len(ports)!=1:raise RuntimeError('Serve un solo Pico con firmware UNIFIED 0.8.1 (o 0.7.0). Nessun driver Zadig richiesto.' if unified else 'Serve un solo Pico con SD Video 0.4.0. Nessun driver Zadig richiesto.')
   server=ThreadingHTTPServer(('127.0.0.1',8765),Handler);server.timeout=.2
   serial=Serial(ports[0],read_timeout=5) if unified else Serial(ports[0]);time.sleep(.4)
   if unified and not resume:
    from unified_boot import boot
-   boot(serial,folder,baseline=baseline)
+   boot(serial,folder,baseline=baseline,stable=stable)
   serial.write(b'START\n')
   if unified:
    from buffered_serial import BufferedSerial
@@ -217,7 +239,9 @@ def main(emerald=False,unified=False,resume=False,log_path=None,baseline=False):
   if render_thread:render_thread.join(3)
   if render_thread and render_thread.is_alive():stats['error']='Renderer non terminato'
   elif renderer:renderer.close()
-  events.close();r=snapshot();r['has_verified_frames']=r['valid_frames']>0
+  events.close()
+  if packets:packets.close()
+  r=snapshot();r['has_verified_frames']=r['valid_frames']>0
   r['stopped_cleanly']=not r['error'] and (worker is None or not worker.is_alive())
   if r['stopped_cleanly']:r['status']='STOPPED'
   (folder/'rapporto.json').write_text(json.dumps(r,indent=2)+'\n',encoding='utf-8')

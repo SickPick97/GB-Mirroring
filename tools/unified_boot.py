@@ -42,8 +42,9 @@ class BootTransport:
   if self.worker and self.worker.is_alive():raise RuntimeError('Lettore multiboot non terminato')
   self.worker=None
 
-def boot(serial,folder,baseline=False):
- version="0.11.0" if baseline else "0.13.0"
+def boot(serial,folder,baseline=False,stable=False):
+ # 0.16.0: announcements, fades, sending inside the adapter probe; 0.13.0: the stable line (PC side 0.15.4 or later)
+ version="0.11.0" if baseline else "0.13.0" if stable else "0.16.0"
  sys.path.insert(0,str(ROOT/'vendor/celio_transport'));from mb_multi import Multiboot
  data=(ROOT/('dist/gbmirroring-emerald-v'+version+'.gba')).read_bytes()
  expected=json.loads((ROOT/('dist/verifica-emerald-v'+version+'.json')).read_text())['sha256']

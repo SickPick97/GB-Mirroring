@@ -1,6 +1,6 @@
 # GBMirroring
 
-Pacchetto **0.15.0** (linea stabile): programma GBA **0.13.0** e firmware Pico **0.7.0** invariato. Codice proprio [GPL-3.0](LICENSE); dipendenze e sorgenti in [THIRD_PARTY.md](THIRD_PARTY.md).
+Pacchetto **0.16.0**: programma GBA **0.16.0** (predefinito) e programma stabile **0.13.0** (scelta S all avvio), firmware Pico **0.8.1**. Il programma 0.16.0 annuncia i blocchi con il loro hash, cosi il PC li prende dalla grafica gia vista o dalla propria copia della cartuccia, lascia calcolare al PC le dissolvenze e trasmette nelle attese del gioco dopo una porta senza allungarle. **E stato misurato solo in emulazione (il residente vero dentro il gioco emulato), mai su una console.** Codice proprio [GPL-3.0](LICENSE); dipendenze e sorgenti in [THIRD_PARTY.md](THIRD_PARTY.md).
 
 **Streaming di Pokémon Smeraldo da un GBA SP senza modifiche interne al browser del PC, attraverso Raspberry Pi Pico e porta Link.**
 
@@ -31,14 +31,14 @@ La documentazione pubblica dà priorità all'inglese e affianca l'italiano. Alcu
 | Adattatore | Pico RP2040 sulla [scheda di agtbaskara](https://github.com/agtbaskara/game-boy-pico-link-board) |
 | Cavo | Cavo GBA con nodo centrale provato; spinotto piccolo all'adattatore, grande al GBA; selettore GBA |
 | PC | Windows 10/11 x64, collegamento USB dati e browser |
-| Software | Residente Smeraldo 0.13.2, firmware Pico unificato 0.7.0 |
+| Software | Residente Smeraldo 0.16.0 (0.13.0 selezionabile), firmware Pico unificato 0.8.1 |
 
 Non servono modifiche interne alla console. Il profilo attuale usa indirizzi specifici e controlla la revisione della cartuccia. Altre lingue di Smeraldo, Rosso Fuoco/Verde Foglia, giochi GB/GBC e cartucce arbitrarie **non sono supportati da questa release**. Un adattatore o cavo diverso può avere collegamenti differenti.
 
 ## Avvio rapido
 
 1. Scarica lo ZIP completo da **Code → Download ZIP** ed estrailo in una cartella scrivibile. Non avviare i BAT dentro lo ZIP.
-2. Se il Pico non usa già il nostro firmware unificato 0.7.0, tieni premuto BOOTSEL mentre colleghi USB e copia `dist/gbmirroring-unified-v0.7.0.uf2` nella sua unità. Per questa release basta una volta.
+2. Se il Pico non usa già il nostro firmware unificato 0.8.1, tieni premuto BOOTSEL mentre colleghi USB e copia `dist/gbmirroring-unified-v0.8.1.uf2` nella sua unità (il programma 0.16.0 è pensato per lo 0.8.1; con lo 0.7.0 scegli il programma stabile, S). Per questa release basta una volta.
 3. **Solo la prima volta:** accendi il GBA senza cartuccia, avvia **14-AVVIA-SMERALDO.bat**, premi **INVIO**, inserisci Smeraldo italiano quando richiesto e premi **A** (non START). La console copia la cartuccia in `runtime/cache/` sul PC in circa tre minuti. Riavvia il GBA quando il PC dice che la cache è stata salvata.
 4. Accendi il GBA senza cartuccia. Avvia **14-AVVIA-SMERALDO.bat** e premi **INVIO** per il multiboot.
 5. Quando richiesto sulla console, inserisci Smeraldo italiano, premi **START** ed entra nella partita.
@@ -67,11 +67,13 @@ Tutti i numeri 0.13.0 seguenti vengono dal vero codice del residente: co-simulaz
 | 0.13.0, co-simulazione menu (Start, Pokedex) | 497 / 497 frame pubblicati identici (0.12: 315 / 533); immagine tenuta nei cambi scena fino a circa 0,9 s | Spariti i tile vecchi nel modello |
 | 0.13.0, co-simulazione battaglia selvatica / Centro Pokemon | battaglia 59,1 frame ogni 60, 672 / 690 identici (0.12.0: 104 / 644); Centro 741 / 769 identici | La battaglia viene trasmessa invece di restare ferma |
 | 0.13.0 iniettata nel gioco emulato | camminando 598 / 600 iterazioni come senza residente, 600 tick su 600 VBlank; la transizione arriva alla battaglia; salvataggio identico tranne il tempo di gioco | Ritmo e salvataggio conservati in emulazione; audio non misurato |
-| 0.13.0, fisica | **non ancora registrata** | Tempi del Link, audio e presentazione nel browser vanno verificati su una console |
+| 0.13.0, fisica | nel registro hardware (dal 2026-09-30): cammino fluido, 1,6-1,9 s per mostrare un edificio dopo una porta | Riferimento della linea stabile |
+| 0.16.0, residente dentro il gioco emulato (`emu_stream_bench.py`; con la 0.13.0 dà 100 frame per la porta del Centro Pokemon, i log della console 98-111) | frame dal cambio di scena all'immagine completa, 0.13.0 -> 0.16.0 prima visita / visite successive: ingresso nel Centro 100 -> 62 / 58, uscita 105 -> 56 / 48, apertura Pokedex 70 -> 50 / 44, chiusura 81 -> 44 / 41, inizio lotta 61 -> 45 / 43; cambi di scena del gioco negli stessi frame che senza residente | I cambi di scena durano circa la metà; in emulazione il gioco non rallenta |
+| 0.16.0, fisica | **non registrata** | Cavo, risposta attraverso il Pico 0.8.1, audio e presentazione nel browser non fanno parte delle misure emulate |
 
 I risultati fisici della 0.11.0 o precedenti non si applicano. Refresh del browser, frame dello stream e fluidità del GBA sono misure separate; frame interpolati o ripetuti non sono mai contati come nuovi frame dello stream.
 
-[Registro hardware](docs/VALIDAZIONE-HARDWARE.md) · [Risultati software](test-results/software-v0.13.0/summary.json) · [Limiti e sviluppo futuro](docs/ARCHITECTURE.md#italiano)
+[Registro hardware](docs/VALIDAZIONE-HARDWARE.md) · [Risultati software](test-results/software-v0.16.0/summary.json) · [Limiti e sviluppo futuro](docs/ARCHITECTURE.md#italiano)
 
 ## Origine e crediti
 

@@ -12,7 +12,7 @@ GBMirroring is an experimental hardware/software project for displaying gameplay
 
 This early release shares working code, ready-to-run tools and measured limitations. **Version 0.13.0 streams queued graphics in the time the game spends waiting for VBlank, never holds off the game's interrupts and fixes a block-hash weakness that left stale tiles in menus; it has been verified only with an emulated game and the real resident code, not yet on a physical console.** A 0.12.x hardware test showed smooth walking but glitches in menus and a frozen image during battles.
 
-Package **0.15.0** (stable line) carries resident **0.13.0** and the unchanged Pico firmware **0.7.0**. Project-owned code is [GPL-3.0](LICENSE); see [third-party notices](THIRD_PARTY.md) for dependencies and source access.
+Package **0.16.0** carries resident **0.16.0** (default) and the stable resident **0.13.0** (choice S at start), with Pico firmware **0.8.1**. Resident 0.16.0 announces blocks by hash so the PC can take them from graphics it has already seen or from its own cartridge image, lets the PC compute palette fades, and sends inside the game's waits after a door without delaying it. **It has been measured only in emulation (the real resident running inside the emulated game), never on a console.** Project-owned code is [GPL-3.0](LICENSE); see [third-party notices](THIRD_PARTY.md) for dependencies and source access.
 
 ## What works today
 
@@ -33,14 +33,14 @@ The public documentation is English-first, with an Italian counterpart. Some his
 | Adapter | RP2040 Pico on the [agtbaskara Link adapter design](https://github.com/agtbaskara/game-boy-pico-link-board) |
 | Cable | Tested GBA Link cable with hub, smaller plug at adapter, larger plug at GBA; GBA selector position |
 | PC | Windows 10/11 x64, USB data connection, web browser |
-| Software | Emerald resident 0.13.2, unified Pico firmware 0.7.0 |
+| Software | Emerald resident 0.16.0 (0.13.0 selectable), unified Pico firmware 0.8.1 |
 
 No internal console modification is required. The current Italian cartridge profile contains revision-specific addresses and a cartridge check. Other Emerald languages, FireRed/LeafGreen, GB/GBC games and arbitrary cartridges are **not supported by this release**. Do not assume another adapter or cable has the same signal routing.
 
 ## Quick start
 
 1. Download the complete repository ZIP from **Code → Download ZIP**, then extract it into a writable folder. Do not run a BAT from inside the ZIP.
-2. If your adapter does not already use our unified 0.7.0 firmware, hold the Pico's BOOTSEL button while connecting USB and copy `dist/gbmirroring-unified-v0.7.0.uf2` to its drive. This is a one-time step for this release.
+2. If your adapter does not already use our unified 0.8.1 firmware, hold the Pico's BOOTSEL button while connecting USB and copy `dist/gbmirroring-unified-v0.8.1.uf2` to its drive (resident 0.16.0 is meant for 0.8.1; with 0.7.0 choose the stable resident, S). This is a one-time step for this release.
 3. **First run only:** start the GBA without a cartridge, run **`14-AVVIA-SMERALDO.bat`**, press **Enter**, insert your Italian Emerald when asked and press **A** (not START). The GBA copies the cartridge to `runtime/cache/` on the PC in about three minutes. Restart the GBA when the PC says the cache was saved.
 4. Start the GBA without a cartridge. Run **`14-AVVIA-SMERALDO.bat`** and press **Enter** to load the resident via multiboot.
 5. When the handheld requests it, insert your Italian Emerald cartridge, press **START**, and enter your game.
@@ -84,11 +84,13 @@ All 0.13.0 numbers below come from the real resident code: the stream co-simulat
 | 0.13.0, co-simulated menus (start menu, Pokedex) | 497 / 497 published frames identical (0.12: 315 / 533); held image during scene changes up to about 0.9 s | The stale-tile glitches are gone in the model |
 | 0.13.0, co-simulated wild battle / Pokemon Center | battle 59.1 frames per 60, 672 / 690 identical (0.12.0: 104 / 644); Center 741 / 769 identical | Battles stream instead of freezing |
 | 0.13.0 injected into the emulated game | walking: 598 / 600 main-loop iterations as without the resident, 600 ticks per 600 VBlanks; battle transition reaches the battle; save identical except the play-time clock | Game pace and save preserved in emulation; audio not measured |
-| 0.13.0, physical | **not recorded yet** | Link timing, audio and browser presentation must be verified on a console |
+| 0.13.0, physical | recorded in the hardware journal (2026-09-30 onwards): smooth walking, 1.6-1.9 s to show a building after a door | Baseline of the stable line |
+| 0.16.0, resident inside the emulated game (`emu_stream_bench.py`; 0.13.0 gives 100 frames for the Pokemon Center door, the console logs 98-111) | frames from scene change to a whole image, 0.13.0 -> 0.16.0 first visit / later visits: Center entry 100 -> 62 / 58, exit 105 -> 56 / 48, Pokedex open 70 -> 50 / 44, close 81 -> 44 / 41, wild battle start 61 -> 45 / 43; scene steps of the game in the same frames as without the resident | Scene changes take about half the time; the game is not slowed in emulation |
+| 0.16.0, physical | **not recorded** | Cable, Pico 0.8.1 answer path, audio and browser presentation are not part of the emulated measurements |
 
 Physical results from 0.11.0 or earlier do not apply. Refresh rate of the browser, stream frames and GBA gameplay are separate measurements; interpolated or repeated frames are never counted as new stream frames.
 
-[Hardware journal (Italian)](docs/VALIDAZIONE-HARDWARE.md) · [Selected software results](test-results/software-v0.13.0/summary.json) · [Current limitations / roadmap](docs/ARCHITECTURE.md#roadmap)
+[Hardware journal (Italian)](docs/VALIDAZIONE-HARDWARE.md) · [Selected software results](test-results/software-v0.16.0/summary.json) · [Current limitations / roadmap](docs/ARCHITECTURE.md#roadmap)
 
 ## Project background and credits
 

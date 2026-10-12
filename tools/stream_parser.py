@@ -75,6 +75,14 @@ def stream_hash(block):
         a^=a>>15;b=(b+(b<<7))&0xffffffff
     return a,b
 
+def fade_block(unfaded,color,y):
+    """The game's palette blend (BlendPalette): every colour of the block moved y sixteenths towards `color`."""
+    R=color&31;G=color>>5&31;B=color>>10&31;out=[]
+    for c in struct.unpack('<128H',unfaded):
+        r=c&31;g=c>>5&31;b=c>>10&31
+        out.append((r+(((R-r)*y)>>4))|((g+(((G-g)*y)>>4))<<5)|((b+(((B-b)*y)>>4))<<10))
+    return struct.pack('<128H',*out)
+
 def block_fold(block):
     a,b=stream_hash(block);return a^((b*0x9e3779b1)&0xffffffff)
 
@@ -114,8 +122,61 @@ class StreamParser(GraphicsParser):
         self.dropped_incomplete=0;self.forced_releases=0;self.ticks=0;self.frames_published=0
         self.rom_image=None;self.rom_seen=None;self.rom_total=None;self.rom_bad=0;self.rom_missing=0
         self.hold_peak=0;self.scene=None  # most blocks outstanding during the current wait; callback id of the last tick
+        # Every block content seen, by the resident's two 32-bit hashes (64 bits: a chance match is out of the question). A block the GBA announces by hash alone (record 14) is shown
+        # at once when its content is here or in the graphics unpacked from the cartridge image; `waiting` holds the
+        # announced blocks whose content must still arrive, `resolved` those found (the verdict sent back to the GBA).
+        self.store={};self.rom_index={};self.raw_index=None;self.fade_solver=None;self.unfaded={};self.fade_hits=0;self.waiting={};self.resolved=set();self.store_hits=0;self.store_misses=0;self.store_dirty=False
         self.packet_log=None  # called with one dict per packet received, also for ticks later dropped by a hold
     ROM_CHUNKS=65536
+    # Fixed fields of a packet: 7 from resident 0.16.0 (the seventh counts announced blocks), which says so with bit
+    # 14 of the first; 6 before. Read from every packet, so the 0.13.0 resident is followed by the same viewer.
+    fields=7
+    STORE_MAX=60000
+    def remember(self,content):
+        if len(self.store)<self.STORE_MAX:
+            key=stream_hash(content)
+            if key not in self.store:self.store[key]=bytes(content);self.store_dirty=True
+    def written(self,first,count=1):
+        """Content for these blocks has arrived by another record: nothing is outstanding for them any more."""
+        for b in range(first,first+count):self.waiting.pop(b,None);self.resolved.discard(b)
+    def forget(self):
+        self.waiting={};self.resolved=set();self.unfaded={}
+    def fade(self,block,key,color,y):
+        """The palette block with this hash during a fade towards `color`: the unfaded block held here, blended. The
+        result is only used when its hash is the announced one."""
+        base=self.unfaded.get(block)
+        if base is None:return None
+        if self.fade_solver:return self.fade_solver(base,color,key,y)
+        # the step in the record is the game's next one: the block usually holds that or the one before
+        for step in sorted(range(17),key=lambda v:abs(v-y)):
+            candidate=fade_block(base,color,step)
+            if stream_hash(candidate)==tuple(key):return candidate
+        return None
+    def verdict(self):
+        """Answer for the resident's control slot (through the Pico): the sequence number read so far and one bit per
+        block, set when the content last announced for it is already here; 28 words that xor to 0x5aa5. None while
+        the cache is being rebuilt."""
+        if self.cache is None or self.previous is None:return None
+        masks=[0]*13
+        for b in self.resolved:masks[b>>5]|=1<<(b&31)
+        words=[self.previous&0xffff]
+        for m in masks:words+=[m&0xffff,m>>16]
+        check=0x5aa5
+        for w in words:check^=w
+        return struct.pack('<28H',*words,check)
+    def load_store(self,path):
+        try:
+            with open(path,'rb') as f:data=f.read()
+        except OSError:return 0
+        for i in range(0,len(data)-263,264):self.store[struct.unpack_from('<II',data,i)]=data[i+8:i+264]
+        self.store_dirty=False;return len(self.store)
+    def save_store(self,path):
+        if not self.store_dirty:return
+        import os
+        temporary=str(path)+'.tmp'
+        with open(temporary,'wb') as f:
+            for key,content in list(self.store.items()):f.write(struct.pack('<II',*key)+content)
+        os.replace(temporary,path);self.store_dirty=False
     BATTLE=164          # callback id of the battle VBlank callback (0x08038a2d folded to a byte)
     battle_hold=8       # ticks an unfinished image may wait during a battle
     scene_backlog=250   # outstanding blocks that mean a scene change rather than an effect
@@ -134,7 +195,7 @@ class StreamParser(GraphicsParser):
     def rom_complete(self):
         return self.rom_image is not None and self.rom_total==self.ROM_CHUNKS and self.rom_received==self.ROM_CHUNKS
     def fail(self,reason='transaction'):
-        super().fail(reason);self.held=[];self.complete=False
+        super().fail(reason);self.held=[];self.complete=False;self.forget()
     def feed_aligned(self,data):
         self.buffer.extend(data);frames=[]
         while True:
@@ -148,7 +209,7 @@ class StreamParser(GraphicsParser):
             elif h[2]==0x600:ok=h[3]==2 and h[6]==12
             else:ok=False
             if not ok or h[11]!=0x5aa5 or binascii.crc_hqx(self.buffer[4:20],65535)!=h[10]:
-                self.bad_headers+=1;self.cache=None;self.held=[];self.complete=False;del self.buffer[:1];continue
+                self.bad_headers+=1;self.cache=None;self.held=[];self.complete=False;self.forget();del self.buffer[:1];continue
             n=24+h[6]*2
             if len(self.buffer)<n:break
             body=bytes(self.buffer[24:n]);del self.buffer[:n]
@@ -171,6 +232,7 @@ class StreamParser(GraphicsParser):
         if not(0x08000000<=src and src-0x08000000+size<=len(self.rom) and 0x06000000<=dest and dest+size<=0x06018000 and size%4==0 and size>0):raise StreamError('rom_copy_bounds')
         offset=HOT_BYTES+dest-0x06000000
         self.cache[offset:offset+size]=self.rom[src-0x08000000:src-0x08000000+size]
+        self.written(9+((dest-0x06000000)>>8),((dest+size-1-0x06000000)>>8)-((dest-0x06000000)>>8)+1)
         # During a scene load (large backlog) the held ticks are the loading screens: tiles copied from the ROM belong in
         # all of them, or the replayed fade would show the old scene under the new palette. While walking, each held tick
         # keeps its own sprite pose.
@@ -178,20 +240,45 @@ class StreamParser(GraphicsParser):
             if entry[3]['pending_blocks']>self.load_backlog:entry[4][offset-HOT_BYTES:offset-HOT_BYTES+size]=self.rom[src-0x08000000:src-0x08000000+size]
     def apply_records(self,body,records):
         """Applies the records of a tick or bulk packet to the running cache; returns (regions, codecs)."""
-        pos=12;seen=set();regions={};codecs={}
+        pos=2*self.fields;seen=set();regions={};codecs={}
         for _ in range(records):
             if pos+4>len(body):raise StreamError('record_bounds')
             tag,descriptor=struct.unpack_from('<HH',body,pos);pos+=4
             kind=descriptor>>8;size=(descriptor&255)*2;block=tag&511;slot=tag>>9
-            if kind not in (1,3,4,5,6,10,12,13) or size>(510 if kind==12 else 256) or pos+size>len(body):raise StreamError('record_kind')
+            if kind not in (1,3,4,5,6,10,12,13,14,15,16) or size>(510 if kind==12 else 256) or pos+size>len(body):raise StreamError('record_kind')
             if kind==13:
                 self.apply_raster(body[pos:pos+size]);pos+=size
                 codecs['13']=codecs.get('13',0)+1;continue
+            if kind==16:
+                # the game's unfaded palette for this block: what the fades that follow are computed from
+                if size!=256 or not 1<=block<=4:raise StreamError('record_block')
+                self.unfaded[block]=bytes(body[pos:pos+256]);pos+=size;codecs['16']=codecs.get('16',0)+1;continue
+            if kind in (14,15):
+                if size!=(8 if kind==14 else 12) or (block<9)!=(kind==15) or not 1<=block<393 or block>4 and block<9 or block in seen:raise StreamError('record_block')
+                key=struct.unpack_from('<II',body,pos);faded=None
+                if kind==15:
+                    color,step=struct.unpack_from('<HH',body,pos+8);faded=self.fade(block,key,color&0x7fff,(step>>6)&31)
+                    if faded is not None:self.fade_hits+=1
+                pos+=size
+                # what the block held is remembered: the game may put it back, and then announces it again
+                if block>=9:self.remember(bytes(self.cache[block*256:(block+1)*256]))
+                content=faded if faded is not None else self.store.get(key)
+                if content is None and key in self.rom_index:
+                    data,offset=self.rom_index[key];content=data[offset:offset+256]
+                if content is None and self.raw_index is not None:content=self.raw_index.find(key)
+                if content is None:self.waiting[block]=key;self.resolved.discard(block);self.store_misses+=1
+                else:
+                    self.waiting.pop(block,None);self.resolved.add(block);self.store_hits+=1
+                    self.cache[block*256:(block+1)*256]=content
+                    if block>=9:self.complete_held(block*256,content)
+                    else:regions.setdefault(region(block),dict(blocks=0,payload_bytes=0))['blocks']+=1
+                codecs[str(kind)]=codecs.get(str(kind),0)+1;continue
             if kind==12:
                 first=tag&511
                 if first>=393-7 or any(b in seen for b in range(first,first+8)):raise StreamError('record_block')
                 unit=decode_unit(first,body[pos:pos+size],bytes(self.cache[first*256:(first+8)*256]));pos+=size
-                self.cache[first*256:(first+8)*256]=unit;seen.update(range(first,first+8));self.complete_held(first*256,unit)
+                self.cache[first*256:(first+8)*256]=unit;seen.update(range(first,first+8));self.complete_held(first*256,unit);self.written(first,8)
+                for i in range(0,2048,256):self.remember(unit[i:i+256])
                 r=regions.setdefault('field_maps',dict(blocks=0,payload_bytes=0));r['blocks']+=8;r['payload_bytes']+=size
                 codecs['12']=codecs.get('12',0)+1;continue
             if kind==10:
@@ -203,7 +290,9 @@ class StreamParser(GraphicsParser):
             decoded=decode_record(kind,tag,body[pos:pos+size],base,self.dictionary);pos+=size
             if kind!=3:self.dictionary[slot]=decoded
             self.cache[block*256:(block+1)*256]=decoded;seen.add(block)
-            if block>=9:self.complete_held(block*256,decoded)
+            self.written(block)
+            if block>=9:self.complete_held(block*256,decoded);self.remember(decoded)
+            elif 1<=block<=4:self.unfaded[block]=bytes(decoded)   # what a fade that starts now is computed from
             r=regions.setdefault(region(block),dict(blocks=0,payload_bytes=0));r['blocks']+=1;r['payload_bytes']+=size
             codecs[str(kind)]=codecs.get(str(kind),0)+1
         if pos!=len(body):raise StreamError('record_trailing')
@@ -229,41 +318,45 @@ class StreamParser(GraphicsParser):
     def continues(self,seq):
         """True when seq follows the last packet and the cache is usable; otherwise the cache waits for a keyframe."""
         if self.cache is not None and self.previous is not None and seq==((self.previous+1)&0xffffffff):return True
-        self.delta_misses+=1;self.cache=None;self.held=[];self.complete=False;self.previous=seq;return False
+        self.delta_misses+=1;self.cache=None;self.held=[];self.complete=False;self.forget();self.previous=seq;return False
     def apply_tick(self,seq,body,wire):
-        if len(body)<2*6:self.fail();return []
-        flags,lo,hi,pending,records,telemetry=struct.unpack_from('<6H',body)
+        if len(body)<12:self.fail();return []
+        self.fields=7 if body[1]&0x40 else 6
+        if len(body)<2*self.fields:self.fail();return []
+        flags,lo,hi,pending,records,telemetry,later=struct.unpack_from('<7H',body) if self.fields==7 else struct.unpack_from('<6H',body)+(0,)
         interrupts=pending>>9;pending&=511;callback_id=records>>8;records&=255
         key=bool(flags&1);self.feedback_available=bool(flags&256)
         if self.previous is not None and seq==self.previous:return []
         if key:
-            self.cache=bytearray(SIZE);self.dictionary={};self.held=[];self.complete=False
+            self.cache=bytearray(SIZE);self.dictionary={};self.held=[];self.complete=False;self.forget()
         elif not self.continues(seq):return []
         try:regions,codecs=self.apply_records(body,records)
         except StreamError as exc:
             self.fail(str(exc));self.previous=seq;return []
-        self.previous=seq;self.ticks+=1;self.scene=callback_id
+        self.previous=seq;self.ticks+=1;self.scene=callback_id;backlog=pending;pending=self.outstanding(pending,later)
         if not flags&2:self.raster_dest=None
         raster=[self.raster_dest]+self.raster if self.raster_dest is not None else None
-        meta=dict(raster=raster,version='emerald-stream-0.13.0',end_game_frame=lo|hi<<16,game_frame=lo|hi<<16,changed_blocks=records,pending_blocks=pending,
-            keyframe=key,raster_dma_active=bool(flags&2),feedback_available=bool(flags&256),cadence=(flags>>9)&3,skipped_ticks=(flags>>4)&7,heavy_tick=bool(flags&128),interrupt_enable=interrupts,callback_id=callback_id,unknown_scene=bool(flags&2048),peak_work_scanlines=telemetry&255,idle_slack=telemetry>>8,
+        meta=dict(raster=raster,version='emerald-stream-0.16.0' if self.fields==7 else 'emerald-stream-0.13.0',end_game_frame=lo|hi<<16,game_frame=lo|hi<<16,changed_blocks=records,pending_blocks=pending,
+            keyframe=key,palette_held_back=self.fields==7 and bool(flags&1024),raster_dma_active=bool(flags&2),feedback_available=bool(flags&256),cadence=(flags>>9)&3,skipped_ticks=(flags>>4)&7,heavy_tick=bool(flags&128),interrupt_enable=interrupts,callback_id=callback_id,unknown_scene=bool(flags&2048),peak_work_scanlines=telemetry&255,idle_slack=telemetry>>8,
             resource_regions=regions,block_codecs=codecs,idle_packets=0,idle_words=0,scope='Graphics stream; scanline effects and per-tick temporal coherence not fully verified')
         self.held.append((seq,bytes(self.cache[:HOT_BYTES]),wire,meta,bytearray(self.cache[HOT_BYTES:])))
-        if self.packet_log:self.packet_log(dict(t='tick',seq=seq,frame=lo|hi<<16,pending=pending,held=len(self.held),words=wire//2,codecs=codecs,lines=telemetry&255,key=int(key),cb=callback_id,skipped=(flags>>4)&7))
+        if self.packet_log:self.packet_log(dict(t='tick',seq=seq,frame=lo|hi<<16,pending=pending,later=later,waiting=len(self.waiting),held=len(self.held),words=wire//2,codecs=codecs,lines=telemetry&255,key=int(key),cb=callback_id,skipped=(flags>>4)&7))
         if key:self.complete=False
-        return self.settle(pending)
+        return self.settle(pending,backlog)
     def apply_bulk(self,seq,body,wire):
         """Blocks sent while the game waited for VBlank: they complete the cache of the last tick, no new image."""
-        if len(body)<2*6:self.fail();return []
-        flags,lo,hi,pending,records,telemetry=struct.unpack_from('<6H',body)
+        if len(body)<12:self.fail();return []
+        self.fields=7 if body[1]&0x40 else 6
+        if len(body)<2*self.fields:self.fail();return []
+        flags,lo,hi,pending,records,telemetry,later=struct.unpack_from('<7H',body) if self.fields==7 else struct.unpack_from('<6H',body)+(0,)
         pending&=511;records&=255
         if self.previous is not None and seq==self.previous:return []
         if not self.continues(seq):return []
         try:regions,codecs=self.apply_records(body,records)
         except StreamError as exc:
             self.fail(str(exc));self.previous=seq;return []
-        self.previous=seq;self.bulk_packets+=1
-        if self.packet_log:self.packet_log(dict(t='idle',seq=seq,pending=pending,held=len(self.held),words=wire//2,codecs=codecs))
+        self.previous=seq;self.bulk_packets+=1;backlog=pending;pending=self.outstanding(pending,later)
+        if self.packet_log:self.packet_log(dict(t='idle',seq=seq,pending=pending,later=later,waiting=len(self.waiting),held=len(self.held),words=wire//2,codecs=codecs))
         if self.held:
             # registers, palette and OAM left over by a heavy tick belong to that tick
             if any(k in regions for k in ('registers','palette','objects')):
@@ -272,15 +365,24 @@ class StreamParser(GraphicsParser):
             for k,v in codecs.items():m['block_codecs'][k]=m['block_codecs'].get(k,0)+v
             for k,v in regions.items():
                 r=m['resource_regions'].setdefault(k,dict(blocks=0,payload_bytes=0));r['blocks']+=v['blocks'];r['payload_bytes']+=v['payload_bytes']
-        return self.settle(pending)
-    def settle(self,pending):
+        return self.settle(pending,backlog)
+    def outstanding(self,pending,later):
+        """Blocks the image must wait for: the resident's known-changed blocks, less the palette blocks of a fade
+        computed here. A tile block announced by hash and found here still counts until the resident, told so by the
+        verdict, has checked it again: the game may have changed it since the announcement (0.16 development showed
+        such blocks a few frames early, with the tiles of the announcement)."""
+        if not later:self.resolved.clear()
+        return max(0,pending-sum(1 for b in self.resolved if b<9))
+    def settle(self,pending,backlog=None):
         """Publishes the held ticks once no known-changed block is outstanding; never mixes old and new tiles unless
         a backlog outlasts the hold limit (then the release is marked incomplete)."""
+        rebuilt=not self.complete
         if pending==0:self.complete=True
         if not self.held:return []
         if not self.complete:
-            # Cache still being rebuilt after a keyframe: nothing meaningful to show yet.
-            if len(self.held)>self.keep:self.dropped_incomplete+=len(self.held)-self.keep;del self.held[:len(self.held)-self.keep]
+            # Cache still being rebuilt after a keyframe: nothing meaningful to show yet, and the ticks received meanwhile
+            # were never whole (0.15 replayed the last twelve, filled in with later tiles): only the newest is kept.
+            self.dropped_incomplete+=len(self.held)-1;del self.held[:-1]
             return []
         # The image waits until every known-changed block has arrived. 0.13-0.14 released it unfinished once fewer than
         # forty blocks were left and thirty ticks had passed: wrong tiles at the start and end of battles and inside
@@ -290,7 +392,7 @@ class StreamParser(GraphicsParser):
         # and the image would never be finished before the move ends: there it is shown after battle_hold ticks even
         # if blocks are missing, so the move is seen while its graphics fill in. A scene change (nearly every block
         # outstanding) is still waited for.
-        self.hold_peak=max(self.hold_peak,pending)
+        self.hold_peak=max(self.hold_peak,pending if backlog is None else backlog)
         limit=self.battle_hold if self.scene==self.BATTLE and self.hold_peak<self.scene_backlog else self.long_hold
         forced=pending>0 and len(self.held)>limit
         if pending>0 and not forced:return []
@@ -299,7 +401,12 @@ class StreamParser(GraphicsParser):
         # in the game; the black frames of the loading screen before it are collapsed into one. The browser then
         # catches up with the live stream.
         long=len(self.held)>self.max_hold
-        keep=self.fade_keep if long else self.keep
+        keep=1 if rebuilt else self.fade_keep if long else self.keep
+        # During a scene load the resident holds the palette back for the tiles: the ticks it marks so never get
+        # their own colours and are not replayed (only the ticks after the last of them are whole).
+        for i in range(len(self.held)-2,-1,-1):
+            if self.held[i][3].get('palette_held_back'):
+                self.dropped_incomplete+=i+1;del self.held[:i+1];break
         if len(self.held)>keep:
             self.dropped_incomplete+=len(self.held)-keep;del self.held[:len(self.held)-keep]
         while long and len(self.held)>1 and black(self.held[0][1]) and black(self.held[1][1]):

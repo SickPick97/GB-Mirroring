@@ -1,0 +1,719 @@
+{
+ "resident": "0.16.0",
+ "package": "0.16.0",
+ "pico": "0.8.1",
+ "date": "2026-10-12",
+ "scope": "Software only, no console: the user asked for no more physical tests. Two benches; neither includes the cable, the real Pico, USB or the browser.",
+ "emulated_game_with_resident_inside": {
+  "tool": "tools/emu_stream_bench.py --rom-index (mGBA runs the game and the resident together; bench build of the resident takes the PC verdict from memory after clocking the control slot)",
+  "calibration": "resident 0.13.0: Pokemon Center door 100 frames here; 98-111 frames in the console logs of 2026-10-06/11",
+  "meaning": "loads: frames from more than 300 blocks outstanding until the PC can show the whole image. first visit: the PC only knows its cartridge image; later visits: it also holds what it saw in the first run",
+  "note_center": "the only difference in the game scene steps is the single frame in which the game clears its VBlank callback at the end of the wireless-adapter probe (frame 197 in both)",
+  "scenarios": {
+   "center": {
+    "resident_0_13_0": {
+     "loads": [
+      {
+       "start_frame": 0,
+       "frames": 55
+      },
+      {
+       "start_frame": 154,
+       "frames": 100
+      },
+      {
+       "start_frame": 592,
+       "frames": 105
+      }
+     ],
+     "frames_with_blocks_outstanding": 289,
+     "packets": 1391,
+     "blocks_found_on_pc": 0,
+     "blocks_not_found": 0,
+     "fades_computed": 0
+    },
+    "resident_0_16_0_first_visit": {
+     "loads": [
+      {
+       "start_frame": 0,
+       "frames": 42
+      },
+      {
+       "start_frame": 154,
+       "frames": 62
+      },
+      {
+       "start_frame": 592,
+       "frames": 56
+      }
+     ],
+     "frames_with_blocks_outstanding": 207,
+     "packets": 1247,
+     "blocks_found_on_pc": 449,
+     "blocks_not_found": 120,
+     "fades_computed": 89
+    },
+    "resident_0_16_0_later_visits": {
+     "loads": [
+      {
+       "start_frame": 0,
+       "frames": 27
+      },
+      {
+       "start_frame": 154,
+       "frames": 58
+      },
+      {
+       "start_frame": 592,
+       "frames": 48
+      }
+     ],
+     "frames_with_blocks_outstanding": 172,
+     "packets": 1201,
+     "blocks_found_on_pc": 541,
+     "blocks_not_found": 6,
+     "fades_computed": 111
+    },
+    "game_scene_steps_same_frames_as_0_13_0": "see note"
+   },
+   "run": {
+    "resident_0_13_0": {
+     "loads": [
+      {
+       "start_frame": 0,
+       "frames": 60
+      }
+     ],
+     "frames_with_blocks_outstanding": 102,
+     "packets": 582,
+     "blocks_found_on_pc": 0,
+     "blocks_not_found": 0,
+     "fades_computed": 0
+    },
+    "resident_0_16_0_first_visit": {
+     "loads": [
+      {
+       "start_frame": 0,
+       "frames": 47
+      }
+     ],
+     "frames_with_blocks_outstanding": 104,
+     "packets": 509,
+     "blocks_found_on_pc": 138,
+     "blocks_not_found": 93,
+     "fades_computed": 0
+    },
+    "resident_0_16_0_later_visits": {
+     "loads": [
+      {
+       "start_frame": 0,
+       "frames": 33
+      }
+     ],
+     "frames_with_blocks_outstanding": 89,
+     "packets": 503,
+     "blocks_found_on_pc": 219,
+     "blocks_not_found": 0,
+     "fades_computed": 0
+    },
+    "game_scene_steps_same_frames_as_0_13_0": true
+   },
+   "battle": {
+    "resident_0_13_0": {
+     "loads": [
+      {
+       "start_frame": 1,
+       "frames": 26
+      }
+     ],
+     "frames_with_blocks_outstanding": 63,
+     "packets": 876,
+     "blocks_found_on_pc": 0,
+     "blocks_not_found": 0,
+     "fades_computed": 0
+    },
+    "resident_0_16_0_first_visit": {
+     "loads": [
+      {
+       "start_frame": 1,
+       "frames": 14
+      }
+     ],
+     "frames_with_blocks_outstanding": 68,
+     "packets": 840,
+     "blocks_found_on_pc": 88,
+     "blocks_not_found": 0,
+     "fades_computed": 0
+    },
+    "resident_0_16_0_later_visits": {
+     "loads": [
+      {
+       "start_frame": 1,
+       "frames": 14
+      }
+     ],
+     "frames_with_blocks_outstanding": 68,
+     "packets": 840,
+     "blocks_found_on_pc": 88,
+     "blocks_not_found": 0,
+     "fades_computed": 0
+    },
+    "game_scene_steps_same_frames_as_0_13_0": true
+   },
+   "surf": {
+    "resident_0_13_0": {
+     "loads": [
+      {
+       "start_frame": 0,
+       "frames": 26
+      }
+     ],
+     "frames_with_blocks_outstanding": 67,
+     "packets": 478,
+     "blocks_found_on_pc": 0,
+     "blocks_not_found": 0,
+     "fades_computed": 0
+    },
+    "resident_0_16_0_first_visit": {
+     "loads": [
+      {
+       "start_frame": 0,
+       "frames": 24
+      }
+     ],
+     "frames_with_blocks_outstanding": 75,
+     "packets": 456,
+     "blocks_found_on_pc": 74,
+     "blocks_not_found": 37,
+     "fades_computed": 0
+    },
+    "resident_0_16_0_later_visits": {
+     "loads": [
+      {
+       "start_frame": 0,
+       "frames": 19
+      }
+     ],
+     "frames_with_blocks_outstanding": 73,
+     "packets": 449,
+     "blocks_found_on_pc": 103,
+     "blocks_not_found": 2,
+     "fades_computed": 0
+    },
+    "game_scene_steps_same_frames_as_0_13_0": true
+   },
+   "menus": {
+    "resident_0_13_0": {
+     "loads": [
+      {
+       "start_frame": 0,
+       "frames": 55
+      },
+      {
+       "start_frame": 265,
+       "frames": 70
+      },
+      {
+       "start_frame": 504,
+       "frames": 81
+      }
+     ],
+     "frames_with_blocks_outstanding": 217,
+     "packets": 1026,
+     "blocks_found_on_pc": 0,
+     "blocks_not_found": 0,
+     "fades_computed": 0
+    },
+    "resident_0_16_0_first_visit": {
+     "loads": [
+      {
+       "start_frame": 0,
+       "frames": 42
+      },
+      {
+       "start_frame": 264,
+       "frames": 50
+      },
+      {
+       "start_frame": 504,
+       "frames": 44
+      }
+     ],
+     "frames_with_blocks_outstanding": 159,
+     "packets": 813,
+     "blocks_found_on_pc": 402,
+     "blocks_not_found": 112,
+     "fades_computed": 96
+    },
+    "resident_0_16_0_later_visits": {
+     "loads": [
+      {
+       "start_frame": 0,
+       "frames": 27
+      },
+      {
+       "start_frame": 265,
+       "frames": 44
+      },
+      {
+       "start_frame": 504,
+       "frames": 41
+      }
+     ],
+     "frames_with_blocks_outstanding": 132,
+     "packets": 782,
+     "blocks_found_on_pc": 485,
+     "blocks_not_found": 1,
+     "fades_computed": 109
+    },
+    "game_scene_steps_same_frames_as_0_13_0": true
+   },
+   "prebattle": {
+    "resident_0_13_0": {
+     "loads": [
+      {
+       "start_frame": 13,
+       "frames": 61
+      }
+     ],
+     "frames_with_blocks_outstanding": 91,
+     "packets": 503,
+     "blocks_found_on_pc": 0,
+     "blocks_not_found": 0,
+     "fades_computed": 0
+    },
+    "resident_0_16_0_first_visit": {
+     "loads": [
+      {
+       "start_frame": 13,
+       "frames": 45
+      }
+     ],
+     "frames_with_blocks_outstanding": 83,
+     "packets": 481,
+     "blocks_found_on_pc": 59,
+     "blocks_not_found": 5,
+     "fades_computed": 0
+    },
+    "resident_0_16_0_later_visits": {
+     "loads": [
+      {
+       "start_frame": 13,
+       "frames": 43
+      }
+     ],
+     "frames_with_blocks_outstanding": 78,
+     "packets": 478,
+     "blocks_found_on_pc": 63,
+     "blocks_not_found": 1,
+     "fades_computed": 0
+    },
+    "game_scene_steps_same_frames_as_0_13_0": true
+   }
+  }
+ },
+ "game_pace": {
+  "scene_entry": "tools/test_scene_entry.py: Pokemon Center entered and left in the same frames as by the game alone (+-3), wireless-adapter probe ends in the same frame (+-1)",
+  "walking": "tools/test_battle_transition.py: main loop iterations with the resident within 1 of the game alone over 600 frames; wild battle reached",
+  "save": "tools/test_save_integrity.py: flash identical except SaveBlock2 play time and its checksum"
+ },
+ "image_by_image": {
+  "tool": "tools/cosim_stream.py --timing measured --rom-index --render (resident in Unicorn beside the game on measured game timing; every published image rendered and compared with the true frame)",
+  "caution": "this bench overstates throughput (0.13.0 door: 29 frames here, about 100 on the console): used for image correctness, not for load times",
+  "scenarios": {
+   "center": {
+    "resident_0_13_0": {
+     "ticks": 900,
+     "frames_published": 784,
+     "published_per_60_ticks": 52.27,
+     "min_window_60": 0,
+     "max_gap_frames": 79,
+     "visually_exact_frames": 734,
+     "frames_rendered": 784,
+     "frames_over_100_wrong_pixels": 27,
+     "max_wrong_pixels": 460,
+     "mean_delay_ticks": 1.33,
+     "max_delay_ticks": 42,
+     "forced_releases": 0,
+     "parser_bad_frames": 0,
+     "delta_misses": 0,
+     "store_hits": 0,
+     "store_misses": 0,
+     "control_slots": 27
+    },
+    "resident_0_16_0": {
+     "ticks": 900,
+     "frames_published": 788,
+     "published_per_60_ticks": 52.53,
+     "min_window_60": 22,
+     "max_gap_frames": 50,
+     "visually_exact_frames": 759,
+     "frames_rendered": 788,
+     "frames_over_100_wrong_pixels": 6,
+     "max_wrong_pixels": 2586,
+     "mean_delay_ticks": 0.3,
+     "max_delay_ticks": 39,
+     "forced_releases": 0,
+     "parser_bad_frames": 0,
+     "delta_misses": 0,
+     "records_by_kind": {
+      "1": 285,
+      "3": 740,
+      "4": 167,
+      "5": 350,
+      "10": 1680,
+      "12": 62,
+      "14": 959,
+      "15": 116,
+      "16": 13
+     },
+     "fade_hits": 111,
+     "store_hits": 557,
+     "store_misses": 72,
+     "control_slots": 69
+    },
+    "resident_0_16_0_without_verdict_pico_0_7_0": {
+     "ticks": 900,
+     "frames_published": 676,
+     "published_per_60_ticks": 45.07,
+     "min_window_60": 0,
+     "max_gap_frames": 92,
+     "visually_exact_frames": 652,
+     "frames_rendered": 676,
+     "frames_over_100_wrong_pixels": 8,
+     "max_wrong_pixels": 3271,
+     "mean_delay_ticks": 0.04,
+     "max_delay_ticks": 3,
+     "forced_releases": 0,
+     "parser_bad_frames": 0,
+     "delta_misses": 0,
+     "records_by_kind": {
+      "1": 818,
+      "3": 813,
+      "4": 214,
+      "5": 358,
+      "10": 1680,
+      "12": 56
+     },
+     "fade_hits": 0,
+     "store_hits": 0,
+     "store_misses": 0,
+     "control_slots": 28
+    }
+   },
+   "run": {
+    "resident_0_13_0": {
+     "ticks": 300,
+     "frames_published": 258,
+     "published_per_60_ticks": 51.6,
+     "min_window_60": 25,
+     "max_gap_frames": 4,
+     "visually_exact_frames": 251,
+     "frames_rendered": 258,
+     "frames_over_100_wrong_pixels": 7,
+     "max_wrong_pixels": 17494,
+     "mean_delay_ticks": 0.34,
+     "max_delay_ticks": 11,
+     "forced_releases": 0,
+     "parser_bad_frames": 0,
+     "delta_misses": 0,
+     "store_hits": 0,
+     "store_misses": 0,
+     "control_slots": 9
+    },
+    "resident_0_16_0": {
+     "ticks": 300,
+     "frames_published": 258,
+     "published_per_60_ticks": 51.6,
+     "min_window_60": 25,
+     "max_gap_frames": 5,
+     "visually_exact_frames": 249,
+     "frames_rendered": 258,
+     "frames_over_100_wrong_pixels": 5,
+     "max_wrong_pixels": 17494,
+     "mean_delay_ticks": 0.24,
+     "max_delay_ticks": 4,
+     "forced_releases": 0,
+     "parser_bad_frames": 0,
+     "delta_misses": 0,
+     "records_by_kind": {
+      "1": 189,
+      "3": 287,
+      "4": 129,
+      "5": 382,
+      "10": 786,
+      "12": 93,
+      "14": 377
+     },
+     "fade_hits": 0,
+     "store_hits": 163,
+     "store_misses": 68,
+     "control_slots": 25
+    }
+   },
+   "battle": {
+    "resident_0_13_0": {
+     "ticks": 700,
+     "frames_published": 682,
+     "published_per_60_ticks": 58.46,
+     "min_window_60": 51,
+     "max_gap_frames": 9,
+     "visually_exact_frames": 661,
+     "frames_rendered": 682,
+     "frames_over_100_wrong_pixels": 1,
+     "max_wrong_pixels": 874,
+     "mean_delay_ticks": 0.4,
+     "max_delay_ticks": 11,
+     "forced_releases": 0,
+     "parser_bad_frames": 0,
+     "delta_misses": 0,
+     "store_hits": 0,
+     "store_misses": 0,
+     "control_slots": 22
+    },
+    "resident_0_16_0": {
+     "ticks": 700,
+     "frames_published": 677,
+     "published_per_60_ticks": 58.03,
+     "min_window_60": 45,
+     "max_gap_frames": 10,
+     "visually_exact_frames": 660,
+     "frames_rendered": 677,
+     "frames_over_100_wrong_pixels": 1,
+     "max_wrong_pixels": 311,
+     "mean_delay_ticks": 0.43,
+     "max_delay_ticks": 9,
+     "forced_releases": 1,
+     "parser_bad_frames": 0,
+     "delta_misses": 0,
+     "records_by_kind": {
+      "1": 146,
+      "3": 87,
+      "4": 359,
+      "5": 455,
+      "10": 4,
+      "12": 2,
+      "14": 158
+     },
+     "fade_hits": 0,
+     "store_hits": 70,
+     "store_misses": 17,
+     "control_slots": 28
+    },
+    "resident_0_16_0_without_verdict_pico_0_7_0": {
+     "ticks": 700,
+     "frames_published": 669,
+     "published_per_60_ticks": 57.34,
+     "min_window_60": 38,
+     "max_gap_frames": 10,
+     "visually_exact_frames": 650,
+     "frames_rendered": 669,
+     "frames_over_100_wrong_pixels": 1,
+     "max_wrong_pixels": 311,
+     "mean_delay_ticks": 0.41,
+     "max_delay_ticks": 9,
+     "forced_releases": 1,
+     "parser_bad_frames": 0,
+     "delta_misses": 0,
+     "records_by_kind": {
+      "1": 201,
+      "3": 91,
+      "4": 442,
+      "5": 454,
+      "10": 4,
+      "12": 3
+     },
+     "fade_hits": 0,
+     "store_hits": 0,
+     "store_misses": 0,
+     "control_slots": 23
+    }
+   },
+   "surf": {
+    "resident_0_13_0": {
+     "ticks": 360,
+     "frames_published": 337,
+     "published_per_60_ticks": 56.17,
+     "min_window_60": 49,
+     "max_gap_frames": 12,
+     "visually_exact_frames": 329,
+     "frames_rendered": 337,
+     "frames_over_100_wrong_pixels": 5,
+     "max_wrong_pixels": 1132,
+     "mean_delay_ticks": 0.96,
+     "max_delay_ticks": 11,
+     "forced_releases": 2,
+     "parser_bad_frames": 0,
+     "delta_misses": 0,
+     "store_hits": 0,
+     "store_misses": 0,
+     "control_slots": 11
+    },
+    "resident_0_16_0": {
+     "ticks": 360,
+     "frames_published": 329,
+     "published_per_60_ticks": 54.83,
+     "min_window_60": 41,
+     "max_gap_frames": 12,
+     "visually_exact_frames": 323,
+     "frames_rendered": 329,
+     "frames_over_100_wrong_pixels": 2,
+     "max_wrong_pixels": 1325,
+     "mean_delay_ticks": 1.06,
+     "max_delay_ticks": 8,
+     "forced_releases": 1,
+     "parser_bad_frames": 0,
+     "delta_misses": 0,
+     "records_by_kind": {
+      "1": 92,
+      "3": 41,
+      "4": 149,
+      "5": 259,
+      "10": 3,
+      "12": 19,
+      "14": 241
+     },
+     "fade_hits": 0,
+     "store_hits": 97,
+     "store_misses": 39,
+     "control_slots": 21
+    }
+   },
+   "menus": {
+    "resident_0_13_0": {
+     "ticks": 600,
+     "frames_published": 509,
+     "published_per_60_ticks": 50.9,
+     "min_window_60": 0,
+     "max_gap_frames": 68,
+     "visually_exact_frames": 508,
+     "frames_rendered": 509,
+     "frames_over_100_wrong_pixels": 0,
+     "max_wrong_pixels": 40,
+     "mean_delay_ticks": 3.23,
+     "max_delay_ticks": 39,
+     "forced_releases": 0,
+     "parser_bad_frames": 0,
+     "delta_misses": 0,
+     "store_hits": 0,
+     "store_misses": 0,
+     "control_slots": 19
+    },
+    "resident_0_16_0": {
+     "ticks": 600,
+     "frames_published": 501,
+     "published_per_60_ticks": 50.1,
+     "min_window_60": 22,
+     "max_gap_frames": 45,
+     "visually_exact_frames": 500,
+     "frames_rendered": 501,
+     "frames_over_100_wrong_pixels": 0,
+     "max_wrong_pixels": 20,
+     "mean_delay_ticks": 0.2,
+     "max_delay_ticks": 11,
+     "forced_releases": 0,
+     "parser_bad_frames": 0,
+     "delta_misses": 0,
+     "records_by_kind": {
+      "1": 233,
+      "3": 787,
+      "4": 170,
+      "5": 121,
+      "10": 935,
+      "14": 810,
+      "15": 117,
+      "16": 13
+     },
+     "fade_hits": 112,
+     "store_hits": 510,
+     "store_misses": 84,
+     "control_slots": 59
+    },
+    "resident_0_16_0_without_verdict_pico_0_7_0": {
+     "ticks": 600,
+     "frames_published": 416,
+     "published_per_60_ticks": 41.6,
+     "min_window_60": 0,
+     "max_gap_frames": 72,
+     "visually_exact_frames": 413,
+     "frames_rendered": 416,
+     "frames_over_100_wrong_pixels": 2,
+     "max_wrong_pixels": 11288,
+     "mean_delay_ticks": 0.04,
+     "max_delay_ticks": 4,
+     "forced_releases": 0,
+     "parser_bad_frames": 0,
+     "delta_misses": 0,
+     "records_by_kind": {
+      "1": 756,
+      "3": 618,
+      "4": 290,
+      "5": 144,
+      "10": 935
+     },
+     "fade_hits": 0,
+     "store_hits": 0,
+     "store_misses": 0,
+     "control_slots": 20
+    }
+   },
+   "prebattle": {
+    "resident_0_13_0": {
+     "ticks": 420,
+     "frames_published": 364,
+     "published_per_60_ticks": 52.0,
+     "min_window_60": 0,
+     "max_gap_frames": 4,
+     "visually_exact_frames": 354,
+     "frames_rendered": 364,
+     "frames_over_100_wrong_pixels": 2,
+     "max_wrong_pixels": 972,
+     "mean_delay_ticks": 0.51,
+     "max_delay_ticks": 13,
+     "forced_releases": 0,
+     "parser_bad_frames": 0,
+     "delta_misses": 0,
+     "store_hits": 0,
+     "store_misses": 0,
+     "control_slots": 12
+    },
+    "resident_0_16_0": {
+     "ticks": 420,
+     "frames_published": 357,
+     "published_per_60_ticks": 51.0,
+     "min_window_60": 3,
+     "max_gap_frames": 7,
+     "visually_exact_frames": 349,
+     "frames_rendered": 357,
+     "frames_over_100_wrong_pixels": 1,
+     "max_wrong_pixels": 107,
+     "mean_delay_ticks": 0.38,
+     "max_delay_ticks": 6,
+     "forced_releases": 0,
+     "parser_bad_frames": 0,
+     "delta_misses": 0,
+     "records_by_kind": {
+      "1": 82,
+      "3": 63,
+      "4": 141,
+      "5": 366,
+      "10": 20,
+      "12": 4,
+      "14": 638
+     },
+     "fade_hits": 0,
+     "store_hits": 331,
+     "store_misses": 51,
+     "control_slots": 29
+    }
+   }
+  }
+ },
+ "not_covered": [
+  "cable and electrical timing",
+  "Pico 0.8.1 extended control slot on the console (checked against the PIO model only)",
+  "USB latency of the verdict",
+  "audio",
+  "browser presentation"
+ ]
+}

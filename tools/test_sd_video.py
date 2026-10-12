@@ -21,8 +21,9 @@ class Tests(unittest.TestCase):
   errors=[];saved=[]
   class FakeSerial:
    def __init__(self,port,read_timeout=50):
-    from graphics_stream import encode_snapshot,SIZE
-    self.chunks=[b'READY SD VIDEO 0.4.0\n']+([encode_snapshot(0,6,bytes(SIZE)),encode_snapshot(1,12,bytes(SIZE),bytes(SIZE))] if emerald else [raw_packet(),raw_packet(1)]);self.writes=[]
+    # the Emerald viewer reads the resident's stream (0.12 on): a keyframe and one more tick of a blank screen
+    from test_stream_parser import tick
+    self.chunks=[b'READY SD VIDEO 0.4.0\n']+([tick(0,6,[],pending=0,key=True),tick(1,12,[],pending=0)] if emerald else [raw_packet(),raw_packet(1)]);self.writes=[]
    def read(self):
     time.sleep(.01)
     return self.chunks.pop(0) if self.chunks else b''
@@ -69,7 +70,15 @@ class Tests(unittest.TestCase):
    report=json.loads(next(root.glob('dist/'+('emerald-reports' if emerald else 'sd-video-reports')+'/*/rapporto.json')).read_text())
    self.assertEqual(report['valid_frames'],2);self.assertEqual(report['crc_errors'],0)
    self.assertTrue(list(root.glob('dist/'+('emerald-reports' if emerald else 'sd-video-reports')+'/*/ultimo-frame.bmp')))
-  self.assertEqual(saved,[b'START\n']+([b'CONTROL\n'] if unified else [])+[b'STOP\n'])
+  # with the unified firmware the viewer also answers the resident's control slot: 'V' and the 28 verdict words
+  verdicts=[w for w in saved if w.startswith(b'V')]
+  self.assertEqual([w for w in saved if not w.startswith(b'V')],[b'START\n']+([b'CONTROL\n'] if unified else [])+[b'STOP\n'])
+  if unified and emerald:
+   self.assertTrue(verdicts);self.assertTrue(all(len(w)==114 and w.endswith(b'\n') for w in verdicts))
+   words=struct.unpack('<28H',bytes.fromhex(verdicts[-1][1:-1].decode()));check=0
+   for w in words:check^=w
+   self.assertEqual(check,0x5aa5)
+  else:self.assertEqual(verdicts,[])
  def test_actual_gba_gpio_frames(self):
   from unicorn import Uc,UC_ARCH_ARM,UC_MODE_ARM,UC_HOOK_MEM_READ,UC_HOOK_MEM_WRITE
   uc=Uc(UC_ARCH_ARM,UC_MODE_ARM)

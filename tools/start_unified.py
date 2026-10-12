@@ -14,9 +14,9 @@ if __name__=='__main__':
   try:
    from check_portable import main as check
    check()
-   print('Pico: firmware UNIFIED 0.7.0. Cavo invariato. Nessun cambio UF2 durante la sessione.')
-   answer=input('INVIO per multiboot 0.13.0 (GBA acceso SENZA cartuccia); R per riprendere; B per la baseline 0.11.0: ').strip().lower()
-   if answer not in ('','r','b'):raise SystemExit('Scelta non riconosciuta; nessun trasferimento avviato.')
-   result=main(emerald=True,unified=True,resume=answer=='r',log_path=log_path,baseline=answer=='b')
+   print('Pico: firmware UNIFIED 0.8.1 (dist/gbmirroring-unified-v0.8.1.uf2). Se il Pico ha ancora lo 0.7.0 scegli S (programma stabile 0.13.0).')
+   answer=input('INVIO per multiboot 0.16.0 (GBA acceso SENZA cartuccia); S per il residente stabile 0.13.0; R per riprendere; B per la baseline 0.11.0: ').strip().lower()
+   if answer not in ('','r','b','s'):raise SystemExit('Scelta non riconosciuta; nessun trasferimento avviato.')
+   result=main(emerald=True,unified=True,resume=answer=='r',log_path=log_path,baseline=answer=='b',stable=answer=='s')
   finally:sys.stdout=original
  sys.exit(result)

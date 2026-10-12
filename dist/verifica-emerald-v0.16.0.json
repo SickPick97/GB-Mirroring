@@ -1,0 +1,7 @@
+{
+  "status": "Experimental; hardware untested",
+  "sha256": "08beb3c6796cb2379ff62728eca76745462af8d62890df5cbdefd4c41ef52c03",
+  "bytes": 11904,
+  "resident_bytes": 8196,
+  "scope": "Italian BPEI; stream 0.16.0 (0.13.0 plus blocks announced by hash, computed fades, sending inside the adapter probe); no scanline effects or UVC; hardware performance unverified"
+}

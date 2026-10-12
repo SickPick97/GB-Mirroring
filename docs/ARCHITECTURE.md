@@ -24,7 +24,7 @@ The renderer's display refresh, received graphics snapshots and GBA gameplay rat
 | Development co-simulation | `tools/cosim_stream.py` (game in mGBA, real ARM resident in Unicorn, PC parser) |
 | Legacy Celio recovery source | `vendor/celio_legacy_source/` (separate from current Pico firmware) |
 
-Keep versioned binaries immutable. The current package contains resident 0.13.0 and Pico firmware 0.7.0. Offline checks: `runtime/python/python.exe tools/check_portable.py`, `python tools/verify_celio_provenance.py`. These commands do not communicate with a console. Development builds require the appropriate ARM toolchain and pinned dependencies; users run the supplied binaries.
+Keep versioned binaries immutable. The current package contains resident 0.16.0 (and the stable 0.13.0) and Pico firmware 0.8.1; the stream additions of 0.16 are described in [PROTOCOLLO-STREAM.md](PROTOCOLLO-STREAM.md). Offline checks: `runtime/python/python.exe tools/check_portable.py`, `python tools/verify_celio_provenance.py`. These commands do not communicate with a console. Development builds require the appropriate ARM toolchain and pinned dependencies; users run the supplied binaries.
 
 ## Roadmap
 

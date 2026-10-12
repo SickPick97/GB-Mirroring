@@ -19,6 +19,8 @@ def main():
     if libusb_package.get_libusb1_backend() is None:
         raise RuntimeError('Backend USB non disponibile')
     for report,binary,key in [
+        ('verifica-emerald-v0.16.0.json','gbmirroring-emerald-v0.16.0.gba','sha256'),
+        ('verifica-unified-v0.8.1.json','gbmirroring-unified-v0.8.1.uf2','uf2_sha256'),
         ('verifica-emerald-v0.13.2.json','gbmirroring-emerald-v0.13.2.gba','sha256'),
         ('verifica-emerald-v0.13.1.json','gbmirroring-emerald-v0.13.1.gba','sha256'),
         ('verifica-emerald-v0.13.0.json','gbmirroring-emerald-v0.13.0.gba','sha256'),
@@ -55,6 +57,9 @@ def main():
     native=json.loads((ROOT/'runtime/native/manifest.json').read_text())
     if hashlib.sha256((ROOT/'runtime/native/gbm_renderer.dll').read_bytes()).hexdigest()!=native['sha256']:
         raise ValueError('Renderer nativo incompleto o modificato')
+    blocks=json.loads((ROOT/'runtime/native/manifest-blocks.json').read_text())
+    if hashlib.sha256((ROOT/'runtime/native/gbm_blocks.dll').read_bytes()).hexdigest()!=blocks['sha256']:
+        raise ValueError('Indice nativo della grafica incompleto o modificato')
     print('Pacchetto GBMirroring', (ROOT/'VERSION').read_text().strip())
     print('OK: runtime, librerie USB, moduli e firmware. Nessun dispositivo interrogato.')
     return 0

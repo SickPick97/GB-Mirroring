@@ -37,17 +37,20 @@ def run(resident,state_path,frames,scenario,enabled=True,key_file=None):
     try:
         core.run();core.restore(state);s=core.state()
         m0=rd(s,COUNTER);v0=struct.unpack_from('<I',s,0x19000+0x22e0)[0]
-        start={n:rd(s,sy[n][0]) for n in ('visits','sequence')} if sy else {}
-        idle=[];callbacks=set()
+        start={n:rd(s,sy[n][0]) for n in ('visits','sequence') if n in sy} if sy else {}
+        idle=[];callbacks=set();ticked=0;seen=None
         for f in range(frames):
             k=keys[f//16] if keys and f<len(keys)*16 else keys_for(scenario,f)
             core.run(1,k);s=core.state()
             callbacks.add(struct.unpack_from('<I',s,0x19000+0x22cc)[0])
             if sy and 'idle_words' in sy:idle.append(rd(s,sy['idle_words'][0]))
+            if sy and 'last_vblank' in sy:
+                # from 0.16.0 the resident keeps no tick counter: a tick ran when the VBlank it last saw has changed
+                ticked+=rd(s,sy['last_vblank'][0])!=seen;seen=rd(s,sy['last_vblank'][0])
         m1=rd(s,COUNTER);v1=struct.unpack_from('<I',s,0x19000+0x22e0)[0]
         out=dict(frames=frames,main_iterations=m1-m0,vblanks=v1-v0)
         if sy:
-            out.update(ticks=rd(s,sy['visits'][0])-start['visits'],packets=rd(s,sy['sequence'][0])-start['sequence'])
+            out.update(ticks=rd(s,sy['visits'][0])-start['visits'] if 'visits' in sy else ticked,packets=rd(s,sy['sequence'][0])-start['sequence'])
             if 'ticks_sent' in sy:out.update(ticks_sent=rd(s,sy['ticks_sent'][0]),busy_skips=rd(s,sy['busy_skips'][0]),last_busy_pc=hex(rd(s,sy['last_busy_pc'][0])))
             if idle:out.update(idle_words_mean=round(sum(idle)/len(idle),1),idle_words_max=max(idle))
         out['callbacks']=sorted(hex(c) for c in callbacks)
